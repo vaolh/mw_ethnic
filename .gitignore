@@ -5,3 +5,10 @@ downloaddata/output/.DS_Store
 downloaddata/temp/.DS_Store
 downloaddata/.DS_Store
 downloaddata/.DS_Store
+downloaddata/code/wget-log
+downloaddata/output/concentradohogar2016.dta
+downloaddata/output/concentradohogar2018.dta
+downloaddata/output/concentradohogar2020.dta
+downloaddata/output/concentradohogar2022.dta
+downloaddata/output/nota_bases_datos_enigh2016_ns.txt
+downloaddata/output/nota_bases_datos_enigh2018_ns.txt
