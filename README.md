@@ -1,6 +1,6 @@
 ## Software
 
-I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I had to install [Homebrew](https://brew.sh) and [Xcode](https://developer.apple.com/xcode/), which is available on the AppStore. All of my code was written on [Sublime Text](https://www.sublimetext.com).
+I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I had to install [Homebrew](https://brew.sh) and [Xcode](https://developer.apple.com/xcode/), which is available on the AppStore. All of my code was written on [Sublime Text](https://www.sublimetext.com) or on the [Stata](http://www.stata.com) Do-File editor.
 
 ## Replication Instructions
 
