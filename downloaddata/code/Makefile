@@ -7,6 +7,7 @@ include ../../generic.make
 	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/microdatos/enigh2022_ns_concentradohogar_dta.zip -O $@
 
 # Extract the dataset (DTA file)
-../output/enigh2022_concentradohogar.dta: ../temp/enigh2022_concentradohogar_dta.zip | ../output
+../output/concentradohogar.dta: ../temp/enigh2022_concentradohogar_dta.zip | ../output
 	unzip -j $< -d ../output
+	rm -rf ../temp  
 	touch $@
