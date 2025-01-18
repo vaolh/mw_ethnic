@@ -5,8 +5,11 @@ I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I ha
 ## Replication Instructions
 
 -Download or clone this repository using the buttons above or [GitHub Desktop](https://github.com/apps/desktop)
+
 -Open Unix/Linux/MacOSX command line. I had zsh - Version 2.14 (455) at the time of this project.
+
 -To do this, you can press Command + Space and write terminal.
+
 -Run the following, if you have not already
 ```bash
 brew install wget
