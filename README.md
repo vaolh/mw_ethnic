@@ -8,7 +8,11 @@ I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I ha
 -Open Unix/Linux/MacOSX command line. I had zsh - Version 2.14 (455) at the time of this project.
 -To do this, you can press Command + Space and write terminal.
 -Run the following, if you have not already
-> `brew install wget`
+```bash
+brew install wget
+```
 -Then, simply type
-> `make`
+```bash
+make
+```
 -The Makefile will run all of the code needed to replicate my results from scratch.
