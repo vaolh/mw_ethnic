@@ -2,9 +2,6 @@ all: $(addprefix ../output/, enigh2022_concentradohogar.dta enigh2020_concentrad
 
 include ../../generic.make
 
-include ../../generic.make
-
-
 # 2022 ENIGH - Concentrado Hogar
 ../temp/enigh2022: | ../temp
 	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/microdatos/enigh2022_ns_concentradohogar_dta.zip -O ../temp/enigh2022_dta.zip
