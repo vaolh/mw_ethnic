@@ -12,3 +12,8 @@ downloaddata/output/concentradohogar2020.dta
 downloaddata/output/concentradohogar2022.dta
 downloaddata/output/nota_bases_datos_enigh2016_ns.txt
 downloaddata/output/nota_bases_datos_enigh2018_ns.txt
+downloaddata/output/concentradohogar.dta
+downloaddata/temp/enigh2018_dta.zip
+downloaddata/temp/enigh2020_dta.zip
+downloaddata/temp/enigh2022_dta.zip
+downloaddata/.DS_Store
