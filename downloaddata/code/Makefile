@@ -1,38 +1,53 @@
+# Target to build all files
 all: $(addprefix ../output/, enigh2022_concentradohogar.dta enigh2020_concentradohogar.dta enigh2018_concentradohogar.dta enigh2016_concentradohogar.dta)
+	# Remove the temp folder at the end
+	rm -rf ../temp
 
 include ../../generic.make
 
+# Ensure the temp and output directories exist
+../temp:
+	mkdir -p ../temp
+
+../output:
+	mkdir -p ../output
+
 # 2022 ENIGH - Concentrado Hogar
-../temp/enigh2022: | ../temp
-	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/microdatos/enigh2022_ns_concentradohogar_dta.zip -O ../temp/enigh2022_dta.zip
-../output/enigh2022_concentradohogar.dta: ../temp/enigh2022 | ../output
-	unzip -j ../temp/enigh2022_dta.zip -d ../output
+../temp/enigh2022_dta.zip: | ../temp
+	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/microdatos/enigh2022_ns_concentradohogar_dta.zip -O ../temp/enigh2022_dta.zip || { echo "Failed to download 2022 data"; exit 1; }
+
+../output/enigh2022_concentradohogar.dta: ../temp/enigh2022_dta.zip | ../output
+	unzip -o -j ../temp/enigh2022_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2022.dta
+	# Delete all non-.dta files in ../output
+	find ../output -type f ! -name '*.dta' -delete
 
 # 2020 ENIGH
-../temp/enigh2020: | ../temp
-	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2020/microdatos/enigh2020_ns_concentradohogar_dta.zip -O ../temp/enigh2020_dta.zip
-../output/enigh2020_concentradohogar.dta: ../temp/enigh2020 | ../output
-	unzip -j ../temp/enigh2020_dta.zip -d ../output
+../temp/enigh2020_dta.zip: | ../temp
+	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2020/microdatos/enigh2020_ns_concentradohogar_dta.zip -O ../temp/enigh2020_dta.zip || { echo "Failed to download 2020 data"; exit 1; }
+
+../output/enigh2020_concentradohogar.dta: ../temp/enigh2020_dta.zip | ../output
+	unzip -o -j ../temp/enigh2020_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2020.dta
+	# Delete all non-.dta files in ../output
+	find ../output -type f ! -name '*.dta' -delete
 
 # 2018 ENIGH
-../temp/enigh2018: | ../temp
-	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2018/microdatos/enigh2018_ns_concentradohogar_dta.zip -O ../temp/enigh2018_dta.zip
+../temp/enigh2018_dta.zip: | ../temp
+	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2018/microdatos/enigh2018_ns_concentradohogar_dta.zip -O ../temp/enigh2018_dta.zip || { echo "Failed to download 2018 data"; exit 1; }
 
-../output/enigh2018_concentradohogar.dta: ../temp/enigh2018 | ../output
-	unzip -j ../temp/enigh2018_dta.zip -d ../output
+../output/enigh2018_concentradohogar.dta: ../temp/enigh2018_dta.zip | ../output
+	unzip -o -j ../temp/enigh2018_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2018.dta
-	# Eliminar todos los archivos que no sean concentradohogar2018.dta
-	find ../output -type f ! -name 'concentradohogar2018.dta' -delete
+	# Delete all non-.dta files in ../output
+	find ../output -type f ! -name '*.dta' -delete
 
 # 2016 ENIGH
-../temp/enigh2016: | ../temp
-	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2016/microdatos/enigh2016_ns_concentradohogar_dta.zip -O ../temp/enigh2016_dta.zip
+../temp/enigh2016_dta.zip: | ../temp
+	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2016/microdatos/enigh2016_ns_concentradohogar_dta.zip -O ../temp/enigh2016_dta.zip || { echo "Failed to download 2016 data"; exit 1; }
 
-../output/enigh2016_concentradohogar.dta: ../temp/enigh2016 | ../output
-	unzip -j ../temp/enigh2016_dta.zip -d ../output
+../output/enigh2016_concentradohogar.dta: ../temp/enigh2016_dta.zip | ../output
+	unzip -o -j ../temp/enigh2016_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2016.dta
-	# Eliminar todos los archivos que no sean concentradohogar2016.dta
-	find ../output -type f ! -name 'concentradohogar2016.dta' -delete
-
+	# Delete all non-.dta files in ../output
+	find ../output -type f ! -name '*.dta' -delete
