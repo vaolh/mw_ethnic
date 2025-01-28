@@ -19,14 +19,20 @@ include ../../generic.make
 # 2018 ENIGH
 ../temp/enigh2018: | ../temp
 	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2018/microdatos/enigh2018_ns_concentradohogar_dta.zip -O ../temp/enigh2018_dta.zip
+
 ../output/enigh2018_concentradohogar.dta: ../temp/enigh2018 | ../output
 	unzip -j ../temp/enigh2018_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2018.dta
+	# Eliminar todos los archivos que no sean concentradohogar2018.dta
+	find ../output -type f ! -name 'concentradohogar2018.dta' -delete
 
 # 2016 ENIGH
 ../temp/enigh2016: | ../temp
 	wget https://www.inegi.org.mx/contenidos/programas/enigh/nc/2016/microdatos/enigh2016_ns_concentradohogar_dta.zip -O ../temp/enigh2016_dta.zip
+
 ../output/enigh2016_concentradohogar.dta: ../temp/enigh2016 | ../output
 	unzip -j ../temp/enigh2016_dta.zip -d ../output
 	mv ../output/concentradohogar.dta ../output/concentradohogar2016.dta
-	rm -rf ../temp
+	# Eliminar todos los archivos que no sean concentradohogar2016.dta
+	find ../output -type f ! -name 'concentradohogar2016.dta' -delete
+
