@@ -16,7 +16,7 @@ I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I ha
 ```bash
 brew install wget
 ```
-- We must also change Stata path.
+-We must also change Stata path.
   
  ```bash
 nano ~/.zshrc
