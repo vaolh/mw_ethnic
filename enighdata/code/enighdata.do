@@ -17,4 +17,4 @@ ssc install tabout
 
 use "../input/ingresos2016.dta", clear
 
-tab clave
+save "../output/ingresos2016.dta", replace
