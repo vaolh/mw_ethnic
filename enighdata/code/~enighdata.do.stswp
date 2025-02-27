@@ -18,7 +18,7 @@ ssc install tabout
 use "../input/poblacion2016.dta", clear
 
 egen new_id = concat(folioviv foliohog numren)
-keep new_id hablaind sexo edad
+keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog asis_esc nivel grado residencia hor_1 trabajo_mp 
 
 save "../output/poblacion2016.dta", replace
 
@@ -47,9 +47,17 @@ append using `negocios'
 
 drop if inrange(real(substr(clave, 2, .)), 68, 81)
 
-order new_id, before(folioviv)
+
+
 
 merge m:1 new_id using "../output/poblacion2016.dta"
+
+reshape long mes_ ing_, i(new_id clave) j(obs)
+rename ing_ income
+gen month = mes_
+drop mes_ obs
+
+order new_id month, before(folioviv)
 
 
 

@@ -26,3 +26,4 @@ downloaddata/output/poblacion2022.dta
 enoedata/.DS_Store
 .DS_Store
 downloaddata/.DS_Store
+*.dta

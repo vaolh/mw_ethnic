@@ -47,12 +47,76 @@ all files already exist and are up to date.
 . *** EMAIL: vincictor33@gmail.com
 . *** DATE: 2025-02-16
 . 
+. use "../input/poblacion2016.dta", clear
+
+. 
+. egen new_id = concat(folioviv foliohog numren)
+
+. keep new_id hablaind sexo edad
+
+. 
+. save "../output/poblacion2016.dta", replace
+file ../output/poblacion2016.dta saved
+
+. 
 . use "../input/ingresos2016.dta", clear
 
 . 
-. save "../output/ingresos2016.dta", replace
-(file ../output/ingresos2016.dta not found)
-file ../output/ingresos2016.dta saved
+. egen new_id = concat(folioviv foliohog numren)
 
+. gen negocio = inrange(real(substr(clave, 2, .)), 68, 81)
+
+. 
+. keep if negocio == 1
+(307,098 observations deleted)
+
+. 
+. collapse (sum) ing_1 ing_2 ing_3 ing_4 ing_5 ing_6 ing_tri ///
+>         (first) mes_1 mes_2 mes_3 mes_4 mes_5 mes_6 negocio, ///
+>         by(new_id)
+
+.                 
+. gen clave = "6"
+
+. 
+. tempfile negocios
+
+. save `negocios'
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St04508.000001 saved
+    as .dta format
+
+. 
+. use "../input/ingresos2016.dta", clear
+
+. 
+. egen new_id = concat(folioviv foliohog numren)
+
+. gen negocio = inrange(real(substr(clave, 2, .)), 68, 81)
+
+. 
+. append using `negocios'
+
+. 
+. drop if inrange(real(substr(clave, 2, .)), 68, 81)
+(27,239 observations deleted)
+
+. 
+. order new_id, before(folioviv)
+
+. 
+. merge m:1 new_id using "../output/poblacion2016.dta"
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                        82,686
+        from master                         0  (_merge==1)
+        from using                     82,686  (_merge==2)
+
+    Matched                           331,547  (_merge==3)
+    -----------------------------------------
+
+. 
+. 
+. 
 . 
 end of do-file
