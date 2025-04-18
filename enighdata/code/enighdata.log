@@ -24,7 +24,6 @@ Notes:
 . do "enighdata.do" 
 
 . /*Clean Memory*/
-. 
 . clear
 
 . cap clear
@@ -35,7 +34,6 @@ Notes:
 
 . 
 . /*Install Programs*/
-. 
 . ssc install tabout
 checking tabout consistency and verifying not already installed...
 all files already exist and are up to date.
@@ -47,65 +45,57 @@ all files already exist and are up to date.
 . *** EMAIL: vincictor33@gmail.com
 . *** DATE: 2025-02-16
 . 
+. // First dataset preparation
 . use "../input/poblacion2016.dta", clear
 
-. 
 . egen new_id = concat(folioviv foliohog numren)
 
-. keep new_id hablaind sexo edad
+. keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog
+>  asis_esc nivel grado residencia hor_1 trabajo_mp 
+
+. tempfile pop_data
+
+. save `pop_data'
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St53009.000001 saved
+    as .dta format
 
 . 
-. save "../output/poblacion2016.dta", replace
-(file ../output/poblacion2016.dta not found)
-file ../output/poblacion2016.dta saved
-
-. 
+. // Second dataset preparation - negocios
 . use "../input/ingresos2016.dta", clear
 
-. 
 . egen new_id = concat(folioviv foliohog numren)
 
 . gen negocio = inrange(real(substr(clave, 2, .)), 68, 81)
 
-. 
 . keep if negocio == 1
 (307,098 observations deleted)
 
-. 
 . collapse (sum) ing_1 ing_2 ing_3 ing_4 ing_5 ing_6 ing_tri ///
 >         (first) mes_1 mes_2 mes_3 mes_4 mes_5 mes_6 negocio, ///
 >         by(new_id)
 
-.                 
 . gen clave = "6"
 
-. 
 . tempfile negocios
 
 . save `negocios'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St20662.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St53009.000002 saved
     as .dta format
 
 . 
 . use "../input/ingresos2016.dta", clear
 
-. 
 . egen new_id = concat(folioviv foliohog numren)
 
 . gen negocio = inrange(real(substr(clave, 2, .)), 68, 81)
 
-. 
 . append using `negocios'
 
-. 
 . drop if inrange(real(substr(clave, 2, .)), 68, 81)
 (27,239 observations deleted)
 
 . 
-. order new_id, before(folioviv)
-
-. 
-. merge m:1 new_id using "../output/poblacion2016.dta"
+. merge m:1 new_id using `pop_data'
 
     Result                      Number of obs
     -----------------------------------------
@@ -117,7 +107,27 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St20662.000001 saved
     -----------------------------------------
 
 . 
-. 
-. 
+. reshape long mes_ ing_, i(new_id clave) j(obs)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          414,233   ->   2,485,398   
+Number of variables                  34   ->   25          
+j variable (6 values)                     ->   obs
+xij variables:
+                  mes_1 mes_2 ... mes_6   ->   mes_
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+
+. rename ing_ income
+
+. gen month = mes_
+(496,116 missing values generated)
+
+. drop mes_ obs
+
+. order new_id month, before(folioviv)
+
 . 
 end of do-file

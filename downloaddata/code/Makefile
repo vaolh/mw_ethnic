@@ -1,3 +1,4 @@
+# Define the data types, years, and zip file patterns
 YEARS := 2022 2020 2018 2016
 TYPES := concentradohogar ingresos poblacion
 ZIP_PATTERNS := dta i_dta p_dta
