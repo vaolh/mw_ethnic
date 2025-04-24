@@ -13,6 +13,10 @@ set more off
 
 ssc install tabout
 
+*************************************************
+**************** Define Globals *****************
+*************************************************
+
 global project="/Users/victorortega/Dropbox/mw_ethnic/downloaddata/output"
 global output="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
 
@@ -28,23 +32,23 @@ global output="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
 
 ******** Poblacion and concentradohogar *********
 
-*use "../input/poblacion2016.dta", clear
-use "$project/poblacion2016.dta", clear
+use "../input/poblacion2016.dta", clear
+*use "$project/poblacion2016.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog asis_esc nivelaprob gradoaprob residencia hor_1 trabajo_mp 
 tempfile pop_data_2016
 save `pop_data_2016'
 
-*use "../input/concentradohogar2016.dta", clear
-use "$project/concentradohogar2016.dta", clear
+use "../input/concentradohogar2016.dta", clear
+*use "$project/concentradohogar2016.dta", clear
 collapse (first) ubica_geo, by(folioviv)
 tempfile hog_data_2016
 save `hog_data_2016'
 
 ************ Ingresos ENIGH dataset *************
 
-*use "../input/ingresos2016.dta", clear
-use "$project/ingresos2016.dta", clear
+use "../input/ingresos2016.dta", clear
+*use "$project/ingresos2016.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 
 gen clave_group = ""
@@ -419,6 +423,9 @@ label variable ing_ventas "sales income"
 egen id = group(new_id)
 order id, before(new_id)
 
+*clean ubica_geo
+replace ubica_geo = substr(ubica_geo, 1, length(ubica_geo) - 4)
+
 *tempfile for append later
 tempfile enighdata2016
 save `enighdata2016'
@@ -429,23 +436,23 @@ save `enighdata2016'
 
 ******** Poblacion and concentradohogar *********
 
-*use "../input/poblacion2018.dta", clear
-use "$project/poblacion2018.dta", clear
+use "../input/poblacion2018.dta", clear
+*use "$project/poblacion2018.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog asis_esc nivelaprob gradoaprob residencia hor_1 trabajo_mp 
 tempfile pop_data_2018
 save `pop_data_2018'
 
-*use "../input/concentradohogar2018.dta", clear
-use "$project/concentradohogar2018.dta", clear
+use "../input/concentradohogar2018.dta", clear
+*use "$project/concentradohogar2018.dta", clear
 collapse (first) ubica_geo, by(folioviv)
 tempfile hog_data_2018
 save `hog_data_2018'
 
 ************ Ingresos ENIGH dataset *************
 
-*use "../input/ingresos2018.dta", clear
-use "$project/ingresos2018.dta", clear
+use "../input/ingresos2018.dta", clear
+*use "$project/ingresos2018.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 
 gen clave_group = ""
@@ -829,23 +836,23 @@ save `enighdata2018'
 
 ******** Poblacion and concentradohogar *********
 
-*use "../input/poblacion2020.dta", clear
-use "$project/poblacion2020.dta", clear
+use "../input/poblacion2020.dta", clear
+*use "$project/poblacion2020.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog asis_esc nivelaprob gradoaprob residencia hor_1 trabajo_mp 
 tempfile pop_data_2020
 save `pop_data_2020'
 
-*use "../input/concentradohogar2020.dta", clear
-use "$project/concentradohogar2020.dta", clear
+use "../input/concentradohogar2020.dta", clear
+*use "$project/concentradohogar2020.dta", clear
 collapse (first) ubica_geo, by(folioviv)
 tempfile hog_data_2020
 save `hog_data_2020'
 
 ************ Ingresos ENIGH dataset *************
 
-*use "../input/ingresos2020.dta", clear
-use "$project/ingresos2020.dta", clear
+use "../input/ingresos2020.dta", clear
+*use "$project/ingresos2020.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 
 gen clave_group = ""
@@ -1230,23 +1237,23 @@ save `enighdata2020'
 
 ******** Poblacion and concentradohogar *********
 
-*use "../input/poblacion2022.dta", clear
-use "$project/poblacion2022.dta", clear
+use "../input/poblacion2022.dta", clear
+*use "$project/poblacion2022.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog asis_esc nivelaprob gradoaprob residencia hor_1 trabajo_mp 
 tempfile pop_data_2022
 save `pop_data_2022'
 
-*use "../input/concentradohogar2022.dta", clear
-use "$project/concentradohogar2022.dta", clear
+use "../input/concentradohogar2022.dta", clear
+*use "$project/concentradohogar2022.dta", clear
 collapse (first) ubica_geo, by(folioviv)
 tempfile hog_data_2022
 save `hog_data_2022'
 
 ************ Ingresos ENIGH dataset *************
 
-*use "../input/ingresos2022.dta", clear
-use "$project/ingresos2022.dta", clear
+use "../input/ingresos2022.dta", clear
+*use "$project/ingresos2022.dta", clear
 egen new_id = concat(folioviv foliohog numren)
 
 gen clave_group = ""
@@ -1632,6 +1639,6 @@ append using `enighdata2016' `enighdata2018' `enighdata2020'
 sort id time
 
 *save dataset
-*save "../output/enighdata.dta", replace
-save "$output/enighdata.dta", replace
+save "../output/enighdata.dta", replace
+*save "$output/enighdata.dta", replace
 
