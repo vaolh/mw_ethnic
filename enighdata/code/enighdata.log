@@ -37,13 +37,8 @@ Notes:
 
 . 
 . *************************************************
-. *************** Install Programs ****************
+. **************** Define Globals *****************
 . *************************************************
-. 
-. ssc install tabout
-checking tabout consistency and verifying not already installed...
-all files already exist and are up to date.
-
 . 
 . global project="/Users/victorortega/Dropbox/mw_ethnic/downloaddata/output"
 
@@ -62,9 +57,9 @@ all files already exist and are up to date.
 . 
 . ******** Poblacion and concentradohogar *********
 . 
-. *use "../input/poblacion2016.dta", clear
-. use "$project/poblacion2016.dta", clear
+. use "../input/poblacion2016.dta", clear
 
+. *use "$project/poblacion2016.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog
@@ -73,27 +68,27 @@ all files already exist and are up to date.
 . tempfile pop_data_2016
 
 . save `pop_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000001 saved
     as .dta format
 
 . 
-. *use "../input/concentradohogar2016.dta", clear
-. use "$project/concentradohogar2016.dta", clear
+. use "../input/concentradohogar2016.dta", clear
 
+. *use "$project/concentradohogar2016.dta", clear
 . collapse (first) ubica_geo, by(folioviv)
 
 . tempfile hog_data_2016
 
 . save `hog_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000002 saved
     as .dta format
 
 . 
 . ************ Ingresos ENIGH dataset *************
 . 
-. *use "../input/ingresos2016.dta", clear
-. use "$project/ingresos2016.dta", clear
+. use "../input/ingresos2016.dta", clear
 
+. *use "$project/ingresos2016.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . 
@@ -795,11 +790,16 @@ state: all characters numeric; replaced as byte
 . order id, before(new_id)
 
 . 
+. *clean ubica_geo
+. replace ubica_geo = substr(ubica_geo, 1, length(ubica_geo) - 4)
+(1,132,963 real changes made)
+
+. 
 . *tempfile for append later
 . tempfile enighdata2016
 
 . save `enighdata2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000003 saved
     as .dta format
 
 . 
@@ -809,9 +809,9 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000003 saved
 . 
 . ******** Poblacion and concentradohogar *********
 . 
-. *use "../input/poblacion2018.dta", clear
-. use "$project/poblacion2018.dta", clear
+. use "../input/poblacion2018.dta", clear
 
+. *use "$project/poblacion2018.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog
@@ -820,27 +820,27 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000003 saved
 . tempfile pop_data_2018
 
 . save `pop_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000004 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000004 saved
     as .dta format
 
 . 
-. *use "../input/concentradohogar2018.dta", clear
-. use "$project/concentradohogar2018.dta", clear
+. use "../input/concentradohogar2018.dta", clear
 
+. *use "$project/concentradohogar2018.dta", clear
 . collapse (first) ubica_geo, by(folioviv)
 
 . tempfile hog_data_2018
 
 . save `hog_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000005 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000005 saved
     as .dta format
 
 . 
 . ************ Ingresos ENIGH dataset *************
 . 
-. *use "../input/ingresos2018.dta", clear
-. use "$project/ingresos2018.dta", clear
+. use "../input/ingresos2018.dta", clear
 
+. *use "$project/ingresos2018.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . 
@@ -1547,7 +1547,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2018
 
 . save `enighdata2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000006 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000006 saved
     as .dta format
 
 . 
@@ -1557,9 +1557,9 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000006 saved
 . 
 . ******** Poblacion and concentradohogar *********
 . 
-. *use "../input/poblacion2020.dta", clear
-. use "$project/poblacion2020.dta", clear
+. use "../input/poblacion2020.dta", clear
 
+. *use "$project/poblacion2020.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog
@@ -1568,27 +1568,27 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000006 saved
 . tempfile pop_data_2020
 
 . save `pop_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000007 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000007 saved
     as .dta format
 
 . 
-. *use "../input/concentradohogar2020.dta", clear
-. use "$project/concentradohogar2020.dta", clear
+. use "../input/concentradohogar2020.dta", clear
 
+. *use "$project/concentradohogar2020.dta", clear
 . collapse (first) ubica_geo, by(folioviv)
 
 . tempfile hog_data_2020
 
 . save `hog_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000008 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000008 saved
     as .dta format
 
 . 
 . ************ Ingresos ENIGH dataset *************
 . 
-. *use "../input/ingresos2020.dta", clear
-. use "$project/ingresos2020.dta", clear
+. use "../input/ingresos2020.dta", clear
 
+. *use "$project/ingresos2020.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . 
@@ -2295,7 +2295,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2020
 
 . save `enighdata2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000009 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000009 saved
     as .dta format
 
 . 
@@ -2306,9 +2306,9 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000009 saved
 . 
 . ******** Poblacion and concentradohogar *********
 . 
-. *use "../input/poblacion2022.dta", clear
-. use "$project/poblacion2022.dta", clear
+. use "../input/poblacion2022.dta", clear
 
+. *use "$project/poblacion2022.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . keep new_id hablaind lenguaind comprenind etnia sexo edad madre_hog padre_hog
@@ -2317,27 +2317,27 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.000009 saved
 . tempfile pop_data_2022
 
 . save `pop_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.00000a saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000a saved
     as .dta format
 
 . 
-. *use "../input/concentradohogar2022.dta", clear
-. use "$project/concentradohogar2022.dta", clear
+. use "../input/concentradohogar2022.dta", clear
 
+. *use "$project/concentradohogar2022.dta", clear
 . collapse (first) ubica_geo, by(folioviv)
 
 . tempfile hog_data_2022
 
 . save `hog_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.00000b saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000b saved
     as .dta format
 
 . 
 . ************ Ingresos ENIGH dataset *************
 . 
-. *use "../input/ingresos2022.dta", clear
-. use "$project/ingresos2022.dta", clear
+. use "../input/ingresos2022.dta", clear
 
+. *use "$project/ingresos2022.dta", clear
 . egen new_id = concat(folioviv foliohog numren)
 
 . 
@@ -3044,7 +3044,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2022
 
 . save `enighdata2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.00000c saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000c saved
     as .dta format
 
 . 
@@ -3089,11 +3089,10 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St11301.00000c saved
 
 . 
 . *save dataset
-. *save "../output/enighdata.dta", replace
-. save "$output/enighdata.dta", replace
-file /Users/victorortega/Dropbox/mw_ethnic/enighdata/output/enighdata.dta
-    saved
+. save "../output/enighdata.dta", replace
+file ../output/enighdata.dta saved
 
+. *save "$output/enighdata.dta", replace
 . 
 . 
 end of do-file
