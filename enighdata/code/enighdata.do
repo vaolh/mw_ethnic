@@ -1632,6 +1632,13 @@ save `enighdata2022'
 append using `enighdata2016' `enighdata2018' `enighdata2020'
 sort id time
 
+*destring ubica_geo
+destring ubica_geo, replace
+
+*gen income variable
+egen ingreso = rowtotal(ing_wages ing_non_wage_income ing_fin_capital ing_gov_transfers ing_negocio ing_other ing_rentas ing_ventas)
+order ingreso, before(ing_wages)
+
 *save dataset
 save "../output/enighdata.dta", replace
 *save "$output/enighdata.dta", replace

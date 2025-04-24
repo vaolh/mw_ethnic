@@ -1,0 +1,90 @@
+*************************************************
+***************** Clean Memory ******************
+*************************************************
+
+clear
+cap clear
+cap log close
+set more off
+
+*** REPLICATION FILE: table1
+*** STATA VERSION: 18/SE
+*** AUTHOR: Victor Alfonso Ortega Le Hénanff
+*** EMAIL: vincictor33@gmail.com
+*** DATE: 2025-02-16
+
+*************************************************
+**************** Define Globals *****************
+*************************************************
+
+global project="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
+global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
+
+*************************************************
+******************* Table 1 *********************
+*************************************************
+
+use "../output/enighdata.dta", clear
+*use "$project/enighdata.dta", clear
+
+*Generate Treatment
+
+gen zona_a = 0
+replace zona_a = 1 if ubica_geo == 02001 | ubica_geo == 02002 | ubica_geo == 02003 | ubica_geo == 02004 | ubica_geo == 02005 | ubica_geo == 26055  | ubica_geo == 26048 | ubica_geo == 26070 | ubica_geo == 26017 | ubica_geo == 26004 | ubica_geo == 26060  | ubica_geo == 26043 | ubica_geo == 26059 | ubica_geo == 26039 | ubica_geo == 26002 | ubica_geo == 08035  | ubica_geo == 08005 | ubica_geo == 08037 | ubica_geo == 08053 | ubica_geo == 08028 | ubica_geo == 08015  | ubica_geo == 08052 | ubica_geo == 08042 | ubica_geo == 05023 | ubica_geo == 05002 | ubica_geo == 05038  | ubica_geo == 05014 | ubica_geo == 05022 | ubica_geo == 05025 | ubica_geo == 05012 | ubica_geo == 05013  | ubica_geo == 19005 | ubica_geo == 28027 | ubica_geo == 28014 | ubica_geo == 28024 | ubica_geo == 28025  | ubica_geo == 28015 | ubica_geo == 28007 | ubica_geo == 28022 | ubica_geo == 28032 | ubica_geo == 28033  | ubica_geo == 28040
+
+*generate log of income sources 
+
+gen lni = ln(ingreso) if ingreso > 0
+gen lnw = ln(ing_wages) if ing_wages > 0
+gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
+gen lnfc = ln(ing_fin_capital) if ing_fin_capital > 0
+gen lngt = ln(ing_gov_transfers) if ing_gov_transfers > 0
+gen lnn = ln(ing_negocio) if ing_negocio > 0
+gen lno = ln(ing_other) if ing_other > 0
+gen lnr = ln(ing_rentas) if ing_rentas > 0
+gen lnv = ln(ing_ventas) if ing_ventas > 0
+
+*************************************************
+******************* Table 1 *********************
+*************************************************
+
+eststo allunits: quietly estpost summarize ///
+    gender edad indspeaker indund indigenous school_attendance years_of_study hoursworked employed ///
+    lni lnw lnnwi lnfc lngt lnn lno lnr lnv
+eststo treat: quietly estpost summarize ///
+    gender edad indspeaker indund indigenous school_attendance years_of_study hoursworked employed ///
+    lni lnw lnnwi lnfc lngt lnn lno lnr lnv if zona_a == 1
+eststo control: quietly estpost summarize ///
+    gender edad indspeaker indund indigenous school_attendance years_of_study hoursworked employed ///
+    lni lnw lnnwi lnfc lngt lnn lno lnr lnv if zona_a == 0
+eststo diff: quietly estpost ttest ///
+    gender edad indspeaker indund indigenous school_attendance years_of_study hoursworked employed ///
+    lni lnw lnnwi lnfc lngt lnn lno lnr lnv, by(zona_a) unequal
+
+esttab allunits treat control diff, ///
+cells("mean(pattern(1 1 1 0) fmt(2)) b(star pattern(0 0 0 1) fmt(2)) t(pattern(0 0 0 1) par fmt(2))") ///
+label
+
+estout allunits treat control diff using "../output/table1.tex", style(tex) ///
+cells("mean(fmt(2)) b(fmt(2)) t(par fmt(2))") ///
+label replace ///
+varlabels(gender "Female" ///
+          edad "Age" ///
+          indspeaker "Indigenous Speaker" ///
+          indund "Undocumented" ///
+          indigenous "Self-Identified Indigenous" ///
+          school_attendance "In School" ///
+          years_of_study "Years of Schooling" ///
+          hoursworked "Hours Worked" ///
+          employed "Employed" ///
+          lni "Log Income" ///
+          lnw "Log Wages" ///
+          lnnwi "Log Non-Wage Income" ///
+          lnfc "Log Financial Capital Income" ///
+          lngt "Log Government Transfers" ///
+          lnn "Log Business Income" ///
+          lno "Log Other Income" ///
+          lnr "Log Rent Income" ///
+          lnv "Log Sales Income") ///
+collabels("All Units" "Treated" "Control" "Difference")
+

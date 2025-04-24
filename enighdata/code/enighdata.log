@@ -68,7 +68,7 @@ Notes:
 . tempfile pop_data_2016
 
 . save `pop_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000001 saved
     as .dta format
 
 . 
@@ -80,7 +80,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000001 saved
 . tempfile hog_data_2016
 
 . save `hog_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000002 saved
     as .dta format
 
 . 
@@ -799,7 +799,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2016
 
 . save `enighdata2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000003 saved
     as .dta format
 
 . 
@@ -820,7 +820,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000003 saved
 . tempfile pop_data_2018
 
 . save `pop_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000004 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000004 saved
     as .dta format
 
 . 
@@ -832,7 +832,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000004 saved
 . tempfile hog_data_2018
 
 . save `hog_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000005 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000005 saved
     as .dta format
 
 . 
@@ -1547,7 +1547,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2018
 
 . save `enighdata2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000006 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000006 saved
     as .dta format
 
 . 
@@ -1568,7 +1568,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000006 saved
 . tempfile pop_data_2020
 
 . save `pop_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000007 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000007 saved
     as .dta format
 
 . 
@@ -1580,7 +1580,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000007 saved
 . tempfile hog_data_2020
 
 . save `hog_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000008 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000008 saved
     as .dta format
 
 . 
@@ -2295,7 +2295,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2020
 
 . save `enighdata2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000009 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.000009 saved
     as .dta format
 
 . 
@@ -2317,7 +2317,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.000009 saved
 . tempfile pop_data_2022
 
 . save `pop_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000a saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.00000a saved
     as .dta format
 
 . 
@@ -2329,7 +2329,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000a saved
 . tempfile hog_data_2022
 
 . save `hog_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000b saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.00000b saved
     as .dta format
 
 . 
@@ -3044,7 +3044,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2022
 
 . save `enighdata2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000c saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St14138.00000c saved
     as .dta format
 
 . 
@@ -3086,6 +3086,18 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St13780.00000c saved
 (label genderlbl already defined)
 
 . sort id time
+
+. 
+. *destring ubica_geo
+. destring ubica_geo, replace
+ubica_geo: all characters numeric; replaced as int
+
+. 
+. *gen income variable
+. egen ingreso = rowtotal(ing_wages ing_non_wage_income ing_fin_capital ing_gov
+> _transfers ing_negocio ing_other ing_rentas ing_ventas)
+
+. order ingreso, before(ing_wages)
 
 . 
 . *save dataset
