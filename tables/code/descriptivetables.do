@@ -24,7 +24,7 @@ global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
 ******************* Table 1 *********************
 *************************************************
 
-use "../output/enighdata.dta", clear
+use "../input/enighdata.dta", clear
 *use "$project/enighdata.dta", clear
 
 *Generate Treatment
@@ -32,7 +32,11 @@ use "../output/enighdata.dta", clear
 gen zona_a = 0
 replace zona_a = 1 if ubica_geo == 02001 | ubica_geo == 02002 | ubica_geo == 02003 | ubica_geo == 02004 | ubica_geo == 02005 | ubica_geo == 26055  | ubica_geo == 26048 | ubica_geo == 26070 | ubica_geo == 26017 | ubica_geo == 26004 | ubica_geo == 26060  | ubica_geo == 26043 | ubica_geo == 26059 | ubica_geo == 26039 | ubica_geo == 26002 | ubica_geo == 08035  | ubica_geo == 08005 | ubica_geo == 08037 | ubica_geo == 08053 | ubica_geo == 08028 | ubica_geo == 08015  | ubica_geo == 08052 | ubica_geo == 08042 | ubica_geo == 05023 | ubica_geo == 05002 | ubica_geo == 05038  | ubica_geo == 05014 | ubica_geo == 05022 | ubica_geo == 05025 | ubica_geo == 05012 | ubica_geo == 05013  | ubica_geo == 19005 | ubica_geo == 28027 | ubica_geo == 28014 | ubica_geo == 28024 | ubica_geo == 28025  | ubica_geo == 28015 | ubica_geo == 28007 | ubica_geo == 28022 | ubica_geo == 28032 | ubica_geo == 28033  | ubica_geo == 28040
 
-*generate log of income sources 
+*collapse by id for monthly averages
+
+
+
+*generate log of income sources
 
 gen lni = ln(ingreso) if ingreso > 0
 gen lnw = ln(ing_wages) if ing_wages > 0

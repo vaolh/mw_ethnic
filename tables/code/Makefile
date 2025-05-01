@@ -1,8 +1,13 @@
 all: ../output/table1.tex
-	mkdir -p ../input
-	ln -sf ../../enighdata/output/enighdata.dta ../input/enighdata.dta
 
 include ../../generic.make
 
-../output/table1.tex: descriptivetables.do ../input/enighdata.dta
-	stata-se -e descriptivestatistics.do
+../input/enighdata.dta:
+	mkdir -p ../input
+	ln -sf ../../enighdata/output/enighdata.dta ../input/enighdata.dta
+
+../output:
+	mkdir -p ../output
+
+../output/table1.tex: descriptivetables.do ../input/enighdata.dta | ../output
+	stata-se -e descriptivetables.do

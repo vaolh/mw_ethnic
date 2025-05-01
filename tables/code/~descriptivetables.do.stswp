@@ -24,7 +24,7 @@ global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
 ******************* Table 1 *********************
 *************************************************
 
-use "../output/enighdata.dta", clear
+use "../inp/enighdata.dta", clear
 *use "$project/enighdata.dta", clear
 
 *Generate Treatment
