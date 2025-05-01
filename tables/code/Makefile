@@ -5,4 +5,4 @@ all: ../output/table1.tex
 include ../../generic.make
 
 ../output/table1.tex: descriptivetables.do ../input/enighdata.dta
-	stata-mp -b do descriptivetables.do
+	stata-se -e descriptivestatistics.do
