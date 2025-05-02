@@ -1376,18 +1376,24 @@ order indspeaker, before(hablaind)
 label variable indspeaker "speaks indigenous language"
 drop hablaind
 
-*indigenous language 
+*indigenous language
+*source for classification
+*https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/nueva_estruc/702825064617.pdf
 rename lenguaind indlang
 label variable indlang "indigenous language spoken"
 destring indlang, replace
 label define indlanglbl ///
     111 "Paipai" ///
     112 "Kiliwa" ///
+    113 "Cucapá" ///
+    114 "Cochimí" ///
     115 "Kumiai" ///
+    121 "Seri" ///
     131 "Chontal de Oaxaca" ///
     200 "Chinanteco" ///
     211 "Chinanteco de Ojitlán" ///
     212 "Chinanteco de Usila" ///
+    221 "Chinanteco de Quiotepec" ///
     222 "Chinanteco de Yolox" ///
     223 "Chinanteco de Sochiapan" ///
     231 "Chinanteco de Palantla" ///
@@ -1398,10 +1404,12 @@ label define indlanglbl ///
     321 "Chichimeca Jonaz" ///
     331 "Otomí" ///
     332 "Mazahua" ///
+    341 "Matlatzinca" ///
     342 "Ocuilteco" ///
     400 "Zapoteco" ///
     411 "Zapoteco de Ixtlán" ///
     412 "Zapoteco Vijano" ///
+    413 "Zapoteco del Rincón" ///
     421 "Zapoteco Vallista" ///
     422 "Zapoteco del Istmo" ///
     431 "Zapoteco de Cuixtla" ///
@@ -1421,6 +1429,7 @@ label define indlanglbl ///
     482 "Amuzgo de Guerrero" ///
     483 "Amuzgo de Oaxaca" ///
     491 "Mazateco" ///
+    492 "Chocholteco" ///
     493 "Ixcateco" ///
     494 "Popoloca" ///
     511 "Huave" ///
@@ -1433,6 +1442,7 @@ label define indlanglbl ///
     821 "Popoluca de la Sierra" ///
     822 "Popoluca de Texistepec" ///
     823 "Zoque" ///
+    824 "Ayapaneco" ///
     911 "Huasteco" ///
     921 "Lacandón" ///
     922 "Maya" ///
@@ -1447,6 +1457,7 @@ label define indlanglbl ///
     943 "Aguacateco" ///
     951 "Motocintleco" ///
     961 "Kanjobal" ///
+    962 "Jacalteco" ///
     971 "Quiché" ///
     972 "Cakchiquel" ///
     981 "Kekchi" ///
@@ -1465,13 +1476,25 @@ label define indlanglbl ///
     1111 "Purépecha" ///
     1211 "Kikapú" ///
     1311 "Chontal" ///
-    1999 "No especificado" ///
+    1999 "Non Specified" ///
+    9999 "Non Specified" ///
+    5023 "Chapaneco" ///
     5024 "Chiapaneco" ///
+    5025 "Chicomucelteco" ///
+    5050 "Guachichil" ///
+    5053 "Guaycura" ///
     5063 "Huzco" ///
+    5098 "Teco" ///
     5103 "Tehueco" ///
     5501 "Añu" ///
+    5504 "Akatako" ///
+    5513 "Aymara" ///
     5540 "Guajiro" ///
+    5544 "Guaymi" ///
+    5551 "Quechua" ///
+    5556 "Mayu" ///
     5571 "Pipil" ///
+    5603 "Other American Languages" ///
     5595 "Wayuu"
 label values indlang indlanglbl
 
@@ -1632,12 +1655,31 @@ save `enighdata2022'
 append using `enighdata2016' `enighdata2018' `enighdata2020'
 sort id time
 
+*************************************************
+**************** New Variables ******************
+*************************************************
+
 *destring ubica_geo
 destring ubica_geo, replace
 
 *gen income variable
 egen ingreso = rowtotal(ing_wages ing_non_wage_income ing_fin_capital ing_gov_transfers ing_negocio ing_other ing_rentas ing_ventas)
 order ingreso, before(ing_wages)
+
+*generate treatment
+gen zona_a = 0
+replace zona_a = 1 if ubica_geo == 02001 | ubica_geo == 02002 | ubica_geo == 02003 | ubica_geo == 02004 | ubica_geo == 02005 | ubica_geo == 26055  | ubica_geo == 26048 | ubica_geo == 26070 | ubica_geo == 26017 | ubica_geo == 26004 | ubica_geo == 26060  | ubica_geo == 26043 | ubica_geo == 26059 | ubica_geo == 26039 | ubica_geo == 26002 | ubica_geo == 08035  | ubica_geo == 08005 | ubica_geo == 08037 | ubica_geo == 08053 | ubica_geo == 08028 | ubica_geo == 08015  | ubica_geo == 08052 | ubica_geo == 08042 | ubica_geo == 05023 | ubica_geo == 05002 | ubica_geo == 05038  | ubica_geo == 05014 | ubica_geo == 05022 | ubica_geo == 05025 | ubica_geo == 05012 | ubica_geo == 05013  | ubica_geo == 19005 | ubica_geo == 28027 | ubica_geo == 28014 | ubica_geo == 28024 | ubica_geo == 28025  | ubica_geo == 28015 | ubica_geo == 28007 | ubica_geo == 28022 | ubica_geo == 28032 | ubica_geo == 28033  | ubica_geo == 28040
+
+*generate log of income sources
+gen lni = ln(ingreso) if ingreso > 0
+gen lnw = ln(ing_wages) if ing_wages > 0
+gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
+gen lnfc = ln(ing_fin_capital) if ing_fin_capital > 0
+gen lngt = ln(ing_gov_transfers) if ing_gov_transfers > 0
+gen lnn = ln(ing_negocio) if ing_negocio > 0
+gen lno = ln(ing_other) if ing_other > 0
+gen lnr = ln(ing_rentas) if ing_rentas > 0
+gen lnv = ln(ing_ventas) if ing_ventas > 0
 
 *save dataset
 save "../output/enighdata.dta", replace

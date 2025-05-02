@@ -220,8 +220,8 @@ Observations              4986621       397090      4589531      4986621
 >           lnv "Log Sales Income") ///
 > collabels("All Units" "Treated" "Control" "Difference")
 (file ../output/table1.tex not found)
-file ../output/table1.tex could not be opened
-r(603);
+(output written to ../output/table1.tex)
 
+. 
+. 
 end of do-file
-r(603);
