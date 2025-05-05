@@ -1,10 +1,12 @@
-all: ../output/table1.tex
+all: ../output/table1.tex ../output/table2.tex
 
 include ../../generic.make
 
 ../input/enighdata.dta:
-	mkdir -p ../input
 	ln -sf ../../enighdata/output/enighdata.dta ../input/enighdata.dta
 
 ../output/table1.tex: descriptivetables.do ../input/enighdata.dta | ../output
 	stata-se -e descriptivetables.do
+
+../output/table2.tex: didwresults.do ../input/enighdata.dta | ../output
+	stata-se -e didwresults.do

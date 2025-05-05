@@ -7,18 +7,18 @@ cap clear
 cap log close
 set more off
 
+*** REPLICATION FILE: enighdata
+*** STATA VERSION: 18/SE
+*** AUTHOR: Victor Alfonso Ortega Le Hénanff
+*** EMAIL: vincictor33@gmail.com
+*** DATE: 2025-02-16
+
 *************************************************
 **************** Define Globals *****************
 *************************************************
 
 global project="/Users/victorortega/Dropbox/mw_ethnic/downloaddata/output"
 global output="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
-
-*** REPLICATION FILE: enighdata
-*** STATA VERSION: 18/SE
-*** AUTHOR: Victor Alfonso Ortega Le Hénanff
-*** EMAIL: vincictor33@gmail.com
-*** DATE: 2025-02-16
 
 *************************************************
 ************** INFLATION DATASET ***************

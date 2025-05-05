@@ -40,7 +40,7 @@ Notes:
 . *** STATA VERSION: 18/SE
 . *** AUTHOR: Victor Alfonso Ortega Le Hénanff
 . *** EMAIL: vincictor33@gmail.com
-. *** DATE: 2025-02-16
+. *** DATE: 2025-04-26
 . 
 . *************************************************
 . **************** Load + Globals *****************
@@ -53,8 +53,7 @@ Notes:
 . 
 . use "../input/enighdata.dta", clear
 
-. use "$project/enighdata.dta", clear
-
+. *use "$project/enighdata.dta", clear
 . 
 . *************************************************
 . ******************* Table 1 *********************
