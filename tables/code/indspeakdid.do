@@ -7,7 +7,7 @@ cap clear
 cap log close
 set more off
 
-*** REPLICATION FILE: didwresults
+*** REPLICATION FILE: indspeakdid
 *** STATA VERSION: 18.5/SE
 *** AUTHOR: Victor Alfonso Ortega Le Hénanff
 *** EMAIL: vincictor33@gmail.com

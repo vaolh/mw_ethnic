@@ -1,0 +1,500 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 18.5
+___/   /   /___/   /   /___/       SE—Standard Edition
+
+ Statistics and Data Science       Copyright 1985-2023 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Unlimited-user network, expiring 30 Jun 2025
+Serial number: 401809303522
+  Licensed to: Victor Ortega
+               UNAM
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do "indigdidplot.do" 
+
+. *************************************************
+. ***************** Clean Memory ******************
+. *************************************************
+. 
+. clear
+
+. cap clear
+
+. cap log close
+
+. set more off
+
+. 
+. *** REPLICATION FILE: indigdidplot
+. *** STATA VERSION: 18.5/SE
+. *** AUTHOR: Victor Alfonso Ortega Le Hénanff
+. *** EMAIL: vincictor33@gmail.com
+. *** DATE: 2025-05-05
+. 
+. *************************************************
+. **************** Load + Globals *****************
+. *************************************************
+. 
+. global project="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
+
+. global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
+
+. 
+. use "../input/enighdata.dta", clear
+
+. *use "$project/enighdata.dta", clear
+. 
+. *************************************************
+. ******************* Table 1 *********************
+. *************************************************
+. 
+. *generate post treatment variable
+. gen post = year > 2018
+
+. 
+. *control for observables
+. gl controls i.gender edad edadsq years_of_study hoursworked i.employed
+
+. 
+. 
+. *regressions
+. reghdfe lnw i.zona_a##ib21397.time $controls if indigenous==0, absorb(ubica_g
+> eo time) vce(cluster ubica_geo)
+(dropped 5 singleton observations)
+(MWFE estimator converged in 7 iterations)
+note: 1bn.zona_a is probably collinear with the fixed effects (all partialled-o
+> ut values are close to zero; tol = 1.0e-09)
+note: 20485bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20514bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20545bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20575bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20606bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20636bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21216bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21244bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21275bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21305bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21336bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21366bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21946bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21975bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22006bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22036bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22067bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22097bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22677bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22705bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22736bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22766bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22797bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22827bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+
+HDFE Linear regression                            Number of obs   =  1,155,584
+Absorbing 2 HDFE groups                           F(  41,   1495) =     577.78
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.4124
+                                                  Adj R-squared   =     0.4116
+                                                  Within R-sq.    =     0.3344
+Number of clusters (ubica_geo) =      1,496       Root MSE        =     0.5697
+
+                          (Std. err. adjusted for 1,496 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+         lnw | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+    1.zona_a |          0  (omitted)
+             |
+        time |
+      20485  |          0  (omitted)
+      20514  |          0  (omitted)
+      20545  |          0  (omitted)
+      20575  |          0  (omitted)
+      20606  |          0  (omitted)
+      20636  |          0  (omitted)
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21216  |          0  (omitted)
+      21244  |          0  (omitted)
+      21275  |          0  (omitted)
+      21305  |          0  (omitted)
+      21336  |          0  (omitted)
+      21366  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      21946  |          0  (omitted)
+      21975  |          0  (omitted)
+      22006  |          0  (omitted)
+      22036  |          0  (omitted)
+      22067  |          0  (omitted)
+      22097  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22677  |          0  (omitted)
+      22705  |          0  (omitted)
+      22736  |          0  (omitted)
+      22766  |          0  (omitted)
+      22797  |          0  (omitted)
+      22827  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+             |
+ zona_a#time |
+    1 20485  |  -.0221163   .0408831    -0.54   0.589    -.1023106     .058078
+    1 20514  |  -.0410686   .0281974    -1.46   0.145    -.0963793    .0142421
+    1 20545  |  -.0119367   .0285621    -0.42   0.676    -.0679628    .0440893
+    1 20575  |  -.0508321   .0265034    -1.92   0.055    -.1028198    .0011557
+    1 20606  |  -.0457991   .0247442    -1.85   0.064    -.0943361    .0027379
+    1 20636  |   -.011164   .0332626    -0.34   0.737    -.0764103    .0540824
+    1 20667  |  -.0511478   .0221339    -2.31   0.021    -.0945645   -.0077311
+    1 20698  |  -.0314819   .0270172    -1.17   0.244    -.0844776    .0215138
+    1 20728  |  -.0263676   .0343957    -0.77   0.443    -.0938366    .0411013
+    1 21216  |  -.0627008   .0372751    -1.68   0.093    -.1358179    .0104162
+    1 21244  |   .0095779   .0196539     0.49   0.626    -.0289743    .0481301
+    1 21275  |  -.0463062   .0111193    -4.16   0.000    -.0681173    -.024495
+    1 21305  |  -.0419893   .0092962    -4.52   0.000    -.0602242   -.0237543
+    1 21336  |   -.010267   .0123592    -0.83   0.406    -.0345103    .0139763
+    1 21366  |   -.053375   .0105431    -5.06   0.000    -.0740559    -.032694
+    1 21428  |  -.0402909   .0209025    -1.93   0.054    -.0812923    .0007105
+    1 21458  |  -.0338134   .0192974    -1.75   0.080    -.0716662    .0040394
+    1 21946  |   .0520097   .0324868     1.60   0.110    -.0117148    .1157343
+    1 21975  |   .0160932   .0289249     0.56   0.578    -.0406445    .0728309
+    1 22006  |   .0299482   .0302091     0.99   0.322    -.0293086     .089205
+    1 22036  |   .0590004   .0273679     2.16   0.031     .0053167     .112684
+    1 22067  |   .0214433   .0223116     0.96   0.337    -.0223221    .0652088
+    1 22097  |   .0783876   .0157616     4.97   0.000     .0474704    .1093047
+    1 22128  |   .0443881   .0214328     2.07   0.039     .0023465    .0864296
+    1 22159  |    .027034   .0165393     1.63   0.102    -.0054087    .0594766
+    1 22189  |   .0696743   .0166186     4.19   0.000      .037076    .1022727
+    1 22677  |   .1035803    .039083     2.65   0.008      .026917    .1802435
+    1 22705  |   .1159836   .0300281     3.86   0.000      .057082    .1748852
+    1 22736  |    .135168   .0273224     4.95   0.000     .0815736    .1887624
+    1 22766  |   .1104761   .0228109     4.84   0.000     .0657313    .1552209
+    1 22797  |   .1239327    .020744     5.97   0.000     .0832423    .1646232
+    1 22827  |    .144061   .0250352     5.75   0.000     .0949531    .1931689
+    1 22858  |   .1169679   .0196808     5.94   0.000     .0783631    .1555728
+    1 22889  |   .1638816   .0164991     9.93   0.000     .1315178    .1962453
+    1 22919  |   .1377401   .0252078     5.46   0.000     .0882936    .1871866
+             |
+      gender |
+       Male  |   .2758825   .0042936    64.25   0.000     .2674604    .2843046
+        edad |   .0555371   .0007795    71.25   0.000     .0540081     .057066
+      edadsq |  -.0005695   9.09e-06   -62.67   0.000    -.0005873   -.0005517
+years_of_s~y |   .0728625   .0008874    82.11   0.000     .0711218    .0746032
+ hoursworked |   .0108241   .0002318    46.69   0.000     .0103694    .0112788
+             |
+    employed |
+        Yes  |  -.1075784   .0220193    -4.89   0.000    -.1507704   -.0643864
+       _cons |   6.118789   .0300529   203.60   0.000     6.059839    6.177739
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1496        1496           0    *|
+        time |        36           1          35     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+.          eststo graph1
+
+. reghdfe lnw i.zona_a##ib21397.time $controls if indigenous==1, absorb(ubica_g
+> eo time) vce(cluster ubica_geo)
+(dropped 1 singleton observations)
+(MWFE estimator converged in 7 iterations)
+note: 1bn.zona_a is probably collinear with the fixed effects (all partialled-o
+> ut values are close to zero; tol = 1.0e-09)
+note: 20485bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20514bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20545bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20575bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20606bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20636bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21216bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21244bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21275bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21305bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21336bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21366bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21946bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21975bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22006bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22036bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22067bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22097bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22677bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22705bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22736bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22766bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22797bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22827bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+
+HDFE Linear regression                            Number of obs   =    461,790
+Absorbing 2 HDFE groups                           F(  41,   1564) =     281.04
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.4078
+                                                  Adj R-squared   =     0.4057
+                                                  Within R-sq.    =     0.3061
+Number of clusters (ubica_geo) =      1,565       Root MSE        =     0.5959
+
+                          (Std. err. adjusted for 1,565 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+         lnw | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+    1.zona_a |          0  (omitted)
+             |
+        time |
+      20485  |          0  (omitted)
+      20514  |          0  (omitted)
+      20545  |          0  (omitted)
+      20575  |          0  (omitted)
+      20606  |          0  (omitted)
+      20636  |          0  (omitted)
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21216  |          0  (omitted)
+      21244  |          0  (omitted)
+      21275  |          0  (omitted)
+      21305  |          0  (omitted)
+      21336  |          0  (omitted)
+      21366  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      21946  |          0  (omitted)
+      21975  |          0  (omitted)
+      22006  |          0  (omitted)
+      22036  |          0  (omitted)
+      22067  |          0  (omitted)
+      22097  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22677  |          0  (omitted)
+      22705  |          0  (omitted)
+      22736  |          0  (omitted)
+      22766  |          0  (omitted)
+      22797  |          0  (omitted)
+      22827  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+             |
+ zona_a#time |
+    1 20485  |   .0150653   .0804065     0.19   0.851    -.1426507    .1727812
+    1 20514  |  -.0033524   .0317955    -0.11   0.916    -.0657187    .0590139
+    1 20545  |   .0313893   .0392921     0.80   0.424    -.0456816    .1084601
+    1 20575  |  -.0308695   .0254098    -1.21   0.225    -.0807104    .0189714
+    1 20606  |  -.0291204   .0198484    -1.47   0.143    -.0680527    .0098118
+    1 20636  |   .0157466   .0345856     0.46   0.649    -.0520924    .0835856
+    1 20667  |  -.0427428   .0294458    -1.45   0.147    -.1005001    .0150145
+    1 20698  |  -.0422464   .0263033    -1.61   0.108    -.0938398     .009347
+    1 20728  |  -.0297195   .0269755    -1.10   0.271    -.0826314    .0231924
+    1 21216  |  -.0702853   .0466383    -1.51   0.132    -.1617655    .0211948
+    1 21244  |   .0602936   .0307909     1.96   0.050    -.0001022    .1206895
+    1 21275  |  -.0489866   .0142015    -3.45   0.001    -.0768427   -.0211306
+    1 21305  |  -.0536711   .0087511    -6.13   0.000    -.0708362   -.0365059
+    1 21336  |   .0103152   .0176929     0.58   0.560    -.0243891    .0450195
+    1 21366  |  -.0606842   .0094047    -6.45   0.000    -.0791314    -.042237
+    1 21428  |  -.0312234   .0207294    -1.51   0.132    -.0718838     .009437
+    1 21458  |  -.0758111    .026153    -2.90   0.004    -.1271097   -.0245124
+    1 21946  |   .0408623   .0470403     0.87   0.385    -.0514065    .1331311
+    1 21975  |   .0769978   .0312979     2.46   0.014     .0156076     .138388
+    1 22006  |   .0640279   .0316533     2.02   0.043     .0019405    .1261153
+    1 22036  |   .1262599   .0436545     2.89   0.004     .0406325    .2118874
+    1 22067  |   .0654676     .02856     2.29   0.022     .0094477    .1214875
+    1 22097  |   .1249811   .0298748     4.18   0.000     .0663822      .18358
+    1 22128  |   .1116378   .0358498     3.11   0.002      .041319    .1819566
+    1 22159  |   .0613784   .0339257     1.81   0.071    -.0051661     .127923
+    1 22189  |   .1611369   .0543367     2.97   0.003     .0545565    .2677173
+    1 22677  |   .1297119    .058987     2.20   0.028       .01401    .2454138
+    1 22705  |    .124421   .0379374     3.28   0.001     .0500074    .1988345
+    1 22736  |   .1803225    .041276     4.37   0.000     .0993603    .2612847
+    1 22766  |   .1158425   .0294067     3.94   0.000     .0581618    .1735231
+    1 22797  |   .1138818    .030053     3.79   0.000     .0549333    .1728303
+    1 22827  |   .1695813   .0388033     4.37   0.000     .0934694    .2456932
+    1 22858  |    .121378   .0310398     3.91   0.000      .060494    .1822621
+    1 22889  |   .1493355    .034721     4.30   0.000     .0812309      .21744
+    1 22919  |   .0970036   .0323849     3.00   0.003     .0334812    .1605261
+             |
+      gender |
+       Male  |   .3068847   .0065301    47.00   0.000      .294076    .3196934
+        edad |   .0552371   .0011598    47.63   0.000     .0529621    .0575121
+      edadsq |  -.0005777   .0000137   -42.04   0.000    -.0006047   -.0005508
+years_of_s~y |   .0638179   .0013196    48.36   0.000     .0612294    .0664063
+ hoursworked |   .0109368   .0002351    46.51   0.000     .0104756     .011398
+             |
+    employed |
+        Yes  |  -.1210792   .0357074    -3.39   0.001    -.1911187   -.0510398
+       _cons |    6.07096   .0465068   130.54   0.000     5.979738    6.162182
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1565        1565           0    *|
+        time |        36           1          35     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+.          eststo graph2
+
+.          
+. *graph
+. coefplot ///
+> (graph1, label("Non Ind") connect(direct) lcolor(blue) lw(thin) msize(small) 
+> mfcolor(blue) mlcolor(blue) mlw(thin) ///
+>  keep("1.zona_a#20514.time" "1.zona_a#20545.time" "1.zona_a#20575.time" "1.zo
+> na_a#20606.time" "1.zona_a#20636.time" "1.zona_a#20667.time" "1.zona_a#20698.
+> time" "1.zona_a#20728.time" "1.zona_a#21216.time" "1.zona_a#21244.time" "1.zo
+> na_a#21275.time" "1.zona_a#21305.time" "1.zona_a#21336.time" "1.zona_a#21366.
+> time" "1.zona_a#21397.time" "1.zona_a#21428.time" "1.zona_a#21458.time" "1.zo
+> na_a#21946.time" "1.zona_a#21975.time" "1.zona_a#22006.time" "1.zona_a#22036.
+> time" "1.zona_a#22067.time" "1.zona_a#22097.time" "1.zona_a#22128.time" "1.zo
+> na_a#22159.time" "1.zona_a#22189.time" "1.zona_a#22677.time" "1.zona_a#22705.
+> time" "1.zona_a#22736.time" "1.zona_a#22766.time" "1.zona_a#22797.time" "1.zo
+> na_a#22827.time" "1.zona_a#22858.time" "1.zona_a#22889.time" "1.zona_a#22919.
+> time")) ///
+> (graph2, label("Ind. Speaker") connect(direct) lcolor(red) lw(thin) msize(sma
+> ll) mfcolor(red) mlcolor(red) mlw(thin) ///
+>  keep("1.zona_a#20514.time" "1.zona_a#20545.time" "1.zona_a#20575.time" "1.zo
+> na_a#20606.time" "1.zona_a#20636.time" "1.zona_a#20667.time" "1.zona_a#20698.
+> time" "1.zona_a#20728.time" "1.zona_a#21216.time" "1.zona_a#21244.time" "1.zo
+> na_a#21275.time" "1.zona_a#21305.time" "1.zona_a#21336.time" "1.zona_a#21366.
+> time" "1.zona_a#21397.time" "1.zona_a#21428.time" "1.zona_a#21458.time" "1.zo
+> na_a#21946.time" "1.zona_a#21975.time" "1.zona_a#22006.time" "1.zona_a#22036.
+> time" "1.zona_a#22067.time" "1.zona_a#22097.time" "1.zona_a#22128.time" "1.zo
+> na_a#22159.time" "1.zona_a#22189.time" "1.zona_a#22677.time" "1.zona_a#22705.
+> time" "1.zona_a#22736.time" "1.zona_a#22766.time" "1.zona_a#22797.time" "1.zo
+> na_a#22827.time" "1.zona_a#22858.time" "1.zona_a#22889.time" "1.zona_a#22919.
+> time")) ///
+> , vertical noci ///
+> xline(18.5, lcolor(red)) ///
+> yline(0, lw(thin) lpattern(solid)) ///
+> ytitle("Coefficient Estimate on log Earnings") ///
+> legend(order(1 "Non Ind" 2 "Indigenous") position(11) ring(0) col(1)) ///
+> xlabel(1 "01feb2016" 2 "01mar2016" 3 "01apr2016" 4 "01may2016" 5 "01jun2016" 
+> 6 "01jul2016" 7 "01aug2016" 8 "01sep2016" 9 "01oct2016" ///
+>       10 "01feb2018" 11 "01mar2018" 12 "01apr2018" 13 "01may2018" 14 "01jun20
+> 18" 15 "01jul2018" 16 "01aug2018" 17 "01sep2018" 18 "01oct2018" ///
+>       19 "01feb2020" 20 "01mar2020" 21 "01apr2020" 22 "01may2020" 23 "01jun20
+> 20" 24 "01jul2020" 25 "01aug2020" 26 "01sep2020" 27 "01oct2020" ///
+>       28 "01feb2022" 29 "01mar2022" 30 "01apr2022" 31 "01may2022" 32 "01jun20
+> 22" 33 "01jul2022" 34 "01aug2022" 35 "01sep2022" 36 "01oct2022", labsize(meds
+> mall) angle(90))
+
+. graph export "../output/graph4.png", replace width(4000) height(3000)
+(file ../output/graph4.png not found)
+file ../output/graph4.png written in PNG format
+
+. 
+. 
+end of do-file

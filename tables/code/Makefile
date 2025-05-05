@@ -1,4 +1,4 @@
-all: ../output/table1.tex ../output/table2.tex
+all: ../output/table1.tex ../output/table2.tex ../output/table3.tex
 
 include ../../generic.make
 
@@ -8,5 +8,8 @@ include ../../generic.make
 ../output/table1.tex: descriptivetables.do ../input/enighdata.dta | ../output
 	stata-se -e descriptivetables.do
 
-../output/table2.tex: didwresults.do ../input/enighdata.dta | ../output
-	stata-se -e didwresults.do
+../output/table2.tex: indspeakdid.do ../input/enighdata.dta | ../output
+	stata-se -e indspeakdid.do
+
+../output/table3.tex: indigdid.do ../input/enighdata.dta | ../output
+	stata-se -e indigdid.do
