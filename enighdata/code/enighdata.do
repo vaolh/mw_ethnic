@@ -21,6 +21,21 @@ global output="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
 *** DATE: 2025-02-16
 
 *************************************************
+************** INFLATION DATASET ***************
+*************************************************
+
+tempfile deflators
+import delimited using "../input/inpc.csv", clear varnames(1)
+gen year = 2016 + int((_n-1)/12)
+gen month = mod(_n-1, 12) + 1
+gen mes = string(month)
+replace mes = "0" + mes if month < 10
+gen time = date(string(year) + "-" + mes, "YM")
+format time %td
+drop year month mes
+save `deflators'
+
+*************************************************
 ************** 2016 ENIGH dataset ***************
 *************************************************
 
@@ -1654,6 +1669,9 @@ save `enighdata2022'
 
 append using `enighdata2016' `enighdata2018' `enighdata2020'
 sort id time
+merge m:1 time using `deflators'
+drop if _merge == 2
+drop _merge
 
 *************************************************
 **************** New Variables ******************
@@ -1670,16 +1688,36 @@ order ingreso, before(ing_wages)
 gen zona_a = 0
 replace zona_a = 1 if ubica_geo == 02001 | ubica_geo == 02002 | ubica_geo == 02003 | ubica_geo == 02004 | ubica_geo == 02005 | ubica_geo == 26055  | ubica_geo == 26048 | ubica_geo == 26070 | ubica_geo == 26017 | ubica_geo == 26004 | ubica_geo == 26060  | ubica_geo == 26043 | ubica_geo == 26059 | ubica_geo == 26039 | ubica_geo == 26002 | ubica_geo == 08035  | ubica_geo == 08005 | ubica_geo == 08037 | ubica_geo == 08053 | ubica_geo == 08028 | ubica_geo == 08015  | ubica_geo == 08052 | ubica_geo == 08042 | ubica_geo == 05023 | ubica_geo == 05002 | ubica_geo == 05038  | ubica_geo == 05014 | ubica_geo == 05022 | ubica_geo == 05025 | ubica_geo == 05012 | ubica_geo == 05013  | ubica_geo == 19005 | ubica_geo == 28027 | ubica_geo == 28014 | ubica_geo == 28024 | ubica_geo == 28025  | ubica_geo == 28015 | ubica_geo == 28007 | ubica_geo == 28022 | ubica_geo == 28032 | ubica_geo == 28033  | ubica_geo == 28040
 
+*generate REAL income variables
+gen ingreso_real = (ingreso / inpc) * 100
+gen ing_wages_real = (ing_wages / inpc) * 100
+gen ing_non_wage_income_real = (ing_non_wage_income / inpc) * 100
+gen ing_fin_capital_real = (ing_fin_capital / inpc) * 100
+gen ing_gov_transfers_real = (ing_gov_transfers / inpc) * 100
+gen ing_negocio_real = (ing_negocio / inpc) * 100
+gen ing_other_real = (ing_other / inpc) * 100
+gen ing_rentas_real = (ing_rentas / inpc) * 100
+gen ing_ventas_real = (ing_ventas / inpc) * 100
+
+
 *generate log of income sources
-gen lni = ln(ingreso) if ingreso > 0
-gen lnw = ln(ing_wages) if ing_wages > 0
-gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
-gen lnfc = ln(ing_fin_capital) if ing_fin_capital > 0
-gen lngt = ln(ing_gov_transfers) if ing_gov_transfers > 0
-gen lnn = ln(ing_negocio) if ing_negocio > 0
-gen lno = ln(ing_other) if ing_other > 0
-gen lnr = ln(ing_rentas) if ing_rentas > 0
-gen lnv = ln(ing_ventas) if ing_ventas > 0
+gen lni = ln(ingreso_real) if ingreso_real > 0
+gen lnw = ln(ing_wages_real) if ing_wages_real > 0
+gen lnnwi = ln(ing_non_wage_income_real) if ing_non_wage_income_real > 0
+gen lnfc = ln(ing_fin_capital_real) if ing_fin_capital_real > 0
+gen lngt = ln(ing_gov_transfers_real) if ing_gov_transfers_real > 0
+gen lnn = ln(ing_negocio_real) if ing_negocio_real > 0
+gen lno = ln(ing_other_real) if ing_other_real > 0
+gen lnr = ln(ing_rentas_real) if ing_rentas_real > 0
+gen lnv = ln(ing_ventas_real) if ing_ventas_real > 0
+
+*************************************************
+**************** Sample Select ******************
+*************************************************
+
+drop if time == .
+drop if edad <= 12
+gen edadsq = edad*edad
 
 *save dataset
 save "../output/enighdata.dta", replace
