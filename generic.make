@@ -1,5 +1,5 @@
 ../input ../output ../temp ../report:
-	mkdir $@
+	mkdir -p $@
 
 .PRECIOUS: ../../%
 ../../%:

@@ -146,6 +146,8 @@ sort new_id mes
 gen time = date("2016-" + mes, "YM")
 format time %td
 order time, after(mes)
+gen year = 2016 
+order year, after(time)
 label variable time "month year date"
 drop mes
 
@@ -547,6 +549,8 @@ sort new_id mes
 gen time = date("2018-" + mes, "YM")
 format time %td
 order time, after(mes)
+gen year = 2018
+order year, after(time)
 label variable time "month year date"
 drop mes
 
@@ -947,6 +951,8 @@ sort new_id mes
 gen time = date("2020-" + mes, "YM")
 format time %td
 order time, after(mes)
+gen year = 2020
+order year, after(time)
 label variable time "month year date"
 drop mes
 
@@ -1348,6 +1354,8 @@ sort new_id mes
 gen time = date("2022-" + mes, "YM")
 format time %td
 order time, after(mes)
+gen year = 2022
+order year, after(time)
 label variable time "month year date"
 drop mes
 
@@ -1718,6 +1726,8 @@ gen lnv = ln(ing_ventas_real) if ing_ventas_real > 0
 drop if time == .
 drop if edad <= 12
 gen edadsq = edad*edad
+sort id time
+order year, after(time)
 
 *save dataset
 save "../output/enighdata.dta", replace

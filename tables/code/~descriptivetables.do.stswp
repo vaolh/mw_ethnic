@@ -21,7 +21,7 @@ global project="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
 global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
 
 use "../input/enighdata.dta", clear
-use "$project/enighdata.dta", clear
+*use "$project/enighdata.dta", clear
 
 *************************************************
 ******************* Table 1 *********************
@@ -69,4 +69,4 @@ esttab allunits treat control diff using "../output/table1.tex", ///
 ******************* Table 2 *********************
 *************************************************
 
-
+tab indlang if inrange(time, td(01jan2016), td(31dec2016)), sort

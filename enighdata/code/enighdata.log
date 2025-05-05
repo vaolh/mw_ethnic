@@ -52,7 +52,7 @@ Notes:
 . *** DATE: 2025-02-16
 . 
 . *************************************************
-. ************** 2016 ENIGH dataset ***************
+. ************** INFLATION DATASET ***************
 . *************************************************
 . 
 . tempfile deflators
@@ -77,7 +77,7 @@ Notes:
 . drop year month mes
 
 . save `deflators'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000001 saved
     as .dta format
 
 . 
@@ -98,7 +98,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000001 saved
 . tempfile pop_data_2016
 
 . save `pop_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000002 saved
     as .dta format
 
 . 
@@ -110,7 +110,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000002 saved
 . tempfile hog_data_2016
 
 . save `hog_data_2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000003 saved
     as .dta format
 
 . 
@@ -333,6 +333,10 @@ variable mes was str1 now str2
 . format time %td
 
 . order time, after(mes)
+
+. gen year = 2016 
+
+. order year, after(time)
 
 . label variable time "month year date"
 
@@ -829,7 +833,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2016
 
 . save `enighdata2016'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000004 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000004 saved
     as .dta format
 
 . 
@@ -850,7 +854,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000004 saved
 . tempfile pop_data_2018
 
 . save `pop_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000005 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000005 saved
     as .dta format
 
 . 
@@ -862,7 +866,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000005 saved
 . tempfile hog_data_2018
 
 . save `hog_data_2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000006 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000006 saved
     as .dta format
 
 . 
@@ -1082,6 +1086,10 @@ variable mes was str1 now str2
 . format time %td
 
 . order time, after(mes)
+
+. gen year = 2018
+
+. order year, after(time)
 
 . label variable time "month year date"
 
@@ -1577,7 +1585,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2018
 
 . save `enighdata2018'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000007 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000007 saved
     as .dta format
 
 . 
@@ -1598,7 +1606,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000007 saved
 . tempfile pop_data_2020
 
 . save `pop_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000008 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000008 saved
     as .dta format
 
 . 
@@ -1610,7 +1618,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000008 saved
 . tempfile hog_data_2020
 
 . save `hog_data_2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.000009 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.000009 saved
     as .dta format
 
 . 
@@ -1830,6 +1838,10 @@ variable mes was str1 now str2
 . format time %td
 
 . order time, after(mes)
+
+. gen year = 2020
+
+. order year, after(time)
 
 . label variable time "month year date"
 
@@ -2325,7 +2337,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2020
 
 . save `enighdata2020'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000a saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.00000a saved
     as .dta format
 
 . 
@@ -2347,7 +2359,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000a saved
 . tempfile pop_data_2022
 
 . save `pop_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000b saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.00000b saved
     as .dta format
 
 . 
@@ -2359,7 +2371,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000b saved
 . tempfile hog_data_2022
 
 . save `hog_data_2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000c saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.00000c saved
     as .dta format
 
 . 
@@ -2579,6 +2591,10 @@ variable mes was str1 now str2
 . format time %td
 
 . order time, after(mes)
+
+. gen year = 2022
+
+. order year, after(time)
 
 . label variable time "month year date"
 
@@ -3098,7 +3114,7 @@ state: all characters numeric; replaced as byte
 . tempfile enighdata2022
 
 . save `enighdata2022'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000d saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26569.00000d saved
     as .dta format
 
 . 
@@ -3152,6 +3168,11 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000d saved
     Matched                         4,601,004  (_merge==3)
     -----------------------------------------
 
+. drop if _merge == 2
+(48 observations deleted)
+
+. drop _merge
+
 . 
 . *************************************************
 . **************** New Variables ******************
@@ -3160,7 +3181,6 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St26292.00000d saved
 . *destring ubica_geo
 . destring ubica_geo, replace
 ubica_geo: all characters numeric; replaced as int
-(48 missing values generated)
 
 . 
 . *gen income variable
@@ -3188,33 +3208,63 @@ ubica_geo: all characters numeric; replaced as int
 (397,090 real changes made)
 
 . 
+. *generate REAL income variables
+. gen ingreso_real = (ingreso / inpc) * 100
+(385,617 missing values generated)
+
+. gen ing_wages_real = (ing_wages / inpc) * 100
+(2,619,411 missing values generated)
+
+. gen ing_non_wage_income_real = (ing_non_wage_income / inpc) * 100
+(3,659,727 missing values generated)
+
+. gen ing_fin_capital_real = (ing_fin_capital / inpc) * 100
+(4,802,373 missing values generated)
+
+. gen ing_gov_transfers_real = (ing_gov_transfers / inpc) * 100
+(3,275,841 missing values generated)
+
+. gen ing_negocio_real = (ing_negocio / inpc) * 100
+(4,295,187 missing values generated)
+
+. gen ing_other_real = (ing_other / inpc) * 100
+(4,075,101 missing values generated)
+
+. gen ing_rentas_real = (ing_rentas / inpc) * 100
+(4,910,175 missing values generated)
+
+. gen ing_ventas_real = (ing_ventas / inpc) * 100
+(4,874,037 missing values generated)
+
+. 
+. 
 . *generate log of income sources
-. gen lni = ln(ingreso) if ingreso > 0
-(1,111,050 missing values generated)
+. gen lni = ln(ingreso_real) if ingreso_real > 0
+(1,111,210 missing values generated)
 
-. gen lnw = ln(ing_wages) if ing_wages > 0
-(2,885,002 missing values generated)
+. gen lnw = ln(ing_wages_real) if ing_wages_real > 0
+(2,884,954 missing values generated)
 
-. gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
-(4,404,004 missing values generated)
+. gen lnnwi = ln(ing_non_wage_income_real) if ing_non_wage_income_real > 0
+(4,404,134 missing values generated)
 
-. gen lnfc = ln(ing_fin_capital) if ing_fin_capital > 0
-(4,937,740 missing values generated)
+. gen lnfc = ln(ing_fin_capital_real) if ing_fin_capital_real > 0
+(4,937,722 missing values generated)
 
-. gen lngt = ln(ing_gov_transfers) if ing_gov_transfers > 0
-(3,901,958 missing values generated)
+. gen lngt = ln(ing_gov_transfers_real) if ing_gov_transfers_real > 0
+(3,901,910 missing values generated)
 
-. gen lnn = ln(ing_negocio) if ing_negocio > 0
-(4,366,518 missing values generated)
+. gen lnn = ln(ing_negocio_real) if ing_negocio_real > 0
+(4,366,470 missing values generated)
 
-. gen lno = ln(ing_other) if ing_other > 0
-(4,499,507 missing values generated)
+. gen lno = ln(ing_other_real) if ing_other_real > 0
+(4,499,459 missing values generated)
 
-. gen lnr = ln(ing_rentas) if ing_rentas > 0
-(4,922,725 missing values generated)
+. gen lnr = ln(ing_rentas_real) if ing_rentas_real > 0
+(4,922,677 missing values generated)
 
-. gen lnv = ln(ing_ventas) if ing_ventas > 0
-(4,961,507 missing values generated)
+. gen lnv = ln(ing_ventas_real) if ing_ventas_real > 0
+(4,961,459 missing values generated)
 
 . 
 . *************************************************
@@ -3228,7 +3278,8 @@ ubica_geo: all characters numeric; replaced as int
 (351,000 observations deleted)
 
 . gen edadsq = edad*edad
-(48 missing values generated)
+
+. sort id time
 
 . 
 . *save dataset

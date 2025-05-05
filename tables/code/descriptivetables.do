@@ -69,4 +69,4 @@ esttab allunits treat control diff using "../output/table1.tex", ///
 ******************* Table 2 *********************
 *************************************************
 
-
+tab indlang if inrange(time, td(01jan2016), td(31dec2016)), sort
