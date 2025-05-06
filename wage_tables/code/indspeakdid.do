@@ -57,7 +57,7 @@ reghdfe lnw i.zona_a##i.post $controls if indspeaker==0, absorb(ubica_geo time) 
 	 estadd local hastimefe 	 "Y"
 	 estadd local hasmunicfe 	 "Y"
 	 
-*non indigenous speaker
+*indigenous speaker
 reghdfe lnw i.zona_a##i.post if indspeaker==1, absorb(ubica_geo time) vce(cluster ubica_geo)
 	 eststo t1m5
 	 estadd local controls 	     "N"

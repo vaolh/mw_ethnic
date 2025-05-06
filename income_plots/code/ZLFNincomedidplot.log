@@ -1,0 +1,74 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 18.5
+___/   /   /___/   /   /___/       SE—Standard Edition
+
+ Statistics and Data Science       Copyright 1985-2023 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Unlimited-user network, expiring 30 Jun 2025
+Serial number: 401809303522
+  Licensed to: Victor Ortega
+               UNAM
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do "ZLFNincomedidplot.do" 
+
+. *************************************************
+. ***************** Clean Memory ******************
+. *************************************************
+. 
+. clear
+
+. cap clear
+
+. cap log close
+
+. set more off
+
+. 
+. *** REPLICATION FILE: indigdidplot
+. *** STATA VERSION: 18.5/SE
+. *** AUTHOR: Victor Alfonso Ortega Le Hénanff
+. *** EMAIL: vincictor33@gmail.com
+. *** DATE: 2025-05-05
+. 
+. *************************************************
+. **************** Load + Globals *****************
+. *************************************************
+. 
+. global project="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
+
+. global output="/Users/victorortega/Dropbox/mw_ethnic/tables/output"
+
+. 
+. use "../input/enighdata.dta", clear
+
+. *use "$project/enighdata.dta", clear
+. 
+. *************************************************
+. ******************* Table 1 *********************
+. *************************************************
+. 
+. *generate post treatment variable
+. gen post = year > 2018
+
+. 
+. *control for observables
+. gl controls i.gender edad edadsq years_of_study hoursworked i.employed
+
+. 
+. 
+. *regressions
+. reghdfe lni i.zona_a##ib21397.time $controls if indspeaker==0, absorb(ubica_g
+> eo time) vce(cluster ubica_geo)
+(dropped 1 singleton observations)
