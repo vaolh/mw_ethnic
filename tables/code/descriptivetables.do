@@ -2,6 +2,8 @@
 ***************** Clean Memory ******************
 *************************************************
 
+* que pedo lince
+
 clear
 cap clear
 cap log close
