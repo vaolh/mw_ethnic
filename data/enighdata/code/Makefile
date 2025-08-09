@@ -1,16 +1,16 @@
-all: ../../enighdata/output/enighdata_output.dta
+all: ../../../data/enighdata/output/enighdata.dta
 
-include ../../generic.make
+include ../../../generic.make
 
 YEARS := 2016 2018 2020 2022
 INPUT_FILES := $(foreach year, $(YEARS), ../input/ingresos$(year).dta ../input/poblacion$(year).dta ../input/concentradohogar$(year).dta)
 
-../../enighdata/output/enighdata_output.dta: enighdata.do $(INPUT_FILES) | ../../enighdata/output
+../../../data/enighdata/output/enighdata.dta: enighdata.do $(INPUT_FILES) | ../../../data/enighdata/output
 	stata-se -e enighdata.do
 
-../input/%.dta: ../../downloaddata/output/%.dta | ../input
+../input/%.dta: ../../../data/downloaddata/output/%.dta | ../input
 	@if [ ! -e ../input ]; then mkdir -p ../input; fi
 	@if [ ! -e $@ ]; then ln -s $< $@; fi
 
-../../enighdata/output:
-	@mkdir -p ../../enighdata/output
+../../../data/enighdata/output:
+	@mkdir -p ../../../data/enighdata/output
