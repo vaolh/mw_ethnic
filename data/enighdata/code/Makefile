@@ -8,7 +8,7 @@ INPUT_FILES := $(foreach year, $(YEARS), ../input/ingresos$(year).dta ../input/p
 ../output/enighdata.dta: enighdata.do $(INPUT_FILES) | ../output
 	stata-mp -e enighdata.do
 
-../input/%.dta: ../../../downloaddata/output/%.dta | ../input
+../input/%.dta: ../../downloaddata/output/%.dta | ../input
 	@if [ ! -e ../input ]; then mkdir -p ../input; fi
 	@if [ ! -e $@ ]; then ln -s $< $@; fi
 
