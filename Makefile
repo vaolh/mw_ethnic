@@ -1,3 +1,3 @@
 all:
-	make -C downloaddata/code
-	make -C enighdata/code
+	make -C data/downloaddata/code
+	make -C data/enighdata/code
