@@ -23,7 +23,7 @@ nano ~/.zshrc
 ```
 -Now run 
   ```bash
-export PATH="/Applications/Stata/StataSE.app/Contents/MacOS:$PATH"
+export PATH="/Applications/StataNow/StataMP.app/Contents/MacOS:$PATH"
 ```
 -Save with Control+X and Enter to save
   ```bash
