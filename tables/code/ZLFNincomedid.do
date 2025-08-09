@@ -66,7 +66,7 @@ reghdfe lni i.zona_a##i.post $controls if indigenous==1, absorb(ubica_geo time) 
 
 
 esttab 	t1m1 t1m2 t1m3 t1m4 t1m5  ///
-			using "../output/table4.tex",  replace label fragment ///
+			using "../output/ZLFNincomedid.tex",  replace label fragment ///
 			nolines  posthead(\cmidrule{2-6}) prefoot(\midrule) postfoot(\bottomrule \bottomrule) booktabs ///
 			nonumbers mtitle("(1)" "(2)" "(3)" "(4)" "(5)") collabels(none)    ///
 			cells(b(star fmt(%9.3f)) se(par fmt(%9.3f)) ) starlevels(* 0.10 ** 0.05 *** 0.01) ///						

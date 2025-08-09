@@ -42,7 +42,7 @@ eststo diff: quietly estpost ttest ///
     edad gender school_attendance employed hoursworked years_of_study indspeaker indund indigenous ///
     lnw lni lnr lnv lno lnn lnnwi lngt lnfc, by(zona_a) unequal
 
-esttab allunits treat control diff using "../output/table1.tex", ///
+esttab allunits treat control diff using "../output/descriptivetables.tex", ///
     style(tex) ///
     cells("mean(pattern(1 1 1 0) fmt(2)) b(star pattern(0 0 0 1) fmt(2)) t(pattern(0 0 0 1) par fmt(2))") ///
 	label replace ///
@@ -66,9 +66,3 @@ esttab allunits treat control diff using "../output/table1.tex", ///
           lnfc "Log Financial Capital Income") ///
     collabels(none) ///
     mlabels("All Units" "Treated" "Control" "Difference")
-	
-*************************************************
-******************* Table 2 *********************
-*************************************************
-
-tab indlang if inrange(time, td(01jan2016), td(31dec2016)), sort

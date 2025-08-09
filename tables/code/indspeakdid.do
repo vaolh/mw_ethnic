@@ -71,7 +71,7 @@ reghdfe lnw i.zona_a##i.post $controls if indspeaker==1, absorb(ubica_geo time) 
 	 
 *tex table	 
 esttab 	t1m1 t1m2 t1m3 t1m4 t1m5 t1m6  ///
-			using "../output/table2.tex",  replace label fragment ///
+			using "../output/indspeak.tex",  replace label fragment ///
 			nolines  posthead(\cmidrule{2-7}) prefoot(\midrule) postfoot(\bottomrule \bottomrule) booktabs ///
 			nonumbers mtitle("(1)" "(2)" "(3)" "(4)" "(5)" "(6)") collabels(none)    ///
 			cells(b(star fmt(%9.3f)) se(par fmt(%9.3f)) ) starlevels(* 0.10 ** 0.05 *** 0.01) ///						
