@@ -2,10 +2,12 @@ YEARS := 2024 2022 2020 2018 2016
 TYPES := concentradohogar ingresos poblacion trabajos
 ZIP_PATTERNS := dta i_dta p_dta
 
-all: $(addprefix ../../output/, enigh2022_concentradohogar.dta enigh2022_ingresos.dta enigh2022_poblacion.dta \
-                             enigh2020_concentradohogar.dta enigh2020_ingresos.dta enigh2020_poblacion.dta \
-                             enigh2018_concentradohogar.dta enigh2018_ingresos.dta enigh2018_poblacion.dta \
-                             enigh2016_concentradohogar.dta enigh2016_ingresos.dta enigh2016_poblacion.dta)
+all: $(addprefix ../../output/, \
+     enigh2024_concentradohogar.dta enigh2024_ingresos.dta enigh2024_poblacion.dta enigh2024_trabajos.dta \
+     enigh2022_concentradohogar.dta enigh2022_ingresos.dta enigh2022_poblacion.dta enigh2022_trabajos.dta \
+     enigh2020_concentradohogar.dta enigh2020_ingresos.dta enigh2020_poblacion.dta enigh2020_trabajos.dta \
+     enigh2018_concentradohogar.dta enigh2018_ingresos.dta enigh2018_poblacion.dta enigh2018_trabajos.dta \
+     enigh2016_concentradohogar.dta enigh2016_ingresos.dta enigh2016_poblacion.dta enigh2016_trabajos.dta)
 	rm -rf ../../temp
 
 include ../../../generic.make
