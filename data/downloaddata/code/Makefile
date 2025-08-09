@@ -1,5 +1,5 @@
-YEARS := 2022 2020 2018 2016
-TYPES := concentradohogar ingresos poblacion
+YEARS := 2024 2022 2020 2018 2016
+TYPES := concentradohogar ingresos poblacion trabajos
 ZIP_PATTERNS := dta i_dta p_dta
 
 all: $(addprefix ../output/, enigh2022_concentradohogar.dta enigh2022_ingresos.dta enigh2022_poblacion.dta \
