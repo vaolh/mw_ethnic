@@ -4,7 +4,7 @@ This replication
 
 I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I had to install [Homebrew](https://brew.sh) and [Xcode](https://developer.apple.com/xcode/), which is available on the AppStore. All of my code was written on [Sublime Text](https://www.sublimetext.com) or on the [Stata](http://www.stata.com) Do-File editor.
 
-## Replication Instructions
+## MacOS Replication Instructions
 
 -Download or clone this repository using the buttons above or [GitHub Desktop](https://github.com/apps/desktop)
 
@@ -34,3 +34,12 @@ source ~/.zshrc
 make
 ```
 -The Makefile will run all of the code needed to replicate my results from scratch.
+
+## Windows Replication Instructions
+
+Download VSCode. I was veyr much against it but I have been converted and it's really not as clanky as I thought.
+
+-Once you have the project loaded, type in the powershell terminal
+```shell
+winget install GnuWin32.Make
+```
