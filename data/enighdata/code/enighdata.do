@@ -39,7 +39,7 @@ save `deflators'
 ******* LOOP FOR ALL ENIGH DATASETS ************
 *************************************************
 
-local years "2016 2018 2020 2022"
+local years "2016 2018 2020 2022 2024"
 local cumulative_ids = 0
 local tempfiles ""
 
