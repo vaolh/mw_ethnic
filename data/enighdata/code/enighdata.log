@@ -78,7 +78,7 @@ Notes:
 . drop year month mes
 
 . save `deflators'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000001 saved
     as .dta format
 
 . 
@@ -86,7 +86,7 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000001 saved
 . ******* LOOP FOR ALL ENIGH DATASETS ************
 . *************************************************
 . 
-. local years "2016 2018 2020 2022"
+. local years "2016 2018 2020 2022 2024"
 
 . local cumulative_ids = 0
 
@@ -548,9 +548,9 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000001 saved
 > e_ids'"
 207. }
 Processing ENIGH 2016 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000002 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000003 saved
     as .dta format
 (334,337 missing values generated)
 variable clave_group was str1 now str5
@@ -689,13 +689,13 @@ state: all characters numeric; replaced as byte
 (696,983 real changes made)
 (297,979 real changes made)
 (1,132,963 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000004 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000004 saved
     as .dta format
 Finished processing 2016. Total individuals so far: 257805
 Processing ENIGH 2018 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000005 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000005 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000006 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000006 saved
     as .dta format
 (348,487 missing values generated)
 variable clave_group was str1 now str5
@@ -834,13 +834,13 @@ state: all characters numeric; replaced as byte
 (741,218 real changes made)
 (309,498 real changes made)
 (1,180,978 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000007 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000007 saved
     as .dta format
 Finished processing 2018. Total individuals so far: 527011
 Processing ENIGH 2020 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000008 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000008 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.000009 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000009 saved
     as .dta format
 (394,912 missing values generated)
 variable clave_group was str1 now str5
@@ -979,13 +979,13 @@ state: all characters numeric; replaced as byte
 (850,635 real changes made)
 (374,592 real changes made)
 (1,337,297 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.00000a saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000a saved
     as .dta format
 Finished processing 2020. Total individuals so far: 842754
 Processing ENIGH 2022 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.00000b saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000b saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.00000c saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000c saved
     as .dta format
 (397,182 missing values generated)
 variable clave_group was str1 now str5
@@ -1124,9 +1124,154 @@ state: all characters numeric; replaced as byte
 (873,503 real changes made)
 (354,176 real changes made)
 (1,335,383 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St12720.00000d saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000d saved
     as .dta format
 Finished processing 2022. Total individuals so far: 1152438
+Processing ENIGH 2024 dataset...
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000e saved
+    as .dta format
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000f saved
+    as .dta format
+(391,563 missing values generated)
+variable clave_group was str1 now str5
+(110,215 real changes made)
+variable clave_group was str5 now str15
+(84,200 real changes made)
+(25,088 real changes made)
+(43,946 real changes made)
+(7,963 real changes made)
+(30,547 real changes made)
+(21,625 real changes made)
+(21,069 real changes made)
+(3,171 real changes made)
+(918 real changes made)
+(4,919 real changes made)
+(28,823 real changes made)
+(5,600 real changes made)
+(3,479 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          321,838   ->   1,931,028   
+Number of variables                  14   ->   10          
+j variable (6 values)                     ->   month
+xij variables:
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+(1,931,028 missing values generated)
+variable mes was str1 now str2
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(1,272,852 missing values generated)
+(1,551,318 missing values generated)
+(1,897,098 missing values generated)
+(1,526,742 missing values generated)
+(1,745,442 missing values generated)
+(1,701,060 missing values generated)
+(1,912,140 missing values generated)
+(1,910,544 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       106,233
+        from master                         0  (_merge==1)
+        from using                    106,233  (_merge==2)
+
+    Matched                         1,214,190  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,320,423  (_merge==3)
+    -----------------------------------------
+(106,233 missing values generated)
+(1,320,423 missing values generated)
+(685,408 real changes made)
+(635,015 real changes made)
+(1,320,423 missing values generated)
+(426,841 real changes made)
+(893,582 real changes made)
+(1,320,423 missing values generated)
+(281,443 real changes made)
+(1,038,980 real changes made)
+(1,320,423 missing values generated)
+(98,868 real changes made)
+(1,207,112 real changes made)
+indlang: all characters numeric; replaced as int
+(1221555 missing values generated)
+(1,320,423 missing values generated)
+(33,605 real changes made)
+(1,173,507 real changes made)
+(1,320,423 missing values generated)
+(342,964 real changes made)
+(963,016 real changes made)
+(1,320,423 missing values generated)
+(206,907 real changes made)
+(1,099,073 real changes made)
+(1,320,423 missing values generated)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+state: all characters numeric; replaced as byte
+(1,320,423 missing values generated)
+(869,987 real changes made)
+(350,932 real changes made)
+(1,320,423 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000g saved
+    as .dta format
+Finished processing 2024. Total individuals so far: 1461036
 
 . 
 . *************************************************
@@ -1179,6 +1324,16 @@ Appending all datasets...
 (label fatherlbl already defined)
 (label motherlbl already defined)
 (label genderlbl already defined)
+(label employedlbl already defined)
+(label states already defined)
+(label school_attendlbl already defined)
+(label indigenouslbl already defined)
+(label indundlbl already defined)
+(label indlanglbl already defined)
+(label indspeakerlbl already defined)
+(label fatherlbl already defined)
+(label motherlbl already defined)
+(label genderlbl already defined)
 
 . 
 . sort id time
@@ -1187,8 +1342,8 @@ Appending all datasets...
 
     Result                      Number of obs
     -----------------------------------------
-    Not matched                       385,665
-        from master                   385,617  (_merge==1)
+    Not matched                     1,706,088
+        from master                 1,706,040  (_merge==1)
         from using                         48  (_merge==2)
 
     Matched                         4,601,004  (_merge==3)
@@ -1233,60 +1388,60 @@ ubica_geo: all characters numeric; replaced as int
 . 
 . *generate REAL income variables
 . gen ingreso_real = (ingreso / inpc) * 100
-(385,617 missing values generated)
+(1,706,040 missing values generated)
 
 . gen ing_wages_real = (ing_wages / inpc) * 100
-(2,619,411 missing values generated)
+(3,939,834 missing values generated)
 
 . gen ing_non_wage_income_real = (ing_non_wage_income / inpc) * 100
-(3,659,727 missing values generated)
+(4,980,150 missing values generated)
 
 . gen ing_fin_capital_real = (ing_fin_capital / inpc) * 100
-(4,802,373 missing values generated)
+(6,122,796 missing values generated)
 
 . gen ing_gov_transfers_real = (ing_gov_transfers / inpc) * 100
-(3,275,841 missing values generated)
+(4,596,264 missing values generated)
 
 . gen ing_negocio_real = (ing_negocio / inpc) * 100
-(4,295,187 missing values generated)
+(5,615,610 missing values generated)
 
 . gen ing_other_real = (ing_other / inpc) * 100
-(4,075,101 missing values generated)
+(5,395,524 missing values generated)
 
 . gen ing_rentas_real = (ing_rentas / inpc) * 100
-(4,910,175 missing values generated)
+(6,230,598 missing values generated)
 
 . gen ing_ventas_real = (ing_ventas / inpc) * 100
-(4,874,037 missing values generated)
+(6,194,460 missing values generated)
 
 . 
 . *generate log of income sources
 . gen lni = ln(ingreso_real) if ingreso_real > 0
-(1,111,210 missing values generated)
+(2,431,633 missing values generated)
 
 . gen lnw = ln(ing_wages_real) if ing_wages_real > 0
-(2,884,954 missing values generated)
+(4,205,377 missing values generated)
 
 . gen lnnwi = ln(ing_non_wage_income_real) if ing_non_wage_income_real > 0
-(4,404,134 missing values generated)
+(5,724,557 missing values generated)
 
 . gen lnfc = ln(ing_fin_capital_real) if ing_fin_capital_real > 0
-(4,937,722 missing values generated)
+(6,258,145 missing values generated)
 
 . gen lngt = ln(ing_gov_transfers_real) if ing_gov_transfers_real > 0
-(3,901,910 missing values generated)
+(5,222,333 missing values generated)
 
 . gen lnn = ln(ing_negocio_real) if ing_negocio_real > 0
-(4,366,470 missing values generated)
+(5,686,893 missing values generated)
 
 . gen lno = ln(ing_other_real) if ing_other_real > 0
-(4,499,459 missing values generated)
+(5,819,882 missing values generated)
 
 . gen lnr = ln(ing_rentas_real) if ing_rentas_real > 0
-(4,922,677 missing values generated)
+(6,243,100 missing values generated)
 
 . gen lnv = ln(ing_ventas_real) if ing_ventas_real > 0
-(4,961,459 missing values generated)
+(6,281,882 missing values generated)
 
 . 
 . *************************************************
@@ -1294,10 +1449,10 @@ ubica_geo: all characters numeric; replaced as int
 . *************************************************
 . 
 . drop if time == .
-(385,617 observations deleted)
+(491,850 observations deleted)
 
 . drop if edad <= 12
-(351,000 observations deleted)
+(411,312 observations deleted)
 
 . gen edadsq = edad*edad
 
