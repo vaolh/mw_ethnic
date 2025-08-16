@@ -78,7 +78,7 @@ Notes:
 . drop year month mes
 
 . save `deflators'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000001 saved
     as .dta format
 
 . 
@@ -548,9 +548,9 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000001 saved
 > e_ids'"
 207. }
 Processing ENIGH 2016 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000002 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000003 saved
     as .dta format
 (334,337 missing values generated)
 variable clave_group was str1 now str5
@@ -689,13 +689,13 @@ state: all characters numeric; replaced as byte
 (696,983 real changes made)
 (297,979 real changes made)
 (1,132,963 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000004 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000004 saved
     as .dta format
 Finished processing 2016. Total individuals so far: 257805
 Processing ENIGH 2018 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000005 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000005 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000006 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000006 saved
     as .dta format
 (348,487 missing values generated)
 variable clave_group was str1 now str5
@@ -834,13 +834,13 @@ state: all characters numeric; replaced as byte
 (741,218 real changes made)
 (309,498 real changes made)
 (1,180,978 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000007 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000007 saved
     as .dta format
 Finished processing 2018. Total individuals so far: 527011
 Processing ENIGH 2020 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000008 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000008 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.000009 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.000009 saved
     as .dta format
 (394,912 missing values generated)
 variable clave_group was str1 now str5
@@ -979,13 +979,13 @@ state: all characters numeric; replaced as byte
 (850,635 real changes made)
 (374,592 real changes made)
 (1,337,297 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000a saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000a saved
     as .dta format
 Finished processing 2020. Total individuals so far: 842754
 Processing ENIGH 2022 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000b saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000b saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000c saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000c saved
     as .dta format
 (397,182 missing values generated)
 variable clave_group was str1 now str5
@@ -1124,13 +1124,13 @@ state: all characters numeric; replaced as byte
 (873,503 real changes made)
 (354,176 real changes made)
 (1,335,383 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000d saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000d saved
     as .dta format
 Finished processing 2022. Total individuals so far: 1152438
 Processing ENIGH 2024 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000e saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000e saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000f saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000f saved
     as .dta format
 (391,563 missing values generated)
 variable clave_group was str1 now str5
@@ -1269,7 +1269,7 @@ state: all characters numeric; replaced as byte
 (869,987 real changes made)
 (350,932 real changes made)
 (1,320,423 real changes made)
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St39434.00000g saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St08321.00000g saved
     as .dta format
 Finished processing 2024. Total individuals so far: 1461036
 
@@ -1463,6 +1463,7 @@ ubica_geo: all characters numeric; replaced as int
 . 
 . *save dataset
 . save "../output/enighdata.dta", replace
+(file ../output/enighdata.dta not found)
 file ../output/enighdata.dta saved
 
 . *save "$output/enighdata.dta", replace
