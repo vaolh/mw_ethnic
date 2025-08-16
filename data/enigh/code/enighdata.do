@@ -13,12 +13,8 @@ set more off
 *** EMAIL: vincictor33@gmail.com
 *** DATE: 2025-02-16
 
-*************************************************
-**************** Define Globals *****************
-*************************************************
-
-global project="/Users/victorortega/Dropbox/mw_ethnic/downloaddata/output"
-global output="/Users/victorortega/Dropbox/mw_ethnic/enighdata/output"
+*** The data dictionary for ENIGH is the following:
+*** https://www.inegi.org.mx/rnm/index.php/catalog/685/data-dictionary
 
 *************************************************
 ************** INFLATION DATASET ***************
@@ -60,6 +56,16 @@ foreach year of local years {
     collapse (first) ubica_geo, by(folioviv)
     tempfile hog_data_`year'
     save `hog_data_`year''
+	
+	*************************************************
+    ************* Trabajos ENIGH dataset ************
+    *************************************************
+	
+	use "../input/trabajos`year'.dta", clear
+	egen new_id = concat(folioviv foliohog numren)
+	keep new_id htrab
+	tempfile trab_data_`year'
+    save `trab_data_`year''
     
     *************************************************
     ************ Ingresos ENIGH dataset *************
@@ -133,10 +139,13 @@ foreach year of local years {
     merge m:1 new_id using `pop_data_`year''
     drop _merge
     gen folioviv = substr(new_id, 1, length(new_id) - 3)
+	
+	merge m:1 new_id using `trab_data_`year''
+    drop _merge
     
     merge m:1 folioviv using `hog_data_`year'', keepusing(ubica_geo)
     drop _merge
-    
+	
     *************************************************
     ************ Data cleanup for estimation ********
     *************************************************
@@ -434,7 +443,9 @@ foreach year of local years {
     
     *work hours and employment dummy
     rename hor_1 hoursworked
-    label variable hoursworked "hours worked per week"
+    label variable hoursworked "hours worked per week (personas)"
+	rename htrab hoursworked2 
+	label variable hoursworked "hours worked per week (trabajos)"
     gen employed = .
     replace employed = 1 if trabajo_mp == "1"
     replace employed = 0 if trabajo_mp == "2"
