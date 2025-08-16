@@ -10,7 +10,7 @@ INPUT_FILES := $(foreach year, $(YEARS), ../input/ingresos$(year).dta ../input/p
 
 ../input/%.dta: ../../download/output/%.dta | ../input
 	@if [ ! -e ../input ]; then mkdir -p ../input; fi
-	@if [ ! -e $@ ]; then ln -s $< $@; fi
+	@if [ ! -e $@ ]; then ln -sf $< $@; fi
 
 ../output:
 	@mkdir -p ../output
