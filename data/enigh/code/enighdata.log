@@ -72,7 +72,7 @@ Notes:
 . drop year month mes
 
 . save `deflators'
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000001 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000001 saved
     as .dta format
 
 . 
@@ -112,168 +112,185 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000001 saved
 .         
 .         use "../input/trabajos`year'.dta", clear
  13.         egen new_id = concat(folioviv foliohog numren)
- 14.         keep new_id htrab
- 15.         tempfile trab_data_`year'
- 16.     save `trab_data_`year''
- 17.     
+ 14.         collapse (sum) htrab, by(new_id scian subor indep personal pago co
+> ntrato ///
+>                          tipocontr pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 
+> ///
+>                                                  pres_7 pres_8 pres_9 pres_10
+>  pres_11 pres_12 pres_13 ///
+>                          pres_14 pres_15 pres_16 pres_17 pres_18 pres_19 pres
+> _20)
+ 15.         bys new_id: egen max_htrab = max(htrab)
+ 16.         bys new_id (htrab scian): gen jobnum = 1 if htrab == max_htrab & _
+> n == _N
+ 17.         replace jobnum = 2 if missing(jobnum)
+ 18.         drop max_htrab
+ 19.         reshape wide scian htrab subor indep personal pago contrato tipoco
+> ntr ///
+>                 pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 pres_7 pres_8 ///
+>                 pres_9 pres_10 pres_11 pres_12 pres_13 pres_14 pres_15 ///
+>                 pres_16 pres_17 pres_18 pres_19 pres_20, i(new_id) j(jobnum)
+ 20.         tempfile trab_data_`year'
+ 21.     save `trab_data_`year''
+ 22.     
 .     *************************************************
 .     ************ Ingresos ENIGH dataset *************
 .     *************************************************
 .     
 .     use "../input/ingresos`year'.dta", clear
- 18.     egen new_id = concat(folioviv foliohog numren)
- 19.     
+ 23.     egen new_id = concat(folioviv foliohog numren)
+ 24.     
 .     gen clave_group = ""
- 20.     
+ 25.     
 .     /*Income Classification - consistent across all years*/
 .     replace clave_group = "wages" if inlist(clave, "P001", "P002", "P011", "P
 > 018", "P019", "P067")
- 21.     
+ 26.     
 .     replace clave_group = "non_wage_income" if inlist(clave, "P003", "P004", 
 > "P005", "P006", "P007", "P009")
- 22.     replace clave_group = "non_wage_income" if inlist(clave, "P008","P014"
+ 27.     replace clave_group = "non_wage_income" if inlist(clave, "P008","P014"
 > ,"P015","P016")
- 23.     
+ 28.     
 .     replace clave_group = "gov_transfers" if inlist(clave, "P032","P033","P03
 > 8","P040","P042","P043","P044","P045") 
- 24.     replace clave_group = "gov_transfers" if inlist(clave, "P048","P101","
+ 29.     replace clave_group = "gov_transfers" if inlist(clave, "P048","P101","
 > P046","P047","P102","P103")
- 25.     replace clave_group = "gov_transfers" if inlist(clave, "P104","P105","
+ 30.     replace clave_group = "gov_transfers" if inlist(clave, "P104","P105","
 > P106","P107","P108")
- 26.     
+ 31.     
 .     replace clave_group = "other" if inlist(clave, "P012","P013","P020","P021
 > ","P022","P034","P035","P036","P037")
- 27.     replace clave_group = "other" if inlist(clave, "P041","P049","P051","P
+ 32.     replace clave_group = "other" if inlist(clave, "P041","P049","P051","P
 > 057","P058","P039")
- 28.         
+ 33.         
 .     replace clave_group = "rentas" if inlist(clave, "P023","P024","P025")
- 29.     
+ 34.     
 .     replace clave_group = "fin_capital" if inlist(clave, "P026","P027","P028"
 > ,"P029","P030","P031","P050")
- 30.     replace clave_group = "fin_capital" if inlist(clave, "P065","P066","P0
+ 35.     replace clave_group = "fin_capital" if inlist(clave, "P065","P066","P0
 > 52","P053","P064")
- 31.     
+ 36.     
 .     replace clave_group = "negocio" if inlist(clave, "P068","P069","P070","P0
 > 71","P072","P073","P074")  
- 32.     replace clave_group = "negocio" if inlist(clave, "P078","P079","P080",
+ 37.     replace clave_group = "negocio" if inlist(clave, "P078","P079","P080",
 > "P081","P075","P076","P077")
- 33.     
+ 38.     
 .     replace clave_group = "ventas" if inlist(clave, "P054","P055","P056","P05
 > 9","P060","P061","P062","P063")
- 34.     
+ 39.     
 .     *Collapse income by income classes
 .     collapse (sum) ing_1 ing_2 ing_3 ing_4 ing_5 ing_6 (first) mes_1 mes_2 me
 > s_3 mes_4 mes_5 mes_6, by(new_id clave_group)
- 35.     
+ 40.     
 .     * Replace spaces with the value from the other row with the same new_id
 .     foreach mes in mes_1 mes_2 mes_3 mes_4 mes_5 mes_6 {
- 36.         replace `mes' = `mes'[_n-1] if `mes' == " " & new_id == new_id[_n-
+ 41.         replace `mes' = `mes'[_n-1] if `mes' == " " & new_id == new_id[_n-
 > 1]
- 37.         replace `mes' = `mes'[_n+1] if `mes' == " " & new_id == new_id[_n+
+ 42.         replace `mes' = `mes'[_n+1] if `mes' == " " & new_id == new_id[_n+
 > 1]
- 38.     }
- 39.     
+ 43.     }
+ 44.     
 .     *Create a panel dataset
 .     reshape long ing_, i(new_id clave_group) j(month)
- 40.     gen mes = ""
- 41.     
+ 45.     gen mes = ""
+ 46.     
 .     * Loop through the months and assign the value from mes_1, mes_2, mes_3..
 > .
 .     foreach m of numlist 1/6 {
- 42.         replace mes = mes_`m' if month == `m'
- 43.     }
- 44.     
+ 47.         replace mes = mes_`m' if month == `m'
+ 48.     }
+ 49.     
 .     drop month mes_1 mes_2 mes_3 mes_4 mes_5
- 45.     
+ 50.     
 .     gen ing_wages = ing_ if clave_group == "wages"
- 46.     gen ing_non_wage_income = ing_ if clave_group == "non_wage_income"
- 47.     gen ing_fin_capital = ing_ if clave_group == "fin_capital"
- 48.     gen ing_gov_transfers = ing_ if clave_group == "gov_transfers"
- 49.     gen ing_negocio = ing_ if clave_group == "negocio"
- 50.     gen ing_other = ing_ if clave_group == "other"
- 51.     gen ing_rentas = ing_ if clave_group == "rentas"
- 52.     gen ing_ventas = ing_ if clave_group == "ventas"
- 53.     
+ 51.     gen ing_non_wage_income = ing_ if clave_group == "non_wage_income"
+ 52.     gen ing_fin_capital = ing_ if clave_group == "fin_capital"
+ 53.     gen ing_gov_transfers = ing_ if clave_group == "gov_transfers"
+ 54.     gen ing_negocio = ing_ if clave_group == "negocio"
+ 55.     gen ing_other = ing_ if clave_group == "other"
+ 56.     gen ing_rentas = ing_ if clave_group == "rentas"
+ 57.     gen ing_ventas = ing_ if clave_group == "ventas"
+ 58.     
 .     collapse (max) ing_wages ing_non_wage_income ing_fin_capital ing_gov_tran
 > sfers ing_negocio ing_other ing_rentas ing_ventas, by(new_id mes mes_6)
- 54.     
+ 59.     
 .     drop mes_6
- 55.     
+ 60.     
 .     *************************************************
 .     ************ Merge with previous datasets *******
 .     *************************************************
 .     
 .     merge m:1 new_id using `pop_data_`year''
- 56.     drop _merge
- 57.     gen folioviv = substr(new_id, 1, length(new_id) - 3)
- 58.         
-.         merge m:1 new_id using `trab_data_`year''
- 59.     drop _merge
- 60.     
-.     merge m:1 folioviv using `hog_data_`year'', keepusing(ubica_geo)
  61.     drop _merge
- 62.         
+ 62.     gen folioviv = substr(new_id, 1, length(new_id) - 3)
+ 63.         
+.         merge m:1 new_id using `trab_data_`year''
+ 64.     drop _merge
+ 65.     
+.     merge m:1 folioviv using `hog_data_`year'', keepusing(ubica_geo)
+ 66.     drop _merge
+ 67.         
 .     *************************************************
 .     ************ Data cleanup for estimation ********
 .     *************************************************
 .     
 .     sort new_id mes
- 63.     
+ 68.     
 .     *generate date
 .     gen time = date("`year'-" + mes, "YM")
- 64.     format time %td
- 65.     order time, after(mes)
- 66.     gen year = `year'
- 67.     order year, after(time)
- 68.     label variable time "month year date"
- 69.     drop mes
- 70.     
+ 69.     format time %td
+ 70.     order time, after(mes)
+ 71.     gen year = `year'
+ 72.     order year, after(time)
+ 73.     label variable time "month year date"
+ 74.     drop mes
+ 75.     
 .     *generate gender
 .     gen gender = .
- 71.     replace gender = 1 if sexo == "1"
- 72.     replace gender = 0 if sexo == "2"
- 73.     label define genderlbl 1 "Male" 0 "Female"
- 74.     label values gender genderlbl
- 75.     order gender, after(sexo)
- 76.     label variable gender "gender"
- 77.     label variable edad "age"
- 78.     order gender edad, after(time)
- 79.     drop sexo
- 80.     
+ 76.     replace gender = 1 if sexo == "1"
+ 77.     replace gender = 0 if sexo == "2"
+ 78.     label define genderlbl 1 "Male" 0 "Female"
+ 79.     label values gender genderlbl
+ 80.     order gender, after(sexo)
+ 81.     label variable gender "gender"
+ 82.     label variable edad "age"
+ 83.     order gender edad, after(time)
+ 84.     drop sexo
+ 85.     
 .     *mother and father home
 .     gen motherhome = .
- 81.     replace motherhome = 1 if madre_hog == "1"
- 82.     replace motherhome = 0 if madre_hog == "2"
- 83.     label define motherlbl 1 "Yes" 0 "No"
- 84.     label values motherhome motherlbl
- 85.     order motherhome, after(madre_hog)
- 86.     label variable motherhome "lives with mother"
- 87.     drop madre_hog
- 88.     
+ 86.     replace motherhome = 1 if madre_hog == "1"
+ 87.     replace motherhome = 0 if madre_hog == "2"
+ 88.     label define motherlbl 1 "Yes" 0 "No"
+ 89.     label values motherhome motherlbl
+ 90.     order motherhome, after(madre_hog)
+ 91.     label variable motherhome "lives with mother"
+ 92.     drop madre_hog
+ 93.     
 .     gen fatherhome = .
- 89.     replace fatherhome = 1 if padre_hog == "1"
- 90.     replace fatherhome = 0 if padre_hog == "2"
- 91.     label define fatherlbl 1 "Yes" 0 "No"
- 92.     label values fatherhome fatherlbl
- 93.     order fatherhome, before(motherhome)
- 94.     label variable fatherhome "lives with father"
- 95.     drop padre_hog
- 96.     
+ 94.     replace fatherhome = 1 if padre_hog == "1"
+ 95.     replace fatherhome = 0 if padre_hog == "2"
+ 96.     label define fatherlbl 1 "Yes" 0 "No"
+ 97.     label values fatherhome fatherlbl
+ 98.     order fatherhome, before(motherhome)
+ 99.     label variable fatherhome "lives with father"
+100.     drop padre_hog
+101.     
 .     *indigenous language speaker
 .     gen indspeaker = .
- 97.     replace indspeaker = 1 if hablaind == "1"
- 98.     replace indspeaker = 0 if hablaind == "2"
- 99.     label define indspeakerlbl 1 "Yes" 0 "No"
-100.     label values indspeaker indspeakerlbl
-101.     order indspeaker, before(hablaind)
-102.     label variable indspeaker "speaks indigenous language"
-103.     drop hablaind
-104.     
+102.     replace indspeaker = 1 if hablaind == "1"
+103.     replace indspeaker = 0 if hablaind == "2"
+104.     label define indspeakerlbl 1 "Yes" 0 "No"
+105.     label values indspeaker indspeakerlbl
+106.     order indspeaker, before(hablaind)
+107.     label variable indspeaker "speaks indigenous language"
+108.     drop hablaind
+109.     
 .     *indigenous language 
 .     rename lenguaind indlang
-105.     label variable indlang "indigenous language spoken"
-106.     destring indlang, replace
-107.     
+110.     label variable indlang "indigenous language spoken"
+111.     destring indlang, replace
+112.     
 .     * Define indigenous language labels (complete list)
 .     label define indlanglbl ///
 >         111 "Paipai" ///
@@ -389,86 +406,86 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000001 saved
 >         5571 "Pipil" ///
 >         5603 "Other American Languages" ///
 >         5595 "Wayuu"
-108.     label values indlang indlanglbl
-109.     
+113.     label values indlang indlanglbl
+114.     
 .     *understands indigenous language 
 .     gen indund = .
-110.     replace indund = 1 if comprenind == "1"
-111.     replace indund = 0 if comprenind == "2"
-112.     label define indundlbl 0 "No" 1 "Yes"
-113.     label values indund indundlbl
-114.     order indund, before(comprenind)
-115.     label variable indund "understands indigenous language"
-116.     drop comprenind
-117.     
+115.     replace indund = 1 if comprenind == "1"
+116.     replace indund = 0 if comprenind == "2"
+117.     label define indundlbl 0 "No" 1 "Yes"
+118.     label values indund indundlbl
+119.     order indund, before(comprenind)
+120.     label variable indund "understands indigenous language"
+121.     drop comprenind
+122.     
 .     *indigenous self-identification 
 .     gen indigenous = .
-118.     replace indigenous = 1 if etnia == "1"
-119.     replace indigenous = 0 if etnia == "2"
-120.     label define indigenouslbl 0 "No" 1 "Yes"
-121.     label values indigenous indigenouslbl
-122.     order indigenous, before(etnia)
-123.     label variable indigenous "indigenous self-identification"
-124.     drop etnia
-125.     
+123.     replace indigenous = 1 if etnia == "1"
+124.     replace indigenous = 0 if etnia == "2"
+125.     label define indigenouslbl 0 "No" 1 "Yes"
+126.     label values indigenous indigenouslbl
+127.     order indigenous, before(etnia)
+128.     label variable indigenous "indigenous self-identification"
+129.     drop etnia
+130.     
 .     *school attendance
 .     gen school_attendance = .
-126.     replace school_attendance = 1 if asis_esc == "1"
-127.     replace school_attendance = 0 if asis_esc == "2"
-128.     label define school_attendlbl 0 "No" 1 "Yes"
-129.     label values school_attendance school_attendlbl
-130.     order school_attendance, before(asis_esc)
-131.     label variable school_attendance "school attendance"
-132.     drop asis_esc
-133.     
+131.     replace school_attendance = 1 if asis_esc == "1"
+132.     replace school_attendance = 0 if asis_esc == "2"
+133.     label define school_attendlbl 0 "No" 1 "Yes"
+134.     label values school_attendance school_attendlbl
+135.     order school_attendance, before(asis_esc)
+136.     label variable school_attendance "school attendance"
+137.     drop asis_esc
+138.     
 .     *years of school achieved
 .     gen years_of_study = .
-134.     replace years_of_study = 0 if nivelaprob == "0"
-135.     replace years_of_study = 0 if nivelaprob == "1"
-136.     replace years_of_study = 1 if nivelaprob == "2" & gradoaprob == "1"
-137.     replace years_of_study = 2 if nivelaprob == "2" & gradoaprob == "2"
-138.     replace years_of_study = 3 if nivelaprob == "2" & gradoaprob == "3"
-139.     replace years_of_study = 4 if nivelaprob == "2" & gradoaprob == "4"
-140.     replace years_of_study = 5 if nivelaprob == "2" & gradoaprob == "5"
-141.     replace years_of_study = 6 if nivelaprob == "2" & gradoaprob == "6"
-142.     replace years_of_study = 7 if nivelaprob == "3" & gradoaprob == "1"
-143.     replace years_of_study = 8 if nivelaprob == "3" & gradoaprob == "2"
-144.     replace years_of_study = 9 if nivelaprob == "3" & gradoaprob == "3"
-145.     replace years_of_study = 10 if nivelaprob == "4" & gradoaprob == "1"
-146.     replace years_of_study = 11 if nivelaprob == "4" & gradoaprob == "2"
-147.     replace years_of_study = 12 if nivelaprob == "4" & gradoaprob == "3"
-148.     replace years_of_study = 13 if nivelaprob == "5" & gradoaprob == "1"
-149.     replace years_of_study = 14 if nivelaprob == "5" & gradoaprob == "2"
-150.     replace years_of_study = 15 if nivelaprob == "5" & gradoaprob == "3"
-151.     replace years_of_study = 16 if nivelaprob == "5" & gradoaprob == "4"
-152.     replace years_of_study = 17 if nivelaprob == "5" & gradoaprob == "5"
-153.     replace years_of_study = 13 if nivelaprob == "6" & gradoaprob == "1"
-154.     replace years_of_study = 14 if nivelaprob == "6" & gradoaprob == "2"
-155.     replace years_of_study = 15 if nivelaprob == "6" & gradoaprob == "3"
-156.     replace years_of_study = 16 if nivelaprob == "6" & gradoaprob == "4"
-157.     replace years_of_study = 17 if nivelaprob == "6" & gradoaprob == "5"
-158.     replace years_of_study = 13 if nivelaprob == "7" & gradoaprob == "1"
-159.     replace years_of_study = 14 if nivelaprob == "7" & gradoaprob == "2"
-160.     replace years_of_study = 15 if nivelaprob == "7" & gradoaprob == "3"
-161.     replace years_of_study = 16 if nivelaprob == "7" & gradoaprob == "4"
-162.     replace years_of_study = 17 if nivelaprob == "7" & gradoaprob == "5"
-163.     replace years_of_study = 18 if nivelaprob == "8" & gradoaprob == "1"
-164.     replace years_of_study = 19 if nivelaprob == "8" & gradoaprob == "2"
-165.     replace years_of_study = 20 if nivelaprob == "8" & gradoaprob == "3"
-166.     replace years_of_study = 21 if nivelaprob == "9" & gradoaprob == "1"
-167.     replace years_of_study = 22 if nivelaprob == "9" & gradoaprob == "2"
-168.     replace years_of_study = 23 if nivelaprob == "9" & gradoaprob == "3"
-169.     replace years_of_study = 24 if nivelaprob == "9" & gradoaprob == "4"
-170.     replace years_of_study = 25 if nivelaprob == "9" & gradoaprob == "5"
-171.     label variable years_of_study "years of study"
-172.     order years_of_study, after(school_attendance)
-173.     drop nivelaprob gradoaprob
-174.     
+139.     replace years_of_study = 0 if nivelaprob == "0"
+140.     replace years_of_study = 0 if nivelaprob == "1"
+141.     replace years_of_study = 1 if nivelaprob == "2" & gradoaprob == "1"
+142.     replace years_of_study = 2 if nivelaprob == "2" & gradoaprob == "2"
+143.     replace years_of_study = 3 if nivelaprob == "2" & gradoaprob == "3"
+144.     replace years_of_study = 4 if nivelaprob == "2" & gradoaprob == "4"
+145.     replace years_of_study = 5 if nivelaprob == "2" & gradoaprob == "5"
+146.     replace years_of_study = 6 if nivelaprob == "2" & gradoaprob == "6"
+147.     replace years_of_study = 7 if nivelaprob == "3" & gradoaprob == "1"
+148.     replace years_of_study = 8 if nivelaprob == "3" & gradoaprob == "2"
+149.     replace years_of_study = 9 if nivelaprob == "3" & gradoaprob == "3"
+150.     replace years_of_study = 10 if nivelaprob == "4" & gradoaprob == "1"
+151.     replace years_of_study = 11 if nivelaprob == "4" & gradoaprob == "2"
+152.     replace years_of_study = 12 if nivelaprob == "4" & gradoaprob == "3"
+153.     replace years_of_study = 13 if nivelaprob == "5" & gradoaprob == "1"
+154.     replace years_of_study = 14 if nivelaprob == "5" & gradoaprob == "2"
+155.     replace years_of_study = 15 if nivelaprob == "5" & gradoaprob == "3"
+156.     replace years_of_study = 16 if nivelaprob == "5" & gradoaprob == "4"
+157.     replace years_of_study = 17 if nivelaprob == "5" & gradoaprob == "5"
+158.     replace years_of_study = 13 if nivelaprob == "6" & gradoaprob == "1"
+159.     replace years_of_study = 14 if nivelaprob == "6" & gradoaprob == "2"
+160.     replace years_of_study = 15 if nivelaprob == "6" & gradoaprob == "3"
+161.     replace years_of_study = 16 if nivelaprob == "6" & gradoaprob == "4"
+162.     replace years_of_study = 17 if nivelaprob == "6" & gradoaprob == "5"
+163.     replace years_of_study = 13 if nivelaprob == "7" & gradoaprob == "1"
+164.     replace years_of_study = 14 if nivelaprob == "7" & gradoaprob == "2"
+165.     replace years_of_study = 15 if nivelaprob == "7" & gradoaprob == "3"
+166.     replace years_of_study = 16 if nivelaprob == "7" & gradoaprob == "4"
+167.     replace years_of_study = 17 if nivelaprob == "7" & gradoaprob == "5"
+168.     replace years_of_study = 18 if nivelaprob == "8" & gradoaprob == "1"
+169.     replace years_of_study = 19 if nivelaprob == "8" & gradoaprob == "2"
+170.     replace years_of_study = 20 if nivelaprob == "8" & gradoaprob == "3"
+171.     replace years_of_study = 21 if nivelaprob == "9" & gradoaprob == "1"
+172.     replace years_of_study = 22 if nivelaprob == "9" & gradoaprob == "2"
+173.     replace years_of_study = 23 if nivelaprob == "9" & gradoaprob == "3"
+174.     replace years_of_study = 24 if nivelaprob == "9" & gradoaprob == "4"
+175.     replace years_of_study = 25 if nivelaprob == "9" & gradoaprob == "5"
+176.     label variable years_of_study "years of study"
+177.     order years_of_study, after(school_attendance)
+178.     drop nivelaprob gradoaprob
+179.     
 .     *generate state
 .     drop residencia
-175.     gen state = substr(ubica_geo, 1, 2)
-176.     destring state, replace
-177.     label define states ///
+180.     gen state = substr(ubica_geo, 1, 2)
+181.     destring state, replace
+182.     label define states ///
 >         1 "Aguascalientes" ///
 >         2 "Baja California" ///
 >         3 "Baja California Sur" ///
@@ -501,67 +518,110 @@ file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000001 saved
 >         30 "Veracruz" ///
 >         31 "Yucatán" ///
 >         32 "Zacatecas"
-178. 
+183. 
 .     label values state states
-179.     label variable state "state"
-180.     label variable ubica_geo "municipality"
-181.     label variable new_id "id"
-182.     order ubica_geo state, after(new_id)
-183.     
+184.     label variable state "state"
+185.     label variable ubica_geo "municipality"
+186.     label variable new_id "id"
+187.     order ubica_geo state, after(new_id)
+188.     
 .     *work hours and employment dummy
 .     rename hor_1 hoursworked
-184.     label variable hoursworked "hours worked per week (personas)"
-185.         rename htrab hoursworked2 
-186.         label variable hoursworked "hours worked per week (trabajos)"
-187.     gen employed = .
-188.     replace employed = 1 if trabajo_mp == "1"
-189.     replace employed = 0 if trabajo_mp == "2"
-190.     label define employedlbl 0 "No" 1 "Yes"
-191.     label values employed employedlbl
-192.     drop trabajo_mp
-193.     label variable employed "employed previous month"
-194.     drop folioviv
-195.     
+189.     label variable hoursworked "hours worked per week (personas)"
+190.         rename htrab1 hours1 
+191.         label variable hours1 "hours worked per week on first job (trabajo
+> s)"
+192.         rename htrab2 hours2 
+193.         label variable hours2 "hours worked per week on second job (trabaj
+> os)"
+194.     gen employed = .
+195.     replace employed = 1 if trabajo_mp == "1"
+196.     replace employed = 0 if trabajo_mp == "2"
+197.     label define employedlbl 0 "No" 1 "Yes"
+198.     label values employed employedlbl
+199.     drop trabajo_mp
+200.     label variable employed "employed previous month"
+201.     drop folioviv
+202.     
 .     *income labels
 .     label variable ing_wages "wage income"
-196.     label variable ing_non_wage_income "non wage labor income"
-197.     label variable ing_gov_transfers "government transfer income"
-198.     label variable ing_other "unclassified income"
-199.     label variable ing_rentas "rental income"
-200.     label variable ing_fin_capital "financial capital income"
-201.     label variable ing_negocio "business income"
-202.     label variable ing_ventas "sales income"
-203.     
+203.     label variable ing_non_wage_income "non wage labor income"
+204.     label variable ing_gov_transfers "government transfer income"
+205.     label variable ing_other "unclassified income"
+206.     label variable ing_rentas "rental income"
+207.     label variable ing_fin_capital "financial capital income"
+208.     label variable ing_negocio "business income"
+209.     label variable ing_ventas "sales income"
+210.     
 .     *clean id - generate unique IDs across years
 .     egen dirty_id = group(new_id)
-204.     gen id = dirty_id + `cumulative_ids'
-205.     order id, before(new_id)
-206.     drop dirty_id
-207.     
+211.     gen id = dirty_id + `cumulative_ids'
+212.     order id, before(new_id)
+213.     drop dirty_id
+214.     
 .     *clean ubica_geo
 .     replace ubica_geo = substr(ubica_geo, 1, length(ubica_geo) - 4)
-208.     
+215.     
 .     *count unique individuals for next iteration
 .     quietly: egen temp_max = max(id)
-209.     local year_max = temp_max[1]
-210.     drop temp_max
-211.     local cumulative_ids = `year_max'
-212.     
+216.     local year_max = temp_max[1]
+217.     drop temp_max
+218.     local cumulative_ids = `year_max'
+219.     
 .     *tempfile for append later
 .     tempfile enighdata`year'
-213.     save `enighdata`year''
-214.     
+220.     save `enighdata`year''
+221.     
 .     local tempfiles "`tempfiles' `enighdata`year''"
-215.     
+222.     
 .     display "Finished processing `year'. Total individuals so far: `cumulativ
 > e_ids'"
-216. }
+223. }
 Processing ENIGH 2016 dataset...
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000002 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000002 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000003 saved
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000003 saved
     as .dta format
-file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St09139.000004 saved
+(11,357 missing values generated)
+(11,357 real changes made)
+(j = 1 2)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations          131,602   ->   120,245     
+Number of variables                  30   ->   57          
+j variable (2 values)            jobnum   ->   (dropped)
+xij variables:
+                                  scian   ->   scian1 scian2
+                                  htrab   ->   htrab1 htrab2
+                                  subor   ->   subor1 subor2
+                                  indep   ->   indep1 indep2
+                               personal   ->   personal1 personal2
+                                   pago   ->   pago1 pago2
+                               contrato   ->   contrato1 contrato2
+                              tipocontr   ->   tipocontr1 tipocontr2
+                                 pres_1   ->   pres_11 pres_12
+                                 pres_2   ->   pres_21 pres_22
+                                 pres_3   ->   pres_31 pres_32
+                                 pres_4   ->   pres_41 pres_42
+                                 pres_5   ->   pres_51 pres_52
+                                 pres_6   ->   pres_61 pres_62
+                                 pres_7   ->   pres_71 pres_72
+                                 pres_8   ->   pres_81 pres_82
+                                 pres_9   ->   pres_91 pres_92
+                                pres_10   ->   pres_101 pres_102
+                                pres_11   ->   pres_111 pres_112
+                                pres_12   ->   pres_121 pres_122
+                                pres_13   ->   pres_131 pres_132
+                                pres_14   ->   pres_141 pres_142
+                                pres_15   ->   pres_151 pres_152
+                                pres_16   ->   pres_161 pres_162
+                                pres_17   ->   pres_171 pres_172
+                                pres_18   ->   pres_181 pres_182
+                                pres_19   ->   pres_191 pres_192
+                                pres_20   ->   pres_201 pres_202
+-----------------------------------------------------------------------------
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000004 saved
     as .dta format
 (334,337 missing values generated)
 variable clave_group was str1 now str5
@@ -627,8 +687,1064 @@ variable mes was str1 now str2
 
     Matched                         1,050,277  (_merge==3)
     -----------------------------------------
-variable new_id does not uniquely identify observations in the using data
-r(459);
 
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       431,965
+        from master                   431,965  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           700,998  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,132,963  (_merge==3)
+    -----------------------------------------
+(82,777 missing values generated)
+(1,132,963 missing values generated)
+(590,558 real changes made)
+(542,405 real changes made)
+(1,132,963 missing values generated)
+(417,347 real changes made)
+(715,616 real changes made)
+(1,132,963 missing values generated)
+(304,505 real changes made)
+(828,458 real changes made)
+(1,132,963 missing values generated)
+(84,663 real changes made)
+(1,030,442 real changes made)
+indlang: all characters numeric; replaced as int
+(1048300 missing values generated)
+(1,132,963 missing values generated)
+(29,880 real changes made)
+(1,000,562 real changes made)
+(1,132,963 missing values generated)
+(370,389 real changes made)
+(744,715 real changes made)
+(1,132,963 missing values generated)
+(256,170 real changes made)
+(858,935 real changes made)
+(1,132,963 missing values generated)
+(67,833 real changes made)
+(30,054 real changes made)
+(32,011 real changes made)
+(43,476 real changes made)
+(58,289 real changes made)
+(35,706 real changes made)
+(32,815 real changes made)
+(156,031 real changes made)
+(28,813 real changes made)
+(40,018 real changes made)
+(246,101 real changes made)
+(28,972 real changes made)
+(30,372 real changes made)
+(110,880 real changes made)
+(230 real changes made)
+(290 real changes made)
+(1,281 real changes made)
+(4,247 real changes made)
+(1,014 real changes made)
+(2,384 real changes made)
+(8,763 real changes made)
+(20,689 real changes made)
+(1,808 real changes made)
+(0 real changes made)
+(12,031 real changes made)
+(12,381 real changes made)
+(13,990 real changes made)
+(39,943 real changes made)
+(42,710 real changes made)
+(878 real changes made)
+(6,567 real changes made)
+(1,851 real changes made)
+(619 real changes made)
+(603 real changes made)
+(537 real changes made)
+(230 real changes made)
+(97 real changes made)
+state: all characters numeric; replaced as byte
+(1,132,963 missing values generated)
+(696,983 real changes made)
+(297,979 real changes made)
+(1,132,963 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000005 saved
+    as .dta format
+Finished processing 2016. Total individuals so far: 257805
+Processing ENIGH 2018 dataset...
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000006 saved
+    as .dta format
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000007 saved
+    as .dta format
+(11,856 missing values generated)
+(11,856 real changes made)
+(j = 1 2)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations          139,494   ->   127,638     
+Number of variables                  30   ->   57          
+j variable (2 values)            jobnum   ->   (dropped)
+xij variables:
+                                  scian   ->   scian1 scian2
+                                  htrab   ->   htrab1 htrab2
+                                  subor   ->   subor1 subor2
+                                  indep   ->   indep1 indep2
+                               personal   ->   personal1 personal2
+                                   pago   ->   pago1 pago2
+                               contrato   ->   contrato1 contrato2
+                              tipocontr   ->   tipocontr1 tipocontr2
+                                 pres_1   ->   pres_11 pres_12
+                                 pres_2   ->   pres_21 pres_22
+                                 pres_3   ->   pres_31 pres_32
+                                 pres_4   ->   pres_41 pres_42
+                                 pres_5   ->   pres_51 pres_52
+                                 pres_6   ->   pres_61 pres_62
+                                 pres_7   ->   pres_71 pres_72
+                                 pres_8   ->   pres_81 pres_82
+                                 pres_9   ->   pres_91 pres_92
+                                pres_10   ->   pres_101 pres_102
+                                pres_11   ->   pres_111 pres_112
+                                pres_12   ->   pres_121 pres_122
+                                pres_13   ->   pres_131 pres_132
+                                pres_14   ->   pres_141 pres_142
+                                pres_15   ->   pres_151 pres_152
+                                pres_16   ->   pres_161 pres_162
+                                pres_17   ->   pres_171 pres_172
+                                pres_18   ->   pres_181 pres_182
+                                pres_19   ->   pres_191 pres_192
+                                pres_20   ->   pres_201 pres_202
+-----------------------------------------------------------------------------
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000008 saved
+    as .dta format
+(348,487 missing values generated)
+variable clave_group was str1 now str5
+(93,476 real changes made)
+variable clave_group was str5 now str15
+(69,223 real changes made)
+(19,151 real changes made)
+(80,989 real changes made)
+(1,523 real changes made)
+(0 real changes made)
+(22,881 real changes made)
+(16,921 real changes made)
+(2,968 real changes made)
+(704 real changes made)
+(7,086 real changes made)
+(24,275 real changes made)
+(5,173 real changes made)
+(4,117 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(4,254 real changes made)
+(28,963 real changes made)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          291,890   ->   1,751,340   
+Number of variables                  14   ->   10          
+j variable (6 values)                     ->   month
+xij variables:
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+(1,751,340 missing values generated)
+variable mes was str1 now str2
+(291,890 real changes made)
+(291,890 real changes made)
+(291,890 real changes made)
+(291,890 real changes made)
+(291,890 real changes made)
+(291,890 real changes made)
+(1,193,550 missing values generated)
+(1,445,928 missing values generated)
+(1,706,178 missing values generated)
+(1,320,042 missing values generated)
+(1,594,164 missing values generated)
+(1,538,508 missing values generated)
+(1,733,712 missing values generated)
+(1,727,298 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                        86,772
+        from master                         0  (_merge==1)
+        from using                     86,772  (_merge==2)
+
+    Matched                         1,094,206  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       436,223
+        from master                   436,223  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           744,755  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,180,978  (_merge==3)
+    -----------------------------------------
+(86,854 missing values generated)
+(1,180,978 missing values generated)
+(617,388 real changes made)
+(563,590 real changes made)
+(1,180,978 missing values generated)
+(424,375 real changes made)
+(756,603 real changes made)
+(1,180,978 missing values generated)
+(304,603 real changes made)
+(876,375 real changes made)
+(1,180,978 missing values generated)
+(88,011 real changes made)
+(1,074,996 real changes made)
+indlang: all characters numeric; replaced as int
+(1092967 missing values generated)
+(1,180,978 missing values generated)
+(31,267 real changes made)
+(1,043,729 real changes made)
+(1,180,978 missing values generated)
+(379,588 real changes made)
+(783,419 real changes made)
+(1,180,978 missing values generated)
+(248,628 real changes made)
+(914,379 real changes made)
+(1,180,978 missing values generated)
+(67,886 real changes made)
+(26,065 real changes made)
+(31,074 real changes made)
+(42,587 real changes made)
+(57,388 real changes made)
+(35,527 real changes made)
+(33,028 real changes made)
+(158,278 real changes made)
+(28,522 real changes made)
+(38,642 real changes made)
+(263,677 real changes made)
+(31,525 real changes made)
+(33,022 real changes made)
+(126,913 real changes made)
+(219 real changes made)
+(303 real changes made)
+(1,227 real changes made)
+(3,923 real changes made)
+(919 real changes made)
+(2,121 real changes made)
+(7,888 real changes made)
+(20,001 real changes made)
+(1,972 real changes made)
+(0 real changes made)
+(13,563 real changes made)
+(13,998 real changes made)
+(15,889 real changes made)
+(45,969 real changes made)
+(47,995 real changes made)
+(982 real changes made)
+(7,344 real changes made)
+(1,822 real changes made)
+(605 real changes made)
+(680 real changes made)
+(469 real changes made)
+(289 real changes made)
+(60 real changes made)
+state: all characters numeric; replaced as byte
+(1,180,978 missing values generated)
+(741,218 real changes made)
+(309,498 real changes made)
+(1,180,978 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.000009 saved
+    as .dta format
+Finished processing 2018. Total individuals so far: 527011
+Processing ENIGH 2020 dataset...
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000a saved
+    as .dta format
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000b saved
+    as .dta format
+(14,971 missing values generated)
+(14,971 real changes made)
+(j = 1 2)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations          164,358   ->   149,387     
+Number of variables                  30   ->   57          
+j variable (2 values)            jobnum   ->   (dropped)
+xij variables:
+                                  scian   ->   scian1 scian2
+                                  htrab   ->   htrab1 htrab2
+                                  subor   ->   subor1 subor2
+                                  indep   ->   indep1 indep2
+                               personal   ->   personal1 personal2
+                                   pago   ->   pago1 pago2
+                               contrato   ->   contrato1 contrato2
+                              tipocontr   ->   tipocontr1 tipocontr2
+                                 pres_1   ->   pres_11 pres_12
+                                 pres_2   ->   pres_21 pres_22
+                                 pres_3   ->   pres_31 pres_32
+                                 pres_4   ->   pres_41 pres_42
+                                 pres_5   ->   pres_51 pres_52
+                                 pres_6   ->   pres_61 pres_62
+                                 pres_7   ->   pres_71 pres_72
+                                 pres_8   ->   pres_81 pres_82
+                                 pres_9   ->   pres_91 pres_92
+                                pres_10   ->   pres_101 pres_102
+                                pres_11   ->   pres_111 pres_112
+                                pres_12   ->   pres_121 pres_122
+                                pres_13   ->   pres_131 pres_132
+                                pres_14   ->   pres_141 pres_142
+                                pres_15   ->   pres_151 pres_152
+                                pres_16   ->   pres_161 pres_162
+                                pres_17   ->   pres_171 pres_172
+                                pres_18   ->   pres_181 pres_182
+                                pres_19   ->   pres_191 pres_192
+                                pres_20   ->   pres_201 pres_202
+-----------------------------------------------------------------------------
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000c saved
+    as .dta format
+(394,912 missing values generated)
+variable clave_group was str1 now str5
+(105,036 real changes made)
+variable clave_group was str5 now str15
+(77,930 real changes made)
+(22,366 real changes made)
+(48,079 real changes made)
+(14,845 real changes made)
+(19,345 real changes made)
+(26,246 real changes made)
+(24,210 real changes made)
+(3,601 real changes made)
+(827 real changes made)
+(8,586 real changes made)
+(30,480 real changes made)
+(6,290 real changes made)
+(7,071 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(3,680 real changes made)
+(28,353 real changes made)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          330,953   ->   1,985,718   
+Number of variables                  14   ->   10          
+j variable (6 values)                     ->   month
+xij variables:
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+(1,985,718 missing values generated)
+variable mes was str1 now str2
+(330,953 real changes made)
+(330,953 real changes made)
+(330,953 real changes made)
+(330,953 real changes made)
+(330,953 real changes made)
+(330,953 real changes made)
+(1,358,298 missing values generated)
+(1,629,912 missing values generated)
+(1,930,788 missing values generated)
+(1,564,380 missing values generated)
+(1,788,294 missing values generated)
+(1,719,594 missing values generated)
+(1,964,268 missing values generated)
+(1,944,492 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       111,411
+        from master                         0  (_merge==1)
+        from using                    111,411  (_merge==2)
+
+    Matched                         1,225,886  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       474,031
+        from master                   474,031  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           863,266  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,337,297  (_merge==3)
+    -----------------------------------------
+(111,437 missing values generated)
+(1,337,297 missing values generated)
+(705,695 real changes made)
+(631,602 real changes made)
+(1,337,297 missing values generated)
+(463,345 real changes made)
+(873,952 real changes made)
+(1,337,297 missing values generated)
+(323,489 real changes made)
+(1,013,808 real changes made)
+(1,337,297 missing values generated)
+(92,088 real changes made)
+(1,227,402 real changes made)
+indlang: all characters numeric; replaced as int
+(1245209 missing values generated)
+(1,337,297 missing values generated)
+(34,213 real changes made)
+(1,193,189 real changes made)
+(1,337,297 missing values generated)
+(424,611 real changes made)
+(894,879 real changes made)
+(1,337,297 missing values generated)
+(239,551 real changes made)
+(1,079,939 real changes made)
+(1,337,297 missing values generated)
+(73,439 real changes made)
+(23,591 real changes made)
+(30,175 real changes made)
+(43,071 real changes made)
+(59,022 real changes made)
+(33,200 real changes made)
+(30,071 real changes made)
+(173,464 real changes made)
+(27,244 real changes made)
+(38,560 real changes made)
+(297,588 real changes made)
+(40,373 real changes made)
+(42,074 real changes made)
+(164,049 real changes made)
+(324 real changes made)
+(433 real changes made)
+(1,535 real changes made)
+(4,877 real changes made)
+(1,153 real changes made)
+(2,660 real changes made)
+(10,064 real changes made)
+(23,894 real changes made)
+(2,471 real changes made)
+(0 real changes made)
+(17,908 real changes made)
+(17,716 real changes made)
+(21,959 real changes made)
+(61,817 real changes made)
+(59,121 real changes made)
+(1,327 real changes made)
+(9,911 real changes made)
+(2,439 real changes made)
+(877 real changes made)
+(911 real changes made)
+(739 real changes made)
+(464 real changes made)
+(157 real changes made)
+state: all characters numeric; replaced as byte
+(1,337,297 missing values generated)
+(850,635 real changes made)
+(374,592 real changes made)
+(1,337,297 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000d saved
+    as .dta format
+Finished processing 2020. Total individuals so far: 842754
+Processing ENIGH 2022 dataset...
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000e saved
+    as .dta format
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000f saved
+    as .dta format
+(13,835 missing values generated)
+(13,835 real changes made)
+(j = 1 2)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations          164,517   ->   150,682     
+Number of variables                  30   ->   57          
+j variable (2 values)            jobnum   ->   (dropped)
+xij variables:
+                                  scian   ->   scian1 scian2
+                                  htrab   ->   htrab1 htrab2
+                                  subor   ->   subor1 subor2
+                                  indep   ->   indep1 indep2
+                               personal   ->   personal1 personal2
+                                   pago   ->   pago1 pago2
+                               contrato   ->   contrato1 contrato2
+                              tipocontr   ->   tipocontr1 tipocontr2
+                                 pres_1   ->   pres_11 pres_12
+                                 pres_2   ->   pres_21 pres_22
+                                 pres_3   ->   pres_31 pres_32
+                                 pres_4   ->   pres_41 pres_42
+                                 pres_5   ->   pres_51 pres_52
+                                 pres_6   ->   pres_61 pres_62
+                                 pres_7   ->   pres_71 pres_72
+                                 pres_8   ->   pres_81 pres_82
+                                 pres_9   ->   pres_91 pres_92
+                                pres_10   ->   pres_101 pres_102
+                                pres_11   ->   pres_111 pres_112
+                                pres_12   ->   pres_121 pres_122
+                                pres_13   ->   pres_131 pres_132
+                                pres_14   ->   pres_141 pres_142
+                                pres_15   ->   pres_151 pres_152
+                                pres_16   ->   pres_161 pres_162
+                                pres_17   ->   pres_171 pres_172
+                                pres_18   ->   pres_181 pres_182
+                                pres_19   ->   pres_191 pres_192
+                                pres_20   ->   pres_201 pres_202
+-----------------------------------------------------------------------------
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000g saved
+    as .dta format
+(397,182 missing values generated)
+variable clave_group was str1 now str5
+(110,402 real changes made)
+variable clave_group was str5 now str15
+(84,222 real changes made)
+(23,950 real changes made)
+(45,981 real changes made)
+(14,729 real changes made)
+(25,737 real changes made)
+(21,939 real changes made)
+(19,972 real changes made)
+(3,532 real changes made)
+(806 real changes made)
+(6,025 real changes made)
+(29,508 real changes made)
+(6,216 real changes made)
+(4,163 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(3,720 real changes made)
+(28,917 real changes made)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          327,762   ->   1,966,572   
+Number of variables                  14   ->   10          
+j variable (6 values)                     ->   month
+xij variables:
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+(1,966,572 missing values generated)
+variable mes was str1 now str2
+(327,762 real changes made)
+(327,762 real changes made)
+(327,762 real changes made)
+(327,762 real changes made)
+(327,762 real changes made)
+(327,762 real changes made)
+(1,307,484 missing values generated)
+(1,591,002 missing values generated)
+(1,926,768 missing values generated)
+(1,536,456 missing values generated)
+(1,776,432 missing values generated)
+(1,740,204 missing values generated)
+(1,945,566 missing values generated)
+(1,942,092 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       104,540
+        from master                         0  (_merge==1)
+        from using                    104,540  (_merge==2)
+
+    Matched                         1,230,843  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       457,517
+        from master                   457,517  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           877,866  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,335,383  (_merge==3)
+    -----------------------------------------
+(104,549 missing values generated)
+(1,335,383 missing values generated)
+(691,643 real changes made)
+(643,740 real changes made)
+(1,335,383 missing values generated)
+(448,619 real changes made)
+(886,764 real changes made)
+(1,335,383 missing values generated)
+(300,797 real changes made)
+(1,034,586 real changes made)
+(1,335,383 missing values generated)
+(96,106 real changes made)
+(1,223,280 real changes made)
+indlang: all characters numeric; replaced as int
+(1239277 missing values generated)
+(1,335,383 missing values generated)
+(33,603 real changes made)
+(1,189,677 real changes made)
+(1,335,383 missing values generated)
+(385,553 real changes made)
+(933,833 real changes made)
+(1,335,383 missing values generated)
+(227,492 real changes made)
+(1,091,894 real changes made)
+(1,335,383 missing values generated)
+(67,945 real changes made)
+(23,830 real changes made)
+(26,776 real changes made)
+(39,616 real changes made)
+(55,345 real changes made)
+(32,288 real changes made)
+(28,153 real changes made)
+(170,232 real changes made)
+(25,160 real changes made)
+(35,997 real changes made)
+(302,230 real changes made)
+(36,305 real changes made)
+(40,908 real changes made)
+(178,087 real changes made)
+(393 real changes made)
+(553 real changes made)
+(1,603 real changes made)
+(4,429 real changes made)
+(1,220 real changes made)
+(2,406 real changes made)
+(8,731 real changes made)
+(23,413 real changes made)
+(2,545 real changes made)
+(0 real changes made)
+(16,149 real changes made)
+(17,030 real changes made)
+(23,091 real changes made)
+(66,648 real changes made)
+(70,078 real changes made)
+(1,300 real changes made)
+(9,840 real changes made)
+(2,960 real changes made)
+(731 real changes made)
+(932 real changes made)
+(874 real changes made)
+(474 real changes made)
+(258 real changes made)
+state: all characters numeric; replaced as byte
+(1,335,383 missing values generated)
+(873,503 real changes made)
+(354,176 real changes made)
+(1,335,383 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000h saved
+    as .dta format
+Finished processing 2022. Total individuals so far: 1152438
+Processing ENIGH 2024 dataset...
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000i saved
+    as .dta format
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000j saved
+    as .dta format
+(13,452 missing values generated)
+(13,452 real changes made)
+(j = 1 2)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations          163,834   ->   150,382     
+Number of variables                  30   ->   57          
+j variable (2 values)            jobnum   ->   (dropped)
+xij variables:
+                                  scian   ->   scian1 scian2
+                                  htrab   ->   htrab1 htrab2
+                                  subor   ->   subor1 subor2
+                                  indep   ->   indep1 indep2
+                               personal   ->   personal1 personal2
+                                   pago   ->   pago1 pago2
+                               contrato   ->   contrato1 contrato2
+                              tipocontr   ->   tipocontr1 tipocontr2
+                                 pres_1   ->   pres_11 pres_12
+                                 pres_2   ->   pres_21 pres_22
+                                 pres_3   ->   pres_31 pres_32
+                                 pres_4   ->   pres_41 pres_42
+                                 pres_5   ->   pres_51 pres_52
+                                 pres_6   ->   pres_61 pres_62
+                                 pres_7   ->   pres_71 pres_72
+                                 pres_8   ->   pres_81 pres_82
+                                 pres_9   ->   pres_91 pres_92
+                                pres_10   ->   pres_101 pres_102
+                                pres_11   ->   pres_111 pres_112
+                                pres_12   ->   pres_121 pres_122
+                                pres_13   ->   pres_131 pres_132
+                                pres_14   ->   pres_141 pres_142
+                                pres_15   ->   pres_151 pres_152
+                                pres_16   ->   pres_161 pres_162
+                                pres_17   ->   pres_171 pres_172
+                                pres_18   ->   pres_181 pres_182
+                                pres_19   ->   pres_191 pres_192
+                                pres_20   ->   pres_201 pres_202
+-----------------------------------------------------------------------------
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000k saved
+    as .dta format
+(391,563 missing values generated)
+variable clave_group was str1 now str5
+(110,215 real changes made)
+variable clave_group was str5 now str15
+(84,200 real changes made)
+(25,088 real changes made)
+(43,946 real changes made)
+(7,963 real changes made)
+(30,547 real changes made)
+(21,625 real changes made)
+(21,069 real changes made)
+(3,171 real changes made)
+(918 real changes made)
+(4,919 real changes made)
+(28,823 real changes made)
+(5,600 real changes made)
+(3,479 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(j = 1 2 3 4 5 6)
+
+Data                               Wide   ->   Long
+-----------------------------------------------------------------------------
+Number of observations          321,838   ->   1,931,028   
+Number of variables                  14   ->   10          
+j variable (6 values)                     ->   month
+xij variables:
+                  ing_1 ing_2 ... ing_6   ->   ing_
+-----------------------------------------------------------------------------
+(1,931,028 missing values generated)
+variable mes was str1 now str2
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(321,838 real changes made)
+(1,272,852 missing values generated)
+(1,551,318 missing values generated)
+(1,897,098 missing values generated)
+(1,526,742 missing values generated)
+(1,745,442 missing values generated)
+(1,701,060 missing values generated)
+(1,912,140 missing values generated)
+(1,910,544 missing values generated)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       106,233
+        from master                         0  (_merge==1)
+        from using                    106,233  (_merge==2)
+
+    Matched                         1,214,190  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                       445,651
+        from master                   445,651  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           874,772  (_merge==3)
+    -----------------------------------------
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         1,320,423  (_merge==3)
+    -----------------------------------------
+(106,233 missing values generated)
+(1,320,423 missing values generated)
+(685,408 real changes made)
+(635,015 real changes made)
+(1,320,423 missing values generated)
+(426,841 real changes made)
+(893,582 real changes made)
+(1,320,423 missing values generated)
+(281,443 real changes made)
+(1,038,980 real changes made)
+(1,320,423 missing values generated)
+(98,868 real changes made)
+(1,207,112 real changes made)
+indlang: all characters numeric; replaced as int
+(1221555 missing values generated)
+(1,320,423 missing values generated)
+(33,605 real changes made)
+(1,173,507 real changes made)
+(1,320,423 missing values generated)
+(342,964 real changes made)
+(963,016 real changes made)
+(1,320,423 missing values generated)
+(206,907 real changes made)
+(1,099,073 real changes made)
+(1,320,423 missing values generated)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+(0 real changes made)
+state: all characters numeric; replaced as byte
+(1,320,423 missing values generated)
+(869,987 real changes made)
+(350,932 real changes made)
+(1,320,423 real changes made)
+file /var/folders/ym/ly4nlkxs5_3dmz2_2h7wxvr80000gn/T//St10532.00000l saved
+    as .dta format
+Finished processing 2024. Total individuals so far: 1461036
+
+. 
+. *************************************************
+. ********* Append all datasets *******************
+. *************************************************
+. 
+. display "Appending all datasets..."
+Appending all datasets...
+
+. 
+. * Load first dataset
+. local first_year : word 1 of `years'
+
+. use `enighdata`first_year'', clear
+
+. 
+. * Append remaining datasets in loop
+. local remaining_years : list years - first_year
+
+. foreach year of local remaining_years {
+  2.     append using `enighdata`year''
+  3. }
+(label employedlbl already defined)
+(label states already defined)
+(label school_attendlbl already defined)
+(label indigenouslbl already defined)
+(label indundlbl already defined)
+(label indlanglbl already defined)
+(label indspeakerlbl already defined)
+(label fatherlbl already defined)
+(label motherlbl already defined)
+(label genderlbl already defined)
+(label employedlbl already defined)
+(label states already defined)
+(label school_attendlbl already defined)
+(label indigenouslbl already defined)
+(label indundlbl already defined)
+(label indlanglbl already defined)
+(label indspeakerlbl already defined)
+(label fatherlbl already defined)
+(label motherlbl already defined)
+(label genderlbl already defined)
+(label employedlbl already defined)
+(label states already defined)
+(label school_attendlbl already defined)
+(label indigenouslbl already defined)
+(label indundlbl already defined)
+(label indlanglbl already defined)
+(label indspeakerlbl already defined)
+(label fatherlbl already defined)
+(label motherlbl already defined)
+(label genderlbl already defined)
+(label employedlbl already defined)
+(label states already defined)
+(label school_attendlbl already defined)
+(label indigenouslbl already defined)
+(label indundlbl already defined)
+(label indlanglbl already defined)
+(label indspeakerlbl already defined)
+(label fatherlbl already defined)
+(label motherlbl already defined)
+(label genderlbl already defined)
+
+. 
+. sort id time
+
+. merge m:1 time using `deflators'
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                     1,706,088
+        from master                 1,706,040  (_merge==1)
+        from using                         48  (_merge==2)
+
+    Matched                         4,601,004  (_merge==3)
+    -----------------------------------------
+
+. drop if _merge == 2
+(48 observations deleted)
+
+. drop _merge
+
+. 
+. *************************************************
+. **************** New Variables ******************
+. *************************************************
+. 
+. *destring ubica_geo
+. destring ubica_geo, replace
+ubica_geo: all characters numeric; replaced as int
+
+. 
+. *gen income variable
+. egen ingreso = rowtotal(ing_wages ing_non_wage_income ing_fin_capital ing_gov
+> _transfers ing_negocio ing_other ing_rentas ing_ventas)
+
+. order ingreso, before(ing_wages)
+
+. 
+. *generate treatment
+. gen zona_a = 0
+
+. replace zona_a = 1 if inlist(ubica_geo, 02001, 02002, 02003, 02004, 02005, 26
+> 055, 26048, 26070, 26017, 26004) ///
+>     | inlist(ubica_geo, 26060, 26043, 26059, 26039, 26002, 08035, 08005, 0803
+> 7, 08053, 08028) ///
+>     | inlist(ubica_geo, 08015, 08052, 08042, 05023, 05002, 05038, 05014, 0502
+> 2, 05025, 05012) ///
+>     | inlist(ubica_geo, 05013, 19005, 28027, 28014, 28024, 28025, 28015, 2800
+> 7, 28022, 28032) ///
+>     | inlist(ubica_geo, 28033, 28040)
+(94,141 real changes made)
+
+. 
+. *generate REAL income variables
+. gen ingreso_real = (ingreso / inpc) * 100
+(1,706,040 missing values generated)
+
+. gen ing_wages_real = (ing_wages / inpc) * 100
+(3,939,834 missing values generated)
+
+. gen ing_non_wage_income_real = (ing_non_wage_income / inpc) * 100
+(4,980,150 missing values generated)
+
+. gen ing_fin_capital_real = (ing_fin_capital / inpc) * 100
+(6,122,796 missing values generated)
+
+. gen ing_gov_transfers_real = (ing_gov_transfers / inpc) * 100
+(4,596,264 missing values generated)
+
+. gen ing_negocio_real = (ing_negocio / inpc) * 100
+(5,615,610 missing values generated)
+
+. gen ing_other_real = (ing_other / inpc) * 100
+(5,395,524 missing values generated)
+
+. gen ing_rentas_real = (ing_rentas / inpc) * 100
+(6,230,598 missing values generated)
+
+. gen ing_ventas_real = (ing_ventas / inpc) * 100
+(6,194,460 missing values generated)
+
+. 
+. *generate log of income sources
+. gen lni = ln(ingreso_real) if ingreso_real > 0
+(2,431,633 missing values generated)
+
+. gen lnw = ln(ing_wages_real) if ing_wages_real > 0
+(4,205,377 missing values generated)
+
+. gen lnnwi = ln(ing_non_wage_income_real) if ing_non_wage_income_real > 0
+(5,724,557 missing values generated)
+
+. gen lnfc = ln(ing_fin_capital_real) if ing_fin_capital_real > 0
+(6,258,145 missing values generated)
+
+. gen lngt = ln(ing_gov_transfers_real) if ing_gov_transfers_real > 0
+(5,222,333 missing values generated)
+
+. gen lnn = ln(ing_negocio_real) if ing_negocio_real > 0
+(5,686,893 missing values generated)
+
+. gen lno = ln(ing_other_real) if ing_other_real > 0
+(5,819,882 missing values generated)
+
+. gen lnr = ln(ing_rentas_real) if ing_rentas_real > 0
+(6,243,100 missing values generated)
+
+. gen lnv = ln(ing_ventas_real) if ing_ventas_real > 0
+(6,281,882 missing values generated)
+
+. 
+. *************************************************
+. **************** Sample Select ******************
+. *************************************************
+. 
+. drop if time == .
+(491,850 observations deleted)
+
+. drop if edad <= 12
+(411,312 observations deleted)
+
+. gen edadsq = edad*edad
+
+. sort id time
+
+. order year, after(time)
+
+. 
+. *save dataset
+. save "../output/enighdata.dta", replace
+file ../output/enighdata.dta saved
+
+. *save "$output/enighdata.dta", replace
+. 
 end of do-file
-r(459);
