@@ -9,7 +9,7 @@ include ../../generic.make
 
 # symlink to enighdata output
 ../input/enighdata.dta: | ../input
-	ln -sf ../../../data/enighdata/output/enighdata.dta ../input/enighdata.dta
+	ln -sf ../../../data/enigh/output/enighdata.dta ../input/enighdata.dta
 
 # run any .do to .tex, given its .dta deps
 ../output/%.tex: %.do ../input/enighdata.dta | ../output
