@@ -63,7 +63,18 @@ foreach year of local years {
 	
 	use "../input/trabajos`year'.dta", clear
 	egen new_id = concat(folioviv foliohog numren)
-	keep new_id htrab
+	collapse (sum) htrab, by(new_id scian subor indep personal pago contrato ///
+                         tipocontr pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 ///
+						 pres_7 pres_8 pres_9 pres_10 pres_11 pres_12 pres_13 ///
+                         pres_14 pres_15 pres_16 pres_17 pres_18 pres_19 pres_20)
+	bys new_id: egen max_htrab = max(htrab)
+	bys new_id (htrab scian): gen jobnum = 1 if htrab == max_htrab & _n == _N
+	replace jobnum = 2 if missing(jobnum)
+	drop max_htrab
+	reshape wide scian htrab subor indep personal pago contrato tipocontr ///
+                pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 pres_7 pres_8 ///
+                pres_9 pres_10 pres_11 pres_12 pres_13 pres_14 pres_15 ///
+                pres_16 pres_17 pres_18 pres_19 pres_20, i(new_id) j(jobnum)
 	tempfile trab_data_`year'
     save `trab_data_`year''
     
@@ -444,8 +455,10 @@ foreach year of local years {
     *work hours and employment dummy
     rename hor_1 hoursworked
     label variable hoursworked "hours worked per week (personas)"
-	rename htrab hoursworked2 
-	label variable hoursworked "hours worked per week (trabajos)"
+	rename htrab1 hours1 
+	label variable hours1 "hours worked per week on first job (trabajos)"
+	rename htrab2 hours2 
+	label variable hours2 "hours worked per week on second job (trabajos)"
     gen employed = .
     replace employed = 1 if trabajo_mp == "1"
     replace employed = 0 if trabajo_mp == "2"
