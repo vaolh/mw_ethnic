@@ -484,8 +484,11 @@ foreach year of local years {
     order id, before(new_id)
     drop dirty_id
     
-    *clean ubica_geo
-    replace ubica_geo = substr(ubica_geo, 1, length(ubica_geo) - 4)
+    *clean ubica_geo - only for 2016 which has different format
+    if `year' == 2016 {
+        replace ubica_geo = substr(ubica_geo, 1, length(ubica_geo) - 4)
+        display "Applied ubica_geo cleaning for year 2016"
+    }
     
     *count unique individuals for next iteration
     quietly: egen temp_max = max(id)
