@@ -60,6 +60,8 @@ foreach year of local years {
 	*************************************************
     ************* Trabajos ENIGH dataset ************
     *************************************************
+
+    *** ID TRABAJO PARA SEPARAR DOS TRABAJOS
 	
 	use "../input/trabajos`year'.dta", clear
 	egen new_id = concat(folioviv foliohog numren)
@@ -520,6 +522,9 @@ local remaining_years : list years - first_year
 foreach year of local remaining_years {
     append using `enighdata`year''
 }
+
+
+*MATIAS AREEGLALO
 
 sort id time
 merge m:1 time using `deflators'
