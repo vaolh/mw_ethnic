@@ -17,7 +17,7 @@ set more off
 *** https://www.inegi.org.mx/rnm/index.php/catalog/685/data-dictionary
 
 *************************************************
-************** INFLATION DATASET ***************
+************** INFLATION DATASET ****************
 *************************************************
 
 tempfile deflators
