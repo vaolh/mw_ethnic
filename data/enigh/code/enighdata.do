@@ -225,33 +225,33 @@ replace scian1 = substr(scian1,1,2)
 replace scian2 = substr(scian2,1,2)
 destring scian1 scian2, replace
 label define scianlbl ///
-9 "Working abroad" ///
-10 "Household chores, beggars, inactive" ///
-11 "Agriculture, forestry, fishing, and hunting" ///
-21 "Mining" ///
-22 "Electricity, water, and natural gas" ///
-23 "Construction" ///
-31 "Manufacturing" ///
-32 "Manufacturing" ///
-33 "Manufacturing" ///
-43 "Wholesale trade" ///
-46 "Retail trade" ///
-48 "Transportation and storage" ///
-49 "Postal activities" ///
-51 "Mass media information" ///
-52 "Financial and insurance" ///
-53 "Real estate and rental of intangible goods" ///
-54 "Professional, scientific and technical" ///
-55 "Management of corporate groups" ///
-56 "Business support, waste management and remediation" ///
-61 "Education" ///
-62 "Health and social" ///
-71 "Cultural, sports and recreational" ///
-72 "Accommodation and food" ///
-81 "Other services except government activities" ///
-93 "Legislative, governmental, and judicial" ///
-97 "Other workers" /// 
-99 "Non-specified" 
+    9 "Working abroad" ///
+    10 "Household chores, beggars, inactive" ///
+    11 "Agriculture, forestry, fishing, and hunting" ///
+    21 "Mining" ///
+    22 "Electricity, water, and natural gas" ///
+    23 "Construction" ///
+    31 "Manufacturing" ///
+    32 "Manufacturing" ///
+    33 "Manufacturing" ///
+    43 "Wholesale trade" ///
+    46 "Retail trade" ///
+    48 "Transportation and storage" ///
+    49 "Postal activities" ///
+    51 "Mass media information" ///
+    52 "Financial and insurance" ///
+    53 "Real estate and rental of intangible goods" ///
+    54 "Professional, scientific and technical" ///
+    55 "Management of corporate groups" ///
+    56 "Business support, waste management and remediation" ///
+    61 "Education" ///
+    62 "Health and social" ///
+    71 "Cultural, sports and recreational" ///
+    72 "Accommodation and food" ///
+    81 "Other services except government activities" ///
+    93 "Legislative, governmental, and judicial" ///
+    97 "Other workers" /// 
+    99 "Non-specified" 
 label values scian1 scianlbl
 label values scian2 scianlbl
 
