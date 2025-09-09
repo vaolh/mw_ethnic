@@ -135,6 +135,8 @@ foreach year of local years {
     collapse (max) ing_wages ing_non_wage_income ing_fin_capital ing_gov_transfers ing_negocio ing_other ing_rentas ing_ventas, by(new_id mes mes_6)
     
     drop mes_6
+
+    *gen month year HERE merge with deflactores create REAL income vars AND aguinaldo
     
     *************************************************
     ************ Merge with previous datasets *******
