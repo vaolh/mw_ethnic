@@ -1,30 +1,31 @@
-rm(list = ls())
-
 if (!require(pacman)) install.packages("pacman")
-p_load(dplyr, readxl)
+pacman::p_load(dplyr, jsonlite, lubridate)
 
-inpc_all <- read_xlsx("ca57_2018a.xlsx", col_names = FALSE) %>%
-  dplyr::select(2) %>%
-  dplyr::rename(INPC = 1)
+json_file <- "../input/inpc.json"
+data <- fromJSON(json_file)
 
-inpc_all <- inpc_all[c(14:680),]
+inpc_obs <- data[["Series"]][["OBSERVATIONS"]]
+inpc_df <- do.call(rbind, lapply(inpc_obs, as.data.frame))
 
-inpc_all$INPC <- as.numeric(inpc_all$INPC)
-inpc_all <- inpc_all %>% filter(!is.na(INPC))
+inpc_df$Fecha <- as.Date(paste0(inpc_df$TIME_PERIOD, "/01"), format="%Y/%m/%d")
+inpc_df$Año_int <- as.integer(format(inpc_df$Fecha, "%Y"))
+inpc_df$Mes     <- as.integer(format(inpc_df$Fecha, "%m"))
 
-inpc_all$Fecha <- seq(as.Date("1970-01-01"), by = "month", length.out = nrow(inpc_all))
-inpc_all$Año_int <- as.integer(format(inpc_all$Fecha, "%Y"))
-inpc_all$Mes     <- as.integer(format(inpc_all$Fecha, "%m"))
+inpc_df <- inpc_df %>%
+  dplyr::select(
+    INPC = OBS_VALUE,
+    Fecha,
+    Año_int,
+    Mes
+  ) %>%
+  mutate(INPC = as.numeric(INPC)) 
 
-inpc <- inpc_all %>%
+inpc <- inpc_df %>%
   filter((Año_int >= 2015) & (Año_int != 2025))
 
 inpc <- inpc %>%
   mutate(Deflator = INPC / INPC[which(inpc$Año_int == 2024 & inpc$Mes == 8)])
 
+if (!dir.exists("../output")) dir.create("../output", recursive = TRUE)
 
-
-
-
-
-
+write.csv(inpc, "../output/inpc.csv", row.names = FALSE)
