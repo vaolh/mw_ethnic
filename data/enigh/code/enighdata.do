@@ -22,13 +22,13 @@ set more off
 
 tempfile deflators
 import delimited using "../input/inpc.csv", clear varnames(1)
-gen year = 2016 + int((_n-1)/12)
-gen month = mod(_n-1, 12) + 1
+rename año_int year
+rename mes month
 gen mes = string(month)
 replace mes = "0" + mes if month < 10
 gen time = date(string(year) + "-" + mes, "YM")
 format time %td
-drop year month mes
+drop year month fecha mes
 save `deflators'
 
 *************************************************
@@ -794,15 +794,15 @@ replace zona_a = 1 if inlist(ubica_geo, 02001, 02002, 02003, 02004, 02005, 26055
     | inlist(ubica_geo, 28033, 28040)
 
 *generate REAL income variables
-gen ingreso_real = (ingreso / inpc) * 100
-gen ing_wages_real = (ing_wages / inpc) * 100
-gen ing_non_wage_income_real = (ing_non_wage_income / inpc) * 100
-gen ing_fin_capital_real = (ing_fin_capital / inpc) * 100
-gen ing_gov_transfers_real = (ing_gov_transfers / inpc) * 100
-gen ing_negocio_real = (ing_negocio / inpc) * 100
-gen ing_other_real = (ing_other / inpc) * 100
-gen ing_rentas_real = (ing_rentas / inpc) * 100
-gen ing_ventas_real = (ing_ventas / inpc) * 100
+gen ingreso_real = ingreso / deflator
+gen ing_wages_real = ing_wages / deflator
+gen ing_non_wage_income_real = ing_non_wage_income / deflator
+gen ing_fin_capital_real = ing_fin_capital / deflator
+gen ing_gov_transfers_real = ing_gov_transfers / deflator
+gen ing_negocio_real = ing_negocio / deflator
+gen ing_other_real = ing_other / deflator
+gen ing_rentas_real = ing_rentas / deflator
+gen ing_ventas_real = ing_ventas / deflator
 
 *generate log of income sources
 gen lni = ln(ingreso_real) if ingreso_real > 0
