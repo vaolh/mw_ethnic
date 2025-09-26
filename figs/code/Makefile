@@ -6,4 +6,4 @@ include ../../generic.make
 	ln -sf ../../enigh/output/enighdata.dta ../input/enighdata.dta
 
 ../output/graph5.png ../output/graph6.png: ZLFNincomedidplot.do ../input/enighdata.dta | ../output
-	stata-se -e ZLFNincomedidplot.do
+	stata-mp -e ZLFNincomedidplot.do
