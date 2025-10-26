@@ -3,7 +3,7 @@ all: ../output/enighdata.dta
 include ../../../generic.make
 
 YEARS := 2016 2018 2020 2022 2024
-INPUT_FILES := $(foreach year, $(YEARS), ../input/ingresos$(year).dta ../input/poblacion$(year).dta ../input/concentradohogar$(year).dta ../input/trabajos$(year).dta)
+INPUT_FILES := $(foreach year, $(YEARS), ../input/ingresos$(year).dta ../input/poblacion$(year).dta ../input/concentradohogar$(year).dta ../input/viviendas$(year).dta ../input/trabajos$(year).dta)
 CSV_FILES := ../input/inpc.csv
 
 ../output/enighdata.dta: enighdata.do $(INPUT_FILES) $(CSV_FILES) | ../output
