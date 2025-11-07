@@ -2,22 +2,17 @@ This replication
 
 ## Software
 
-I used [Stata](http://www.stata.com) 18.5 SE on macOS Sequoia (version 15). I had to install [Homebrew](https://brew.sh) and [Xcode](https://developer.apple.com/xcode/), which is available on the AppStore. All of my code was written on [Sublime Text](https://www.sublimetext.com) or on the [Stata](http://www.stata.com) Do-File editor.
+I used [Stata](http://www.stata.com)'s StataNow/MP 19.5 on macOS Sequoia (version 15.6.1). I had to install [Homebrew](https://brew.sh) and [Xcode](https://developer.apple.com/xcode/), which is available on the AppStore. All of my code was written on [VS Code](https://code.visualstudio.com/) or on the [Stata](http://www.stata.com) do-file editor.
 
 ## MacOS Replication Instructions
 
--Download or clone this repository using the buttons above or [GitHub Desktop](https://github.com/apps/desktop)
+-Open Unix/Linux/MacOSX command line. I had zsh - Version 2.14 (455) at the time of this project. To do this, you can press Command + Space and write terminal.
 
--Open Unix/Linux/MacOSX command line. I had zsh - Version 2.14 (455) at the time of this project.
-
--To do this, you can press Command + Space and write terminal.
-
--Run the following, if you have not already
+- Run the following, if you have not already
 ```bash
 brew install wget
 ```
 -We must also change Stata path.
-  
  ```bash
 nano ~/.zshrc
 ```
@@ -33,13 +28,4 @@ source ~/.zshrc
 ```bash
 make
 ```
--The Makefile will run all of the code needed to replicate my results from scratch.
-
-## Windows Replication Instructions
-
-Download VSCode. I was veyr much against it but I have been converted and it's really not as clanky as I thought.
-
--Once you have the project loaded, type in the powershell terminal
-```shell
-winget install GnuWin32.Make
-```
+-The Makefile will run all of the code needed to replicate my results from scratch. You have to set the folder where the main Makefile is using cd and typing the folder path.
