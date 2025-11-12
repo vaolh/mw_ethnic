@@ -43,7 +43,7 @@ foreach year of local years {
     display "Processing ENIGH `year' dataset..."
     
     *************************************************
-    ******** Poblacion and concentradohogar *********
+    ***** Poblacion, viviendas, concentradohogar ****
     *************************************************
     
     use "../input/poblacion`year'.dta", clear
@@ -53,9 +53,14 @@ foreach year of local years {
     save `pop_data_`year''
     
     use "../input/concentradohogar`year'.dta", clear
-    collapse (first) ubica_geo, by(folioviv)
+    collapse (first) ubica_geo factor smg, by(folioviv)
     tempfile hog_data_`year'
     save `hog_data_`year''
+
+    use "../input/viviendas`year'.dta", clear
+    collapse (first) tenencia renta estim_pago antiguedad, by(folioviv)
+    tempfile viv_data_`year'
+    save `viv_data_`year''
 	
 	*************************************************
     ************* Trabajos ENIGH dataset ************
@@ -66,8 +71,8 @@ foreach year of local years {
 	use "../input/trabajos`year'.dta", clear
 	egen new_id = concat(folioviv foliohog numren)
     rename (pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 pres_7 pres_8 pres_9 pres_10 pres_11 pres_12 pres_13 pres_14 pres_15 pres_16 pres_17 pres_18 pres_19 pres_20) (incapacidad aguinaldo vacaciones utilidades credito_vivienda guarderias cuidados_parentales sar_afore seguro_vida prestamos prima_vacacional becas comedor fonacot despensa servicios_publicos pension_invalidez pension_familia otras_prestaciones sin_prestaciones)
-    collapse (sum) htrab, by(new_id scian subor indep personal pago contrato tipocontr incapacidad aguinaldo vacaciones utilidades credito_vivienda guarderias cuidados_parentales sar_afore seguro_vida prestamos prima_vacacional becas comedor fonacot despensa servicios_publicos pension_invalidez pension_familia otras_prestaciones sin_prestaciones id_trabajo)
-    reshape wide scian htrab subor indep personal pago contrato tipocontr incapacidad aguinaldo vacaciones utilidades credito_vivienda guarderias cuidados_parentales sar_afore seguro_vida prestamos prima_vacacional becas comedor fonacot despensa servicios_publicos pension_invalidez pension_familia otras_prestaciones sin_prestaciones, i(new_id) j(id_trabajo) string
+    collapse (sum) htrab, by(new_id scian sinco subor indep personal pago contrato tipocontr incapacidad aguinaldo vacaciones utilidades credito_vivienda guarderias cuidados_parentales sar_afore seguro_vida prestamos prima_vacacional becas comedor fonacot despensa servicios_publicos pension_invalidez pension_familia otras_prestaciones sin_prestaciones id_trabajo)
+    reshape wide scian sinco htrab subor indep personal pago contrato tipocontr incapacidad aguinaldo vacaciones utilidades credito_vivienda guarderias cuidados_parentales sar_afore seguro_vida prestamos prima_vacacional becas comedor fonacot despensa servicios_publicos pension_invalidez pension_familia otras_prestaciones sin_prestaciones, i(new_id) j(id_trabajo) string
     tempfile trab_data_`year'
     save `trab_data_`year''
     
@@ -104,7 +109,10 @@ foreach year of local years {
     replace clave_group = "ventas" if inlist(clave, "P054","P055","P056","P059","P060","P061","P062","P063")
     
     *Collapse income by income classes
-    collapse (sum) ing_1 ing_2 ing_3 ing_4 ing_5 ing_6 (first) mes_1 mes_2 mes_3 mes_4 mes_5 mes_6, by(new_id clave_group)
+    collapse (sum) ing_1 ing_2 ing_3 ing_4 ing_5 ing_6 ing_tri (first) mes_1 mes_2 mes_3 mes_4 mes_5 mes_6, by(new_id clave_group)
+
+    * add up trimestral income
+    bysort new_id: egen total_ing_tri = total(ing_tri)
     
     * Replace spaces with the value from the other row with the same new_id
     foreach mes in mes_1 mes_2 mes_3 mes_4 mes_5 mes_6 {
@@ -121,7 +129,7 @@ foreach year of local years {
         replace mes = mes_`m' if month == `m'
     }
     
-    drop month mes_1 mes_2 mes_3 mes_4 mes_5
+    drop month mes_2 mes_3 mes_4 mes_5 mes_6
     
     gen ing_wages = ing_ if clave_group == "wages"
     gen ing_non_wage_income = ing_ if clave_group == "non_wage_income"
@@ -132,9 +140,9 @@ foreach year of local years {
     gen ing_rentas = ing_ if clave_group == "rentas"
     gen ing_ventas = ing_ if clave_group == "ventas"
     
-    collapse (max) ing_wages ing_non_wage_income ing_fin_capital ing_gov_transfers ing_negocio ing_other ing_rentas ing_ventas, by(new_id mes mes_6)
+    collapse (max) ing_wages ing_non_wage_income ing_fin_capital ing_gov_transfers ing_negocio ing_other ing_rentas ing_ventas total_ing_tri, by(new_id mes mes_1)
     
-    drop mes_6
+    rename mes_1 cohort
 
     *gen month year HERE merge with deflactores create REAL income vars AND aguinaldo
     
@@ -149,7 +157,10 @@ foreach year of local years {
 	merge m:1 new_id using `trab_data_`year''
     drop _merge
     
-    merge m:1 folioviv using `hog_data_`year'', keepusing(ubica_geo)
+    merge m:1 folioviv using `viv_data_`year'', keepusing(tenencia renta estim_pago antiguedad)
+    drop _merge
+
+    merge m:1 folioviv using `hog_data_`year'', keepusing(ubica_geo factor smg)
     drop _merge
 	
     *************************************************
@@ -223,10 +234,10 @@ drop _merge
 *************************************************
 
 *generate scian industries
-replace scian1 = substr(scian1,1,2)
-replace scian2 = substr(scian2,1,2)
-destring scian1 scian2, replace
-label define scianlbl ///
+generate ind1 = substr(scian1,1,2)
+generate ind2 = substr(scian2,1,2)
+destring ind1 ind2, replace
+label define indlbl ///
     9 "Working abroad" ///
     10 "Household chores, beggars, inactive" ///
     11 "Agriculture, forestry, fishing, and hunting" ///
@@ -254,18 +265,22 @@ label define scianlbl ///
     93 "Legislative, governmental, and judicial" ///
     97 "Other workers" /// 
     99 "Non-specified" 
-label values scian1 scianlbl
-label values scian2 scianlbl
+label values ind1 indlbl
+label values ind2 indlbl
 
 *labels for benefits and jobs
-label variable scian1 "industry - main job"
+label variable ind1 "industry - main job"
+label variable scian1 "scian - main job"
+label variable sinco1 "sinco - main job"
 label variable subor1 "subordinate worker - main job"
 label variable indep1 "independent worker - main job"
 label variable personal1 "employer with personnel - main job"
 label variable pago1 "receives payment - main job"
 label variable contrato1 "has written contract - main job"
 label variable tipocontr1 "type of contract - main job"
-label variable scian2 "industry - secondary job"
+label variable ind2 "industry - secondary job"
+label variable scian2 "scian - secondary job"
+label variable sinco2 "sinco - secondary job"
 label variable subor2 "subordinate worker - secondary job"
 label variable indep2 "independent worker - secondary job"
 label variable personal2 "employer with personnel - secondary job"
@@ -292,7 +307,6 @@ drop sexo
 gen motherhome = .
 replace motherhome = 1 if madre_hog == "1"
 replace motherhome = 0 if madre_hog == "2"
-label values motherhome yesno
 order motherhome, after(madre_hog)
 label variable motherhome "lives with mother"
 drop madre_hog
@@ -300,7 +314,6 @@ drop madre_hog
 gen fatherhome = .
 replace fatherhome = 1 if padre_hog == "1"
 replace fatherhome = 0 if padre_hog == "2"
-label values fatherhome yesno
 order fatherhome, before(motherhome)
 label variable fatherhome "lives with father"
 drop padre_hog
@@ -458,7 +471,6 @@ drop etnia
 gen school_attendance = .
 replace school_attendance = 1 if asis_esc == "1"
 replace school_attendance = 0 if asis_esc == "2"
-label values school_attendance yesno
 order school_attendance, before(asis_esc)
 label variable school_attendance "school attendance"
 drop asis_esc
@@ -579,8 +591,6 @@ label variable ing_ventas "sales income"
 *has a contract
 destring contrato1 contrato2, replace
 recode contrato1 contrato2 (1=1) (2=0)
-label values contrato1 yesno
-label values contrato2 yesno
 
 *types of contract
 destring tipocontr1 tipocontr2, replace
@@ -593,184 +603,136 @@ label values tipocontr2 tiposcontrato
 *is paid
 destring pago1 pago2, replace
 recode pago1 pago2 (1=1) (2=0) (3=0)
-label values pago1 yesno
-label values pago2 yesno
 
 *has personnel
 destring personal1 personal2, replace
 recode personal1 personal2 (1=1) (2=0) 
-label values personal1 yesno
-label values personal2 yesno
 
 *is subordinate worker
 destring subor1 subor2, replace
 recode subor1 subor2 (1=1) (2=0) 
-label values subor1 yesno
-label values subor2 yesno
 
 *is independent worker
 destring indep1 indep2, replace
 recode indep1 indep2 (1=1) (2=0) 
-label values indep1 yesno
-label values indep2 yesno
 
 *sick leave
 destring incapacidad1 incapacidad2, replace
 recode incapacidad1 incapacidad2 (1=1) 
-label values incapacidad1 yesno
-label values incapacidad2 yesno
 label variable incapacidad1 "sick leave in case of illness, accident, or maternity - main job"
 label variable incapacidad2 "sick leave in case of illness, accident, or maternity - secondary job"
 
 *year-end bonus
 destring aguinaldo1 aguinaldo2, replace
 recode aguinaldo1 aguinaldo2 (2=1) 
-label values aguinaldo1 yesno
-label values aguinaldo2 yesno
 label variable aguinaldo1 "year-end bonus - main job"
 label variable aguinaldo2 "year-end bonus - secondary job"
 
 *paid vacation
 destring vacaciones1 vacaciones2, replace
 recode vacaciones1 vacaciones2 (3=1) 
-label values vacaciones1 yesno
-label values vacaciones2 yesno
 label variable vacaciones1 "paid vacation - main job"
 label variable vacaciones2 "paid vacation - secondary job"
 
 *profit sharing
 destring utilidades1 utilidades2, replace
 recode utilidades1 utilidades2 (4=1) 
-label values utilidades1 yesno
-label values utilidades2 yesno
 label variable utilidades1 "profit sharing - main job"
 label variable utilidades2 "profit sharing - secondary job"
 
 *housing credit
 destring credito_vivienda1 credito_vivienda2, replace
 recode credito_vivienda1 credito_vivienda2 (5=1) 
-label values credito_vivienda1 yesno
-label values credito_vivienda2 yesno
 label variable credito_vivienda1 "housing credit - main job"
 label variable credito_vivienda2 "housing credit - secondary job"
 
 *daycare / childcare
 destring guarderias1 guarderias2, replace
 recode guarderias1 guarderias2 (6=1) 
-label values guarderias1 yesno
-label values guarderias2 yesno
 label variable guarderias1 "daycare or childcare centers - main job"
 label variable guarderias2 "daycare or childcare centers - secondary job"
 
 *maternal/paternal care
 destring cuidados_parentales1 cuidados_parentales2, replace
 recode cuidados_parentales1 cuidados_parentales2 (7=1) 
-label values cuidados_parentales1 yesno
-label values cuidados_parentales2 yesno
 label variable cuidados_parentales1 "time for maternal/paternal care - main job"
 label variable cuidados_parentales2 "time for maternal/paternal care - secondary job"
 
 *SAR / AFORE
 destring sar_afore1 sar_afore2, replace
 recode sar_afore1 sar_afore2 (8=1) 
-label values sar_afore1 yesno
-label values sar_afore2 yesno
 label variable sar_afore1 "retirement savings SAR or AFORE - main job"
 label variable sar_afore2 "retirement savings SAR or AFORE - secondary job"
 
 *life insurance
 destring seguro_vida1 seguro_vida2, replace
 recode seguro_vida1 seguro_vida2 (9=1) 
-label values seguro_vida1 yesno
-label values seguro_vida2 yesno
 label variable seguro_vida1 "life insurance - main job"
 label variable seguro_vida2 "life insurance - secondary job"
 
 *personal loans / savings fund
 destring prestamos1 prestamos2, replace
 recode prestamos1 prestamos2 (10=1) 
-label values prestamos1 yesno
-label values prestamos2 yesno
 label variable prestamos1 "personal loans or savings fund - main job"
 label variable prestamos2 "personal loans or savings fund - secondary job"
 
 *vacation premium
 destring prima_vacacional1 prima_vacacional2, replace
 recode prima_vacacional1 prima_vacacional2 (11=1) 
-label values prima_vacacional1 yesno
-label values prima_vacacional2 yesno
 label variable prima_vacacional1 "vacation premium - main job"
 label variable prima_vacacional2 "vacation premium - secondary job"
 
 *scholarships
 destring becas1 becas2, replace
 recode becas1 becas2 (12=1) 
-label values becas1 yesno
-label values becas2 yesno
 label variable becas1 "scholarships or educational support - main job"
 label variable becas2 "scholarships or educational support - secondary job"
 
 *canteen or meal service
 destring comedor1 comedor2, replace
 recode comedor1 comedor2 (13=1) 
-label values comedor1 yesno
-label values comedor2 yesno
 label variable comedor1 "canteen or meal service - main job"
 label variable comedor2 "canteen or meal service - secondary job"
 
 *FONACOT credit
 destring fonacot1 fonacot2, replace
 recode fonacot1 fonacot2 (14=1) 
-label values fonacot1 yesno
-label values fonacot2 yesno
 label variable fonacot1 "FONACOT credit - main job"
 label variable fonacot2 "FONACOT credit - secondary job"
 
 *despensas
 destring despensa1 despensa2, replace
 recode despensa1 despensa2 (15=1) 
-label values despensa1 yesno
-label values despensa2 yesno
 label variable despensa1 "food coupons or grocery vouchers - main job"
 label variable despensa2 "food coupons or grocery vouchers - secondary job"
 
 *help or exemption
 destring servicios_publicos1 servicios_publicos2, replace
 recode servicios_publicos1 servicios_publicos2 (16=1) 
-label values servicios_publicos1 yesno
-label values servicios_publicos2 yesno
 label variable servicios_publicos1 "help or exemption paying utilities - main job"
 label variable servicios_publicos2 "help or exemption paying utilities - secondary job"
 
 *pension in case of disability
 destring pension_invalidez1 pension_invalidez2, replace
 recode pension_invalidez1 pension_invalidez2 (17=1) 
-label values pension_invalidez1 yesno
-label values pension_invalidez2 yesno
 label variable pension_invalidez1 "pension in case of disability - main job"
 label variable pension_invalidez2 "pension in case of disability - secondary job"
 
 *pension for family
 destring pension_familia1 pension_familia2, replace
 recode pension_familia1 pension_familia2 (18=1) 
-label values pension_familia1 yesno
-label values pension_familia2 yesno
 label variable pension_familia1 "pension for family in case of death - main job"
 label variable pension_familia2 "pension for family in case of death - secondary job"
 
 *other benefits
 destring otras_prestaciones1 otras_prestaciones2, replace
 recode otras_prestaciones1 otras_prestaciones2 (19=1) 
-label values otras_prestaciones1 yesno
-label values otras_prestaciones2 yesno
 label variable otras_prestaciones1 "other benefits - main job"
 label variable otras_prestaciones2 "other benefits - secondary job"
 
 *no benefits
 destring sin_prestaciones1 sin_prestaciones2, replace
 recode sin_prestaciones1 sin_prestaciones2 (20=1) 
-label values sin_prestaciones1 yesno
-label values sin_prestaciones2 yesno
 label variable sin_prestaciones1 "no benefits - main job"
 label variable sin_prestaciones2 "no benefits - secondary job"
 
