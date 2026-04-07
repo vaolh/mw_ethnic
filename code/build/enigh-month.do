@@ -9,7 +9,7 @@ set more off
 
 *** REPLICATION FILE: enigh-month
 *** STATA VERSION: StataNow 19.5
-*** AUTHORS: Matías Carrasco, Victor Ortega Le Hénanff
+*** AUTHORS: Matías Carrasco-Jiménez, Victor Ortega Le Hénanff
 *** DATE: 2025-02-16
 
 log using "log/enigh-month.log", replace text
