@@ -15,6 +15,7 @@ recompile:
 	make -C code/recompile
 
 clean:
+	make -C code/build clean
 	make -C code/estimate clean
 
 .PHONY: all build estimate recompile clean

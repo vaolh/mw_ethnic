@@ -3,3 +3,6 @@
 *.RData
 *.json
 .DS_Store
+/quality_reports
+CLAUDE.md
+MEMORY.md

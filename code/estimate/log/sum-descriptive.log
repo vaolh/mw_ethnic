@@ -3,7 +3,7 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/sum-descriptive.log
   log type:  text
- opened on:  28 Mar 2026, 15:28:39
+ opened on:  24 Apr 2026, 00:27:00
 
 . 
 . *************************************************
@@ -43,10 +43,7 @@ all files already exist and are up to date.
 checking estout consistency and verifying not already installed...
 
 the following files will be replaced:
-    /Users/victorortega/Library/Application Support/Stata/ado/plus/e/estout.ado
-    /Users/victorortega/Library/Application Support/Stata/ado/plus/e/estout.hlp
     /Users/victorortega/Library/Application Support/Stata/ado/plus/e/esttab.ado
-    /Users/victorortega/Library/Application Support/Stata/ado/plus/e/esttab.hlp
 
 installing into /Users/victorortega/Library/Application Support/Stata/ado/plus/
 > ...

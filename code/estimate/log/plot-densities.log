@@ -3,7 +3,7 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/plot-densities.log
   log type:  text
- opened on:  28 Mar 2026, 15:44:36
+ opened on:  24 Apr 2026, 00:47:57
 
 . 
 . *************************************************
@@ -444,7 +444,6 @@ file ../../paper/figures/plot-density-income-all.png written in PNG format
 
 . graph export "../../paper/figures/plot-density-wages-ethnic-pretreat.png", re
 > place width(4000) height(3000)
-(file ../../paper/figures/plot-density-wages-ethnic-pretreat.png not found)
 file ../../paper/figures/plot-density-wages-ethnic-pretreat.png written in PNG 
 > format
 

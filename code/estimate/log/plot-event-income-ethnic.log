@@ -3,7 +3,7 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/plot-event-income-ethnic.log
   log type:  text
- opened on:  28 Mar 2026, 15:34:25
+ opened on:  24 Apr 2026, 00:35:52
 
 . 
 . *************************************************
@@ -18,22 +18,22 @@
   5. 
 . if "`ds'" == "year" {
   6. 
-.     reghdfe lni ib2016.year##i.zlfn $controls if indspeaker == 0, ///
->         absorb(ubica_geo) vce(cluster ubica_geo)
+.     reghdfe lni i.zlfn#ib2018.year $controls if indspeaker == 0, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
   7.     eststo graph1
   8. 
-.     reghdfe lni ib2016.year##i.zlfn $controls if indspeaker == 1, ///
->         absorb(ubica_geo) vce(cluster ubica_geo)
+.     reghdfe lni i.zlfn#ib2018.year $controls if indspeaker == 1, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
   9.     eststo graph2
  10. 
 .     coefplot graph1 ///
->         , keep(*.year#1.zlfn) vertical offset(0) ///
->         rename(2018.year#1.zlfn = "2018" 2020.year#1.zlfn = "2020" ///
->                2022.year#1.zlfn = "2022" 2024.year#1.zlfn = "2024") ///
+>         , keep(1.zlfn#*.year) vertical offset(0) ///
+>         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
+>                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
 > ircle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->         xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(1.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
@@ -44,13 +44,13 @@
 > g", replace width(4000) height(3000)
  12. 
 .     coefplot graph2 ///
->         , keep(*.year#1.zlfn) vertical offset(0) ///
->         rename(2018.year#1.zlfn = "2018" 2020.year#1.zlfn = "2020" ///
->                2022.year#1.zlfn = "2022" 2024.year#1.zlfn = "2024") ///
+>         , keep(1.zlfn#*.year) vertical offset(0) ///
+>         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
+>                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
 > cle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->         xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(1.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
@@ -66,22 +66,22 @@
 . 
 .     estimates clear
  15. 
-.     reghdfe lni ib2016.year##i.zlfn $controls if etnia == 0, ///
->         absorb(ubica_geo) vce(cluster ubica_geo)
+.     reghdfe lni i.zlfn#ib2018.year $controls if etnia == 0, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
  16.     eststo graph3
  17. 
-.     reghdfe lni ib2016.year##i.zlfn $controls if etnia == 1, ///
->         absorb(ubica_geo) vce(cluster ubica_geo)
+.     reghdfe lni i.zlfn#ib2018.year $controls if etnia == 1, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
  18.     eststo graph4
  19. 
 .     coefplot graph3 ///
->         , keep(*.year#1.zlfn) vertical offset(0) ///
->         rename(2018.year#1.zlfn = "2018" 2020.year#1.zlfn = "2020" ///
->                2022.year#1.zlfn = "2022" 2024.year#1.zlfn = "2024") ///
+>         , keep(1.zlfn#*.year) vertical offset(0) ///
+>         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
+>                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
 > ircle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->         xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(1.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
@@ -92,13 +92,13 @@
 > png", replace width(4000) height(3000)
  21. 
 .     coefplot graph4 ///
->         , keep(*.year#1.zlfn) vertical offset(0) ///
->         rename(2018.year#1.zlfn = "2018" 2020.year#1.zlfn = "2020" ///
->                2022.year#1.zlfn = "2022" 2024.year#1.zlfn = "2024") ///
+>         , keep(1.zlfn#*.year) vertical offset(0) ///
+>         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
+>                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
 > cle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->         xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(1.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
@@ -369,212 +369,200 @@ all files already exist and are up to date.
 
 . 
 end of do-file
-(dropped 31 singleton observations)
-(MWFE estimator converged in 1 iterations)
-note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
->  values are close to zero; tol = 1.0e-09)
-note: 2024.year omitted because of collinearity
-note: 2024o.year#0b.zlfn omitted because of collinearity
+(dropped 27 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1.zlfn#2016.year omitted because of collinearity
+note: 1.zlfn#2020.year omitted because of collinearity
+note: 1.zlfn#2022.year omitted because of collinearity
+note: 1.zlfn#2024.year omitted because of collinearity
 
-HDFE Linear regression                            Number of obs   =    496,341
-Absorbing 1 HDFE group                            F(  12,   2553) =    2796.91
+HDFE Linear regression                            Number of obs   =    496,345
+Absorbing 2 HDFE groups                           F(  11,   1693) =    2285.89
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3766
-                                                  Adj R-squared   =     0.3733
-                                                  Within R-sq.    =     0.2864
-Number of clusters (ubica_geo) =      2,554       Root MSE        =     0.9063
+                                                  R-squared       =     0.3736
+                                                  Adj R-squared   =     0.3714
+                                                  Within R-sq.    =     0.2773
+Number of clusters (ubica_geo) =      1,694       Root MSE        =     0.9077
 
-                          (Std. err. adjusted for 2,554 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,694 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-        year |
-       2018  |  -.2032336   .0093156   -21.82   0.000    -.2215005   -.1849668
-       2020  |  -.2935556   .0097228   -30.19   0.000     -.312621   -.2744901
-       2022  |  -.1445315   .0077309   -18.70   0.000     -.159691   -.1293721
-       2024  |          0  (omitted)
+   zlfn#year |
+     0 2016  |   -.104947   .0367263    -2.86   0.004    -.1769806   -.0329134
+     0 2020  |  -.1188505   .0383429    -3.10   0.002     -.194055    -.043646
+     0 2022  |  -.2028984    .021126    -9.60   0.000    -.2443343   -.1614625
+     0 2024  |  -.1635616   .0427826    -3.82   0.000    -.2474739   -.0796492
+     1 2016  |          0  (omitted)
+     1 2018  |   .0327956   .0300985     1.09   0.276    -.0262385    .0918297
+     1 2020  |          0  (omitted)
+     1 2022  |          0  (omitted)
+     1 2024  |          0  (omitted)
              |
-      1.zlfn |          0  (omitted)
-             |
-   year#zlfn |
-     2016 1  |          0  (empty)
-     2018 1  |  -.1305282   .0207213    -6.30   0.000    -.1711605    -.089896
-     2020 1  |  -.0452004   .0173199    -2.61   0.009    -.0791629   -.0112379
-     2022 1  |   .0395456   .0342223     1.16   0.248    -.0275607    .1066518
-     2024 1  |          0  (omitted)
-             |
-    1.female |  -.4283294   .0063395   -67.57   0.000    -.4407605   -.4158984
-    edad_pob |    .072725   .0007292    99.74   0.000     .0712952    .0741548
-      edadsq |   -.000794   8.29e-06   -95.83   0.000    -.0008102   -.0007777
-years_of_s~y |   .0744475   .0007744    96.14   0.000     .0729291     .075966
- hoursworked |    .016967   .0001929    87.97   0.000     .0165888    .0173452
-  1.employed |    .305544    .023417    13.05   0.000     .2596257    .3514623
-       _cons |   5.737052   .0289596   198.11   0.000     5.680265    5.793838
+    1.female |   -.428227    .006794   -63.03   0.000    -.4415525   -.4149015
+    edad_pob |    .072719   .0007691    94.55   0.000     .0712105    .0742275
+      edadsq |  -.0007938   8.69e-06   -91.35   0.000    -.0008108   -.0007767
+years_of_s~y |   .0747435   .0008922    83.77   0.000     .0729935    .0764934
+ hoursworked |   .0169827   .0002107    80.61   0.000     .0165695    .0173959
+  1.employed |   .3052998    .022902    13.33   0.000     .2603806    .3502189
+       _cons |   5.720189   .0364368   156.99   0.000     5.648723    5.791655
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      2554        2554           0    *|
+   ubica_geo |      1694        1694           0    *|
+        year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(dropped 317 singleton observations)
-(MWFE estimator converged in 1 iterations)
-note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
->  values are close to zero; tol = 1.0e-09)
-note: 2024.year omitted because of collinearity
-note: 2024o.year#0b.zlfn omitted because of collinearity
+(dropped 214 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1.zlfn#2016.year omitted because of collinearity
+note: 1.zlfn#2020.year omitted because of collinearity
+note: 1.zlfn#2022.year omitted because of collinearity
+note: 1.zlfn#2024.year omitted because of collinearity
 
-HDFE Linear regression                            Number of obs   =     42,368
-Absorbing 1 HDFE group                            F(  12,   1230) =     478.15
+HDFE Linear regression                            Number of obs   =     42,471
+Absorbing 2 HDFE groups                           F(  11,    938) =     459.83
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.4256
-                                                  Adj R-squared   =     0.4082
-                                                  Within R-sq.    =     0.2858
-Number of clusters (ubica_geo) =      1,231       Root MSE        =     1.1199
+                                                  R-squared       =     0.4180
+                                                  Adj R-squared   =     0.4046
+                                                  Within R-sq.    =     0.2760
+Number of clusters (ubica_geo) =        939       Root MSE        =     1.1231
 
-                          (Std. err. adjusted for 1,231 clusters in ubica_geo)
+                            (Std. err. adjusted for 939 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-        year |
-       2018  |   -.351423   .0427905    -8.21   0.000    -.4353734   -.2674725
-       2020  |  -.4177768   .0424838    -9.83   0.000    -.5011255   -.3344281
-       2022  |   -.116273   .0388553    -2.99   0.003    -.1925029    -.040043
-       2024  |          0  (omitted)
+   zlfn#year |
+     0 2016  |  -.1179223   .2681693    -0.44   0.660    -.6442037     .408359
+     0 2020  |  -.1909265   .0484109    -3.94   0.000    -.2859327   -.0959203
+     0 2022  |  -.1738021   .0479914    -3.62   0.000     -.267985   -.0796192
+     0 2024  |   .0446598   .0738161     0.61   0.545     -.100204    .1895236
+     1 2016  |          0  (omitted)
+     1 2018  |   .1017624   .0634986     1.60   0.109    -.0228534    .2263782
+     1 2020  |          0  (omitted)
+     1 2022  |          0  (omitted)
+     1 2024  |          0  (omitted)
              |
-      1.zlfn |          0  (omitted)
-             |
-   year#zlfn |
-     2016 1  |          0  (empty)
-     2018 1  |   .1533458   .0648349     2.37   0.018     .0261465    .2805451
-     2020 1  |   .2289548   .0949377     2.41   0.016     .0426969    .4152126
-     2022 1  |   .2045225   .0796718     2.57   0.010     .0482147    .3608303
-     2024 1  |          0  (omitted)
-             |
-    1.female |  -.6114655   .0211028   -28.98   0.000    -.6528669   -.5700641
-    edad_pob |   .0575474   .0020789    27.68   0.000     .0534687     .061626
-      edadsq |  -.0006982   .0000226   -30.95   0.000    -.0007425   -.0006539
-years_of_s~y |   .0627895   .0023864    26.31   0.000     .0581076    .0674713
- hoursworked |   .0188416   .0005118    36.81   0.000     .0178374    .0198457
-  1.employed |   .0615192   .0948497     0.65   0.517    -.1245659    .2476043
-       _cons |   5.980947   .1040917    57.46   0.000      5.77673    6.185164
+    1.female |  -.6062843   .0222136   -27.29   0.000    -.6498785   -.5626901
+    edad_pob |   .0576393   .0021205    27.18   0.000     .0534778    .0618008
+      edadsq |  -.0006964   .0000227   -30.64   0.000     -.000741   -.0006518
+years_of_s~y |    .064087   .0026904    23.82   0.000     .0588072    .0693668
+ hoursworked |   .0189542   .0005132    36.94   0.000     .0179471    .0199613
+  1.employed |   .0675649   .0879577     0.77   0.443    -.1050517    .2401814
+       _cons |   5.864954   .1106308    53.01   0.000     5.647842    6.082067
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1231        1231           0    *|
+   ubica_geo |       939         939           0    *|
+        year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
 file ../../paper/figures/plot-event-income-hli-nonind-year.png written in PNG f
 > ormat
 file ../../paper/figures/plot-event-income-hli-ind-year.png written in PNG form
 > at
-(dropped 69 singleton observations)
-(MWFE estimator converged in 1 iterations)
-note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
->  values are close to zero; tol = 1.0e-09)
-note: 2024.year omitted because of collinearity
-note: 2024o.year#0b.zlfn omitted because of collinearity
+(dropped 47 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1.zlfn#2016.year omitted because of collinearity
+note: 1.zlfn#2020.year omitted because of collinearity
+note: 1.zlfn#2022.year omitted because of collinearity
+note: 1.zlfn#2024.year omitted because of collinearity
 
-HDFE Linear regression                            Number of obs   =    373,557
-Absorbing 1 HDFE group                            F(  12,   2460) =    2736.49
+HDFE Linear regression                            Number of obs   =    373,579
+Absorbing 2 HDFE groups                           F(  11,   1636) =    2265.83
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3741
-                                                  Adj R-squared   =     0.3699
-                                                  Within R-sq.    =     0.2880
-Number of clusters (ubica_geo) =      2,461       Root MSE        =     0.8842
+                                                  R-squared       =     0.3708
+                                                  Adj R-squared   =     0.3680
+                                                  Within R-sq.    =     0.2789
+Number of clusters (ubica_geo) =      1,637       Root MSE        =     0.8857
 
-                          (Std. err. adjusted for 2,461 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,637 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-        year |
-       2018  |  -.1920171   .0090271   -21.27   0.000    -.2097186   -.1743156
-       2020  |  -.2831838   .0098951   -28.62   0.000    -.3025873   -.2637802
-       2022  |  -.1424238   .0070632   -20.16   0.000    -.1562742   -.1285733
-       2024  |          0  (omitted)
+   zlfn#year |
+     0 2016  |   -.115084   .0380232    -3.03   0.003    -.1896633   -.0405047
+     0 2020  |  -.1120896   .0355584    -3.15   0.002    -.1818344   -.0423447
+     0 2022  |  -.2120744   .0202611   -10.47   0.000    -.2518149   -.1723339
+     0 2024  |  -.1719683    .040959    -4.20   0.000    -.2523058   -.0916308
+     1 2016  |          0  (omitted)
+     1 2018  |   .0322036   .0292212     1.10   0.271    -.0251112    .0895184
+     1 2020  |          0  (omitted)
+     1 2022  |          0  (omitted)
+     1 2024  |          0  (omitted)
              |
-      1.zlfn |          0  (omitted)
-             |
-   year#zlfn |
-     2016 1  |          0  (empty)
-     2018 1  |  -.1400646   .0227812    -6.15   0.000    -.1847369   -.0953922
-     2020 1  |  -.0602905   .0169312    -3.56   0.000    -.0934914   -.0270897
-     2022 1  |   .0407446   .0346297     1.18   0.239    -.0271617     .108651
-     2024 1  |          0  (omitted)
-             |
-    1.female |  -.4092812   .0063525   -64.43   0.000     -.421738   -.3968244
-    edad_pob |   .0723588   .0007845    92.24   0.000     .0708206    .0738971
-      edadsq |  -.0007873   8.95e-06   -87.99   0.000    -.0008048   -.0007697
-years_of_s~y |   .0759576   .0008017    94.75   0.000     .0743855    .0775296
- hoursworked |    .016722   .0001967    85.02   0.000     .0163363    .0171076
-  1.employed |   .3154709   .0268847    11.73   0.000     .2627519    .3681899
-       _cons |   5.764961   .0320586   179.83   0.000     5.702096    5.827826
+    1.female |  -.4092164   .0066568   -61.47   0.000    -.4222732   -.3961597
+    edad_pob |   .0723636   .0008335    86.81   0.000     .0707286    .0739985
+      edadsq |  -.0007871   9.48e-06   -83.00   0.000    -.0008057   -.0007685
+years_of_s~y |   .0762588   .0008958    85.13   0.000     .0745018    .0780158
+ hoursworked |   .0167388   .0002126    78.74   0.000     .0163219    .0171558
+  1.employed |   .3151451   .0262172    12.02   0.000     .2637223    .3665678
+       _cons |   5.758134   .0374948   153.57   0.000     5.684591    5.831677
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      2461        2461           0    *|
+   ubica_geo |      1637        1637           0    *|
+        year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(dropped 48 singleton observations)
-(MWFE estimator converged in 1 iterations)
-note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
->  values are close to zero; tol = 1.0e-09)
-note: 2024.year omitted because of collinearity
-note: 2024o.year#0b.zlfn omitted because of collinearity
+(dropped 24 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1.zlfn#2016.year omitted because of collinearity
+note: 1.zlfn#2020.year omitted because of collinearity
+note: 1.zlfn#2022.year omitted because of collinearity
+note: 1.zlfn#2024.year omitted because of collinearity
 
-HDFE Linear regression                            Number of obs   =    165,383
-Absorbing 1 HDFE group                            F(  12,   2535) =    1256.72
+HDFE Linear regression                            Number of obs   =    165,407
+Absorbing 2 HDFE groups                           F(  11,   1708) =    1158.37
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.4077
-                                                  Adj R-squared   =     0.3985
-                                                  Within R-sq.    =     0.2831
-Number of clusters (ubica_geo) =      2,536       Root MSE        =     1.0111
+                                                  R-squared       =     0.4020
+                                                  Adj R-squared   =     0.3957
+                                                  Within R-sq.    =     0.2756
+Number of clusters (ubica_geo) =      1,709       Root MSE        =     1.0134
 
-                          (Std. err. adjusted for 2,536 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,709 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-        year |
-       2018  |  -.2583027   .0201728   -12.80   0.000    -.2978596   -.2187459
-       2020  |   -.339224   .0186743   -18.17   0.000    -.3758425   -.3026055
-       2022  |  -.1453525   .0187807    -7.74   0.000    -.1821796   -.1085255
-       2024  |          0  (omitted)
+   zlfn#year |
+     0 2016  |  -.0561812   .0527044    -1.07   0.287    -.1595531    .0471907
+     0 2020  |  -.1475443   .0528027    -2.79   0.005     -.251109   -.0439796
+     0 2022  |  -.1598457   .0358113    -4.46   0.000    -.2300844    -.089607
+     0 2024  |   -.060407   .0552024    -1.09   0.274    -.1686784    .0478644
+     1 2016  |          0  (omitted)
+     1 2018  |   .0288434   .0462662     0.62   0.533     -.061901    .1195878
+     1 2020  |          0  (omitted)
+     1 2022  |          0  (omitted)
+     1 2024  |          0  (omitted)
              |
-      1.zlfn |          0  (omitted)
-             |
-   year#zlfn |
-     2016 1  |          0  (empty)
-     2018 1  |  -.0293662   .0505792    -0.58   0.562     -.128547    .0698145
-     2020 1  |   .0815304    .045415     1.80   0.073    -.0075238    .1705846
-     2022 1  |   .0957902   .0502211     1.91   0.057    -.0026884    .1942688
-     2024 1  |          0  (omitted)
-             |
-    1.female |  -.5140129   .0094628   -54.32   0.000    -.5325686   -.4954572
-    edad_pob |   .0702528   .0012181    57.68   0.000     .0678644    .0726413
-      edadsq |  -.0007923   .0000139   -57.09   0.000    -.0008195   -.0007651
-years_of_s~y |   .0688505   .0012658    54.39   0.000     .0663684    .0713326
- hoursworked |   .0179862    .000289    62.24   0.000     .0174195    .0185528
-  1.employed |   .2397818   .0377263     6.36   0.000     .1658042    .3137594
-       _cons |   5.696195   .0468642   121.55   0.000     5.604299    5.788091
+    1.female |  -.5131092   .0101537   -50.53   0.000    -.5330243   -.4931941
+    edad_pob |    .070186   .0012143    57.80   0.000     .0678043    .0725677
+      edadsq |  -.0007914   .0000137   -57.79   0.000    -.0008183   -.0007646
+years_of_s~y |   .0694037   .0014479    47.93   0.000     .0665638    .0722437
+ hoursworked |   .0180232    .000308    58.52   0.000     .0174191    .0186273
+  1.employed |   .2380044   .0378022     6.30   0.000     .1638609    .3121479
+       _cons |   5.625136   .0579045    97.14   0.000     5.511564    5.738707
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      2536        2536           0    *|
+   ubica_geo |      1709        1709           0    *|
+        year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
 file ../../paper/figures/plot-event-income-indig-nonind-year.png written in PNG

@@ -1,0 +1,586 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: 65-student 2-core lab, expiring 18 May 2026
+Serial number: 501909312971
+  Licensed to: Victor Ortega
+               Columbia University
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+. do enigh-household-month.do 
+
+. *************************************************
+. ***************** Clean Memory ******************
+. *************************************************
+. 
+. clear
+
+. cap clear
+
+. cap log close
+
+. set more off
+
+. set linesize 250
+
+. set varabbrev off
+
+. 
+. *** REPLICATION FILE: enigh-household-month.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-03
+. 
+. *** Builds the household × month ENIGH panel.
+. *** Each row = one household per calendar month within the survey reference
+. *** period (typically Feb–Sep of each ENIGH wave).
+. ***   - HH income aggregated from enigh-month (sum across earners)
+. ***   - HH composition aggregated from enigh-month rows in that month
+. ***   - HH-invariant attributes from concentradohogar (replicated to each month)
+. ***
+. *** Output: ../../data/clean/enigh/enigh-household-month.dta
+. *** Companion R script: enigh-household-month.R
+. 
+. cap mkdir log
+
+. log using "log/enigh-household-month.log", replace text
+(file /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-minwage/code/build/log/enigh-household-month.log not found)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-minwage/code/build/log/enigh-household-month.log
+  log type:  text
+ opened on:   3 May 2026, 11:35:02
+
+. 
+. include _helpers.do
+
+. *************************************************
+. *************** Shared Helpers ******************
+. *************************************************
+. 
+. *** REPLICATION FILE: _helpers.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-02
+. 
+. *** Sourced via `include _helpers.do` from every build script.
+. *** Provides:
+. ***   - tempfile $deflators        — INPC monthly deflators (base Aug 2024)
+. ***   - global zlfn_munis          — list of 40 ZLFN municipality codes
+. ***   - program apply_zlfn         — set zlfn = 1 if ubica_geo in zlfn_munis
+. ***   - program apply_state_region — generate state, ent_name, region, macro
+. ***   - program clean_ubica_geo    — 2016 9-digit -> 5-digit truncation
+. ***   - program build_years_of_study — derive years_of_study from nivelaprob/gradoaprob
+. ***   - program classify_clave     — generate clave_group from clave (P001-P108)
+. 
+. *************************************************
+. **************** INPC Deflators ******************
+. *************************************************
+. 
+. cap drop deflators_path
+
+. global deflators_path "../../data/clean/inpc/inpc.csv"
+
+. 
+. *** Helper to load deflators into a tempfile.
+. *** Sets $deflators_tf to the tempfile path. Caller must declare the tempfile
+. *** in main scope so it persists beyond program execution.
+. *** Usage:
+. ***     tempfile defl_tf
+. ***     load_deflators_to "`defl_tf'"
+. cap program drop load_deflators_to
+
+. program define load_deflators_to
+  1.     args target
+  2.     preserve
+  3.     import delimited using "$deflators_path", clear varnames(1)
+  4.     cap rename año_int year
+  5.     cap rename mes month
+  6.     drop fecha
+  7.     drop inpc
+  8.     gen mes_str = string(month)
+  9.     replace mes_str = "0" + mes_str if month < 10
+ 10.     gen time = date(string(year) + "-" + mes_str, "YM")
+ 11.     format time %td
+ 12.     keep year month time deflator
+ 13.     save "`target'", replace
+ 14.     restore
+ 15. end
+
+. 
+. *************************************************
+. ************** ZLFN Municipalities ***************
+. *************************************************
+. 
+. *** 40 municipalities in the Zona Libre de la Frontera Norte (ZLFN)
+. *** as defined by the Decreto del Estímulo Fiscal de la Frontera Norte (2018).
+. *** Codes are 5-digit (state + municipality).
+. global zlfn_munis ///
+>     "02001 02002 02003 02004 02005 " ///
+>     "05002 05012 05013 05014 05022 05023 05025 05038 " ///
+>     "08005 08015 08028 08035 08037 08042 08052 08053 " ///
+>     "19005 " ///
+>     "26002 26004 26017 26019 26039 26043 26048 26055 26059 26060 26070 " ///
+>     "28007 28014 28015 28022 28024 28025 28027 28032 28033 28040"
+
+. 
+. cap program drop apply_zlfn
+
+. program define apply_zlfn
+  1.     *** Generates zlfn (1/0) from ubica_geo (string, 5-digit).
+.     *** Assumes ubica_geo has been cleaned to 5-digit form.
+.     syntax , [Ugeo(string)]
+  2.     if "`ugeo'" == "" local ugeo "ubica_geo"
+  3.     cap drop zlfn
+  4.     gen byte zlfn = 0
+  5.     label variable zlfn "ZLFN treatment municipality (1=yes)"
+  6.     foreach m of global zlfn_munis {
+  7.         replace zlfn = 1 if `ugeo' == "`m'"
+  8.     }
+  9. end
+
+. 
+. *************************************************
+. **************** ubica_geo Clean *****************
+. *************************************************
+. 
+. cap program drop clean_ubica_geo
+
+. program define clean_ubica_geo
+  1.     *** Cleans ubica_geo to consistent 5-digit string (state+muni).
+.     *** 2016 ENIGH stores 9-digit codes (state+muni+locality);
+.     *** later years already store 5-digit. Truncate if needed.
+.     args yr
+  2.     cap confirm string variable ubica_geo
+  3.     if _rc {
+  4.         tostring ubica_geo, replace
+  5.     }
+  6.     *** Truncate any code longer than 5 digits to first 5 chars.
+.     replace ubica_geo = substr(ubica_geo, 1, 5) if length(ubica_geo) > 5
+  7.     *** Pad shorter codes with leading zeros (defensive).
+.     replace ubica_geo = "0" + ubica_geo if length(ubica_geo) == 4
+  8. end
+
+. 
+. *************************************************
+. *************** State / Region *******************
+. *************************************************
+. 
+. cap program drop apply_state_region
+
+. program define apply_state_region
+  1.     *** Generates state, ent_name, reg_num, reg_name, macro_num, macro_name
+.     *** from ubica_geo (string, 5-digit, first 2 chars = state).
+.     cap drop state
+  2.     gen state = real(substr(ubica_geo, 1, 2))
+  3.     label variable state "state code (2-digit)"
+  4. 
+.     label define _states ///
+>         1 "Aguascalientes" 2 "Baja California" 3 "Baja California Sur" ///
+>         4 "Campeche" 5 "Coahuila" 6 "Colima" 7 "Chiapas" 8 "Chihuahua" ///
+>         9 "Ciudad de México" 10 "Durango" 11 "Guanajuato" 12 "Guerrero" ///
+>         13 "Hidalgo" 14 "Jalisco" 15 "México" 16 "Michoacán" 17 "Morelos" ///
+>         18 "Nayarit" 19 "Nuevo León" 20 "Oaxaca" 21 "Puebla" 22 "Querétaro" ///
+>         23 "Quintana Roo" 24 "San Luis Potosí" 25 "Sinaloa" 26 "Sonora" ///
+>         27 "Tabasco" 28 "Tamaulipas" 29 "Tlaxcala" 30 "Veracruz" ///
+>         31 "Yucatán" 32 "Zacatecas", replace
+  5.     label values state _states
+  6. 
+.     *** Persist as a string column too (so the variable list matches R parity)
+.     cap drop ent_name
+  7.     decode state, gen(ent_name)
+  8. 
+.     cap drop reg_num
+  9.     gen byte reg_num = .
+ 10.     replace reg_num = 1 if inlist(state, 26, 25, 2, 3, 18)
+ 11.     replace reg_num = 2 if inlist(state, 5, 8, 10, 32, 24)
+ 12.     replace reg_num = 3 if inlist(state, 28, 19)
+ 13.     replace reg_num = 4 if inlist(state, 1, 14, 11, 6, 16)
+ 14.     replace reg_num = 5 if inlist(state, 22, 15, 9, 13, 17, 29, 21)
+ 15.     replace reg_num = 6 if inlist(state, 12, 20, 7)
+ 16.     replace reg_num = 7 if inlist(state, 27, 30)
+ 17.     replace reg_num = 8 if inlist(state, 4, 23, 31)
+ 18.     label variable reg_num "region (1-8)"
+ 19. 
+.     label define _regs ///
+>         1 "Northwest" 2 "North" 3 "Northeast" 4 "Center-West" ///
+>         5 "Center-East" 6 "South" 7 "East" 8 "Peninsula", replace
+ 20.     label values reg_num _regs
+ 21.     cap drop reg_name
+ 22.     decode reg_num, gen(reg_name)
+ 23. 
+.     cap drop macro_num
+ 24.     gen byte macro_num = .
+ 25.     replace macro_num = 1 if inlist(reg_num, 1, 2, 3)
+ 26.     replace macro_num = 2 if inlist(reg_num, 4, 5)
+ 27.     replace macro_num = 3 if inlist(reg_num, 6)
+ 28.     replace macro_num = 4 if inlist(reg_num, 7, 8)
+ 29.     label variable macro_num "macro region (1-4)"
+ 30. 
+.     label define _macros ///
+>         1 "Northern" 2 "Central" 3 "South" 4 "Eastern", replace
+ 31.     label values macro_num _macros
+ 32.     cap drop macro_name
+ 33.     decode macro_num, gen(macro_name)
+ 34. end
+
+. 
+. *************************************************
+. ************* Years of Study *********************
+. *************************************************
+. 
+. cap program drop build_years_of_study
+
+. program define build_years_of_study
+  1.     *** Derives years_of_study (0-25) from nivelaprob and gradoaprob.
+.     *** Mexico education levels:
+.     ***   niv 0,1 = none/preschool       -> 0
+.     ***   niv 2   = primary (1-6)        -> grad
+.     ***   niv 3   = secondary (1-3)      -> 6+grad
+.     ***   niv 4   = upper secondary (1-3)-> 9+grad
+.     ***   niv 5,6 = post-secondary tech  -> 12+grad capped 5
+.     ***   niv 7   = bachelor's            -> 12+grad capped 5
+.     ***   niv 8   = master's              -> 17+grad
+.     ***   niv 9   = doctorate             -> 20+grad
+.     cap destring nivelaprob, replace
+  2.     cap destring gradoaprob, replace
+  3.     cap drop years_of_study
+  4.     gen years_of_study = .
+  5.     replace years_of_study = 0                if inlist(nivelaprob, 0, 1)
+  6.     replace years_of_study = min(gradoaprob, 6)         if nivelaprob == 2
+  7.     replace years_of_study = 6  + min(gradoaprob, 3)    if nivelaprob == 3
+  8.     replace years_of_study = 9  + min(gradoaprob, 3)    if nivelaprob == 4
+  9.     replace years_of_study = 12 + min(gradoaprob, 5)    if inlist(nivelaprob, 5, 6, 7)
+ 10.     replace years_of_study = 17 + min(gradoaprob, 3)    if nivelaprob == 8
+ 11.     replace years_of_study = 20 + min(gradoaprob, 5)    if nivelaprob == 9
+ 12.     label variable years_of_study "years of completed schooling"
+ 13. end
+
+. 
+. *************************************************
+. ************ Income Classification ***************
+. *************************************************
+. 
+. cap program drop classify_clave
+
+. program define classify_clave
+  1.     *** Generates clave_group from clave (P001-P108) following the project
+.     *** classification used in enigh-year.R. Categories:
+.     ***   wages, non_wage_income, gov_transfers, rentas, fin_capital,
+.     ***   negocio, ventas, other.
+.     cap drop clave_group
+  2.     gen str20 clave_group = ""
+  3.     replace clave_group = "wages"             if inlist(clave, "P001","P002","P011","P018","P019","P067")
+  4.     replace clave_group = "non_wage_income"   if inlist(clave, "P003","P004","P005","P006","P007","P008")
+  5.     replace clave_group = "non_wage_income"   if inlist(clave, "P009","P014","P015","P016")
+  6.     replace clave_group = "gov_transfers"     if inlist(clave, "P032","P033","P038","P040","P042","P043","P044","P045")
+  7.     replace clave_group = "gov_transfers"     if inlist(clave, "P046","P047","P048","P101","P102","P103","P104","P105")
+  8.     replace clave_group = "gov_transfers"     if inlist(clave, "P106","P107","P108")
+  9.     replace clave_group = "rentas"            if inlist(clave, "P023","P024","P025")
+ 10.     replace clave_group = "fin_capital"       if inlist(clave, "P026","P027","P028","P029","P030","P031","P050","P052")
+ 11.     replace clave_group = "fin_capital"       if inlist(clave, "P053","P064","P065","P066")
+ 12.     replace clave_group = "negocio"           if inlist(clave, "P068","P069","P070","P071","P072","P073","P074","P075")
+ 13.     replace clave_group = "negocio"           if inlist(clave, "P076","P077","P078","P079","P080","P081")
+ 14.     replace clave_group = "ventas"            if inlist(clave, "P054","P055","P056","P059","P060","P061","P062","P063")
+ 15.     replace clave_group = "other"             if inlist(clave, "P012","P013","P020","P021","P022","P034","P035","P036")
+ 16.     replace clave_group = "other"             if inlist(clave, "P037","P039","P041","P049","P051","P057","P058")
+ 17. end
+
+. 
+. *************************************************
+. *************** Benefit Recoding *****************
+. *************************************************
+. 
+. cap program drop rename_benefits
+
+. program define rename_benefits
+  1.     *** Renames pres_* benefit indicators to readable names.
+.     *** 2016: pres_1-6 are medical institution codes; benefits start at pres_7.
+.     *** 2018+: benefits start at pres_1.
+.     *** After this step, both years share the same benefit variable names.
+.     args yr
+  2.     if `yr' == 2016 {
+  3.         cap drop pres_1 pres_2 pres_3 pres_4 pres_5 pres_6
+  4.         rename (pres_7 pres_8 pres_9 pres_10 pres_11 pres_12 pres_13 ///
+>                 pres_14 pres_15 pres_16 pres_17 pres_18 pres_19 pres_20 ///
+>                 pres_21 pres_22 pres_23 pres_24 pres_25 pres_26) ///
+>                (incapacidad aguinaldo vacaciones utilidades credito_vivienda ///
+>                 guarderias cuidados_parentales sar_afore seguro_vida prestamos ///
+>                 prima_vacacional becas comedor fonacot despensa servicios_publicos ///
+>                 pension_invalidez pension_familia otras_prestaciones sin_prestaciones)
+  5.     }
+  6.     else {
+  7.         rename (pres_1 pres_2 pres_3 pres_4 pres_5 pres_6 pres_7 pres_8 pres_9 ///
+>                 pres_10 pres_11 pres_12 pres_13 pres_14 pres_15 pres_16 pres_17 ///
+>                 pres_18 pres_19 pres_20) ///
+>                (incapacidad aguinaldo vacaciones utilidades credito_vivienda ///
+>                 guarderias cuidados_parentales sar_afore seguro_vida prestamos ///
+>                 prima_vacacional becas comedor fonacot despensa servicios_publicos ///
+>                 pension_invalidez pension_familia otras_prestaciones sin_prestaciones)
+  8.     }
+  9. end
+
+. 
+. cap program drop recode_benefit_indicators
+
+. program define recode_benefit_indicators
+  1.     *** Recodes the wide-form benefit indicators (suffix 1 = main job, 2 = secondary)
+.     *** from raw response codes to 0/1 binaries.
+.     ***
+.     *** ENIGH benefit response codes — same across years after rename_benefits:
+.     ***   1 = incapacidad         7  = cuidados_parentales
+.     ***   2 = aguinaldo           8  = sar_afore
+.     ***   3 = vacaciones          9  = seguro_vida
+.     ***   4 = utilidades         10  = prestamos
+.     ***   5 = credito_vivienda   11  = prima_vacacional
+.     ***   6 = guarderias         12  = becas        ... etc.
+.     ***
+.     *** Each cell carries the response code if the worker received that benefit
+.     *** (so cell `incapacidad1` == "1" means worker 1 has incapacidad). Convert to 1/0.
+.     foreach v in incapacidad aguinaldo vacaciones utilidades credito_vivienda ///
+>                  guarderias cuidados_parentales sar_afore seguro_vida prestamos ///
+>                  prima_vacacional becas comedor fonacot despensa servicios_publicos ///
+>                  pension_invalidez pension_familia otras_prestaciones {
+  2.         foreach j in 1 2 {
+  3.             cap confirm variable `v'`j'
+  4.             if _rc == 0 {
+  5.                 cap destring `v'`j', replace
+  6.                 replace `v'`j' = 1 if `v'`j' >  0 & `v'`j' < .
+  7.                 replace `v'`j' = 0 if `v'`j' == 0 | missing(`v'`j')
+  8.             }
+  9.         }
+ 10.     }
+ 11.     *** sin_prestaciones is the "no benefits" flag — 1 means no benefits.
+.     foreach j in 1 2 {
+ 12.         cap confirm variable sin_prestaciones`j'
+ 13.         if _rc == 0 {
+ 14.             cap destring sin_prestaciones`j', replace
+ 15.             replace sin_prestaciones`j' = 1 if sin_prestaciones`j' >  0 & sin_prestaciones`j' < .
+ 16.             replace sin_prestaciones`j' = 0 if sin_prestaciones`j' == 0 | missing(sin_prestaciones`j')
+ 17.         }
+ 18.     }
+ 19. end
+
+. 
+. *************************************************
+. ************* SCIAN Industry Labels **************
+. *************************************************
+. 
+. cap program drop label_scian
+
+. program define label_scian
+  1.     *** Applies SCIAN 2-digit industry labels to ind1, ind2.
+.     label define indlbl ///
+>         9 "Working abroad" ///
+>         10 "Household chores, beggars, inactive" ///
+>         11 "Agriculture, forestry, fishing, hunting" ///
+>         21 "Mining" ///
+>         22 "Electricity, water, gas" ///
+>         23 "Construction" ///
+>         31 "Manufacturing" 32 "Manufacturing" 33 "Manufacturing" ///
+>         43 "Wholesale trade" ///
+>         46 "Retail trade" ///
+>         48 "Transportation and storage" ///
+>         49 "Postal activities" ///
+>         51 "Mass media information" ///
+>         52 "Financial and insurance" ///
+>         53 "Real estate and rental of intangible goods" ///
+>         54 "Professional, scientific and technical" ///
+>         55 "Management of corporate groups" ///
+>         56 "Business support, waste management" ///
+>         61 "Education" ///
+>         62 "Health and social" ///
+>         71 "Cultural, sports and recreational" ///
+>         72 "Accommodation and food" ///
+>         81 "Other services except government" ///
+>         93 "Legislative, governmental, judicial" ///
+>         97 "Other workers" ///
+>         99 "Non-specified", replace
+  2.     cap label values ind1 indlbl
+  3.     cap label values ind2 indlbl
+  4. end
+
+. 
+. 
+. *************************************************
+. *********** Aggregate from enigh-month ***********
+. *************************************************
+. 
+. use "../../data/clean/enigh/enigh-month.dta", clear
+
+. display _n "Loaded enigh-month: N = " _N
+
+Loaded enigh-month: N = 5404806
+
+. 
+. local income_bases wages non_wage_income gov_transfers rentas fin_capital ///
+>                    negocio ventas other lab mon
+
+. 
+. *** Indicator constructions used in composition counts.
+. gen byte _is_kid          = (edad < 15) if !missing(edad)
+
+. gen byte _is_adult        = (edad >= 15) if !missing(edad)
+
+. gen byte _is_worker       = (employed == 1)
+
+. gen byte _is_indig        = (etnia == 1)
+
+. gen byte _is_hli          = (indspeaker == 1)
+
+. gen byte _is_female       = (gender == 0)
+
+. gen byte _is_informal     = (sar_afore1 == 0 & employed == 1)
+
+. 
+. *** Aggregate at HH × month level.
+. collapse (sum) ing_wages_nom ing_wages ///
+>                ing_non_wage_income_nom ing_non_wage_income ///
+>                ing_gov_transfers_nom ing_gov_transfers ///
+>                ing_rentas_nom ing_rentas ///
+>                ing_fin_capital_nom ing_fin_capital ///
+>                ing_negocio_nom ing_negocio ///
+>                ing_ventas_nom ing_ventas ///
+>                ing_other_nom ing_other ///
+>                ing_lab_nom ing_lab ///
+>                ing_mon_nom ing_mon ///
+>                n_kids       = _is_kid ///
+>                n_adults     = _is_adult ///
+>                n_workers    = _is_worker ///
+>                n_indigenous = _is_indig ///
+>                n_hli        = _is_hli ///
+>                n_employed   = _is_worker ///
+>                n_informal   = _is_informal ///
+>          (mean) mean_age   = edad ///
+>                 mean_educ  = years_of_study ///
+>                 share_female = _is_female ///
+>          (firstnm) ubica_geo state ent_name reg_num reg_name macro_num macro_name ///
+>                    tam_loc factor upm est_dis zlfn post treat_post smg ///
+>                    tipo_viv mat_pared mat_techos mat_pisos antiguedad cuart_dorm ///
+>                    num_cuarto disp_agua dotac_agua excusado disp_elect combustible ///
+>                    eli_basura tenencia renta estim_pago pago_viv tot_resid ///
+>                    tot_hom tot_muj tot_hog est_socio deflator time, ///
+>          by(folioviv foliohog year month)
+
+. 
+. label variable n_kids       "# household members aged < 15"
+
+. label variable n_adults     "# household members aged >= 15"
+
+. label variable n_workers    "# employed members"
+
+. label variable n_employed   "# employed members"
+
+. label variable n_indigenous "# self-identified indigenous members"
+
+. label variable n_hli        "# indigenous-language-speaking members"
+
+. label variable n_informal   "# informal workers (employed & no SAR/AFORE)"
+
+. label variable mean_age     "mean age of HH members (>12)"
+
+. label variable mean_educ    "mean years of schooling (HH members >12)"
+
+. label variable share_female "share of female members"
+
+. 
+. gen hh_size = n_kids + n_adults
+
+. label variable hh_size      "household size (# residents from enigh-month)"
+
+. 
+. *** Logs on HH-level real income (parallel arrays).
+. local _bases   wages           non_wage_income gov_transfers rentas    fin_capital negocio ventas  other   lab     mon
+
+. local _lognames lnw            lnnwi           lngt          lnr       lnfc        lnn     lnv     lno     lni     lnmon
+
+. local _N : word count `_bases'
+
+. forvalues k = 1/`_N' {
+  2.     local b   : word `k' of `_bases'
+  3.     local lnm : word `k' of `_lognames'
+  4.     cap drop `lnm'
+  5.     gen double `lnm' = ln(ing_`b') if ing_`b' > 0 & !missing(ing_`b')
+  6. }
+(765,317 missing values generated)
+(1,969,336 missing values generated)
+(1,608,069 missing values generated)
+(2,413,191 missing values generated)
+(2,433,950 missing values generated)
+(1,805,646 missing values generated)
+(2,461,919 missing values generated)
+(1,966,405 missing values generated)
+(724,688 missing values generated)
+(47,061 missing values generated)
+
+. 
+. *************************************************
+. **************** Save output *********************
+. *************************************************
+. 
+. order folioviv foliohog year month time ubica_geo state ent_name ///
+>       reg_num reg_name macro_num macro_name ///
+>       tam_loc factor upm est_dis zlfn post treat_post ///
+>       hh_size n_kids n_adults n_workers n_employed n_informal ///
+>       n_indigenous n_hli mean_age mean_educ share_female ///
+>       ing_wages_nom ing_wages ing_non_wage_income_nom ing_non_wage_income ///
+>       ing_gov_transfers_nom ing_gov_transfers ing_rentas_nom ing_rentas ///
+>       ing_fin_capital_nom ing_fin_capital ing_negocio_nom ing_negocio ///
+>       ing_ventas_nom ing_ventas ing_other_nom ing_other ///
+>       ing_lab_nom ing_lab ing_mon_nom ing_mon ///
+>       lnw lnnwi lngt lnr lnfc lnn lnv lno lni lnmon ///
+>       deflator
+
+. 
+. sort folioviv foliohog year month
+
+. compress
+  variable hh_size was float now byte
+  variable n_kids was double now byte
+  variable n_adults was double now byte
+  variable n_workers was double now byte
+  variable n_employed was double now byte
+  variable n_informal was double now byte
+  variable n_indigenous was double now byte
+  variable n_hli was double now byte
+  variable ing_wages_nom was double now long
+  variable ing_non_wage_income_nom was double now long
+  variable ing_gov_transfers_nom was double now long
+  variable ing_rentas_nom was double now long
+  variable ing_fin_capital_nom was double now long
+  variable ing_negocio_nom was double now long
+  variable ing_ventas_nom was double now long
+  variable ing_other_nom was double now long
+  variable ing_lab_nom was double now long
+  variable ing_mon_nom was double now long
+  (229,148,448 bytes saved)
+
+. save "../../data/clean/enigh/enigh-household-month.dta", replace
+(file ../../data/clean/enigh/enigh-household-month.dta not found)
+file ../../data/clean/enigh/enigh-household-month.dta saved
+
+. 
+. display _n "Saved enigh-household-month.dta with " _N " HH-month obs and " c(k) " variables."
+
+Saved enigh-household-month.dta with 2490744 HH-month obs and 84 variables.
+
+. 
+. cap log close
+
+. 
+end of do-file
