@@ -9,7 +9,7 @@ set more off
 set linesize 250
 set varabbrev off
 
-*** REPLICATION FILE: enigh-month.do
+*** REPLICATION FILE: enigh-indlevel-month.do
 *** STATA VERSION:    StataNow 19.5
 *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 *** DATE:             2026-05-02
@@ -18,11 +18,11 @@ set varabbrev off
 *** Canonical variable names — same contract as enigh-year.dta and the
 *** household-level files (modulo unit of observation and time index).
 ***
-*** Output: ../../data/clean/enigh/enigh-month.dta
-*** Companion R script: enigh-month.R (must produce the same variables / N).
+*** Output: ../../data/clean/enigh/enigh-indlevel-month.dta
+*** Companion R script: enigh-indlevel-month.R (must produce the same variables / N).
 
 cap mkdir log
-log using "log/enigh-month.log", replace text
+log using "log/enigh-indlevel-month.log", replace text
 
 include _helpers.do
 
@@ -44,20 +44,31 @@ foreach year of local years {
 
     display _n "Processing ENIGH `year' …"
 
-    *** ---- Poblacion (individual demographics) -------------------
+    *** Poblacion (individual demographics — keep ALL available columns).
+    *** new_id is preserved as folioviv+foliohog+numren so downstream tables
+    *** can be merged in via this key. Variable names drift between waves
+    *** (especially the disability block in 2024 which uses disc_ver/disc_oir
+    *** etc. instead of disc1-disc7) — we destring whatever is present and
+    *** rely on apply_all_labels to attach value labels at the end.
     use "../../data/source/enigh/poblacion`year'.dta", clear
-    keep folioviv foliohog numren ///
-        sexo edad parentesco ///
-        hablaind comprenind etnia ///
-        madre_hog padre_hog asis_esc ///
-        nivelaprob gradoaprob ///
-        hor_1 trabajo_mp num_trabaj
-    cap destring sexo, replace
-    cap destring edad, replace
-    cap destring parentesco, replace
-    cap destring nivelaprob, replace
-    cap destring gradoaprob, replace
-    cap destring hor_1, replace
+
+    *** Harmonize 2024 disability aliases back to canonical disc1-disc7 if
+    *** the wave used the new naming. Map (best-effort): caminar → disc1,
+    *** ver → disc2, hablar → disc3, oir → disc4, vestirse → disc5,
+    *** aprender → disc6, mental → disc7. Older waves with disc1-disc7
+    *** keep their values.
+    cap rename disc_camin   disc1
+    cap rename disc_ver     disc2
+    cap rename disc_habla   disc3
+    cap rename disc_oir     disc4
+    cap rename disc_vest    disc5
+    cap rename disc_apren   disc6
+    cap rename disc_acti    disc7
+
+    *** Selectively destring the helper numerics needed by the canonical
+    *** recodes below. The remaining string columns are bulk-destringed
+    *** AFTER the recodes (which read raw "1"/"2" strings).
+    cap destring sexo edad parentesco nivelaprob gradoaprob hor_1, replace
 
     *** Canonical recodes
     gen byte gender             = .
@@ -107,13 +118,24 @@ foreach year of local years {
 
     build_years_of_study
 
-    drop sexo hablaind comprenind asis_esc madre_hog padre_hog ///
-         trabajo_mp nivelaprob gradoaprob
+    *** Now bulk-destring all remaining string columns (they were kept as
+    *** strings until the canonical recodes finished reading "1"/"2" codes).
+    quietly: ds, has(type string)
+    foreach v in `r(varlist)' {
+        if !inlist("`v'", "folioviv", "foliohog", "numren") {
+            cap destring `v', replace
+        }
+    }
 
+    *** Keep all the raw poblacion columns (nivel/grado/health/time-use/
+    *** social-network/fertility/marital/disability/etc.) — they are preserved
+    *** alongside the canonical recodes (gender, etnia, indspeaker, indund,
+    *** school_attendance, motherhome, fatherhome, employed, hoursworked,
+    *** years_of_study). apply_all_labels will attach value labels at save.
     tempfile pop_`year'
     save `pop_`year''
 
-    *** ---- Concentradohogar (HH expansion weight, ubica_geo, smg) ---
+    *** Concentradohogar (HH expansion weight, ubica_geo, smg)
     use "../../data/source/enigh/concentradohogar`year'.dta", clear
     cap confirm string variable ubica_geo
     if _rc {
@@ -125,7 +147,7 @@ foreach year of local years {
     tempfile hog_`year'
     save `hog_`year''
 
-    *** ---- Viviendas (housing + survey design) ----------------------
+    *** Viviendas (housing + survey design)
     *** Variable names drift across years (e.g., 2024 renames disp_agua →
     *** agua_ent, combustible → combus, etc.). Keep only columns that exist
     *** in this year's file, then harmonize aliases below.
@@ -157,7 +179,7 @@ foreach year of local years {
     tempfile viv_`year'
     save `viv_`year''
 
-    *** ---- Trabajos (jobs and benefits) ----------------------------
+    *** Trabajos (jobs and benefits)
     use "../../data/source/enigh/trabajos`year'.dta", clear
     rename_benefits `year'
     *** Some years have tipo_trab/ocupa, others do not — drop if present
@@ -196,7 +218,7 @@ foreach year of local years {
     tempfile trab_`year'
     save `trab_`year''
 
-    *** ---- Gastospersona (personal expenditure aggregates) ---------
+    *** Gastospersona (personal expenditure aggregates)
     use "../../data/source/enigh/gastospersona`year'.dta", clear
     collapse (sum) gasto_tri gas_nm_tri, by(folioviv foliohog numren)
     rename gasto_tri  gaspers_tri
@@ -206,7 +228,7 @@ foreach year of local years {
     tempfile gpers_`year'
     save `gpers_`year''
 
-    *** ---- Ingresos (income panel) — reshape to person × month ----
+    *** Ingresos (income panel) — reshape to person × month
     use "../../data/source/enigh/ingresos`year'.dta", clear
     classify_clave
     drop if missing(clave_group) | clave_group == ""
@@ -243,7 +265,7 @@ foreach year of local years {
     tempfile inc_`year'
     save `inc_`year''
 
-    *** ---- Merge all per-year pieces -------------------------------
+    *** Merge all per-year pieces
     use `inc_`year'', clear
     merge m:1 folioviv foliohog numren using `pop_`year''
     drop _merge
@@ -296,7 +318,7 @@ drop if _merge == 2
 drop _merge
 
 *************************************************
-************* Real income & logs *****************
+************* Real income & logs ****************
 *************************************************
 
 *** Total ingreso aggregates (real & nominal)
@@ -351,7 +373,7 @@ gen byte treat_post = zlfn * post
 label variable treat_post "ZLFN × Post"
 
 *************************************************
-************* Derived demographics ***************
+************* Derived demographics **************
 *************************************************
 
 gen edad_pob = edad
@@ -396,9 +418,22 @@ order folioviv foliohog numren year month time ///
 
 sort folioviv foliohog numren year month
 
-compress
-save "../../data/clean/enigh/enigh-month.dta", replace
+*** Generate new_id (a string concat of HH + person identifiers) so analysis
+*** scripts can join in additional poblacion / trabajos rows by a single key.
+cap drop new_id
+egen new_id = concat(folioviv foliohog numren)
+label variable new_id "individual ID = folioviv+foliohog+numren"
+order new_id, after(numren)
 
-display _n "Saved enigh-month.dta with " _N " observations and " c(k) " variables."
+*** Apply value labels to every categorical column (Yes/No, sex, parentesco,
+*** education, marital, languages, dwelling, materials, water, electricity,
+*** combustible, drainage, tenure, locality size, est_socio, clase_hog, pea,
+*** clas_emp, tipocontr, indlang, disc1, causa_*, inst_*, etc.).
+apply_all_labels
+
+compress
+save "../../data/clean/enigh/enigh-indlevel-month.dta", replace
+
+display _n "Saved enigh-indlevel-month.dta with " _N " observations and " c(k) " variables."
 
 cap log close

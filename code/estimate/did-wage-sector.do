@@ -22,7 +22,7 @@ log using "log/did-wage-sector.log", replace text
 
 foreach ds in year month {
 
-do read-enigh`ds'.do
+do read-indlevel-`ds'.do
 estimates clear
 
 *************************************************

@@ -5,17 +5,17 @@
 rm(list = ls())
 options(scipen = 999)
 
-### REPLICATION FILE: enigh-month.R
+### REPLICATION FILE: enigh-indlevel-month.R
 ### R VERSION:        4.5+
 ### AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 ### DATE:             2026-05-02
 
 ### Builds the individual × month ENIGH panel for years 2016–2024.
-### Parity port of enigh-month.do — must produce the same variable list,
+### Parity port of enigh-indlevel-month.do — must produce the same variable list,
 ### same N, and per-variable summary statistics within 1e-6 (validated by
 ### compare-builds.R).
 ###
-### Output: ../../data/clean/enigh/enigh-month.dta
+### Output: ../../data/clean/enigh/enigh-indlevel-month.dta
 
 #################################################
 ################ Load + Helpers #################
@@ -40,7 +40,7 @@ build_year_month <- function(year_int) {
 
   base <- "../../data/source/enigh"
 
-  ### ---- Poblacion (individual demographics) -------------------
+  ### Poblacion (individual demographics)
   pop <- read_dta(file.path(base, sprintf("poblacion%d.dta", year_int))) |>
     rename_with(tolower) |>
     select(folioviv, foliohog, numren, sexo, edad, parentesco,
@@ -84,7 +84,7 @@ build_year_month <- function(year_int) {
     select(-sexo, -hablaind, -comprenind, -asis_esc, -madre_hog, -padre_hog,
            -trabajo_mp, -nivelaprob, -gradoaprob, -hor_1)
 
-  ### ---- Concentradohogar (HH weight, ubica_geo, smg) ----------
+  ### Concentradohogar (HH weight, ubica_geo, smg)
   hog <- read_dta(file.path(base, sprintf("concentradohogar%d.dta", year_int))) |>
     rename_with(tolower) |>
     select(folioviv, ubica_geo, factor, smg) |>
@@ -95,7 +95,7 @@ build_year_month <- function(year_int) {
     )
   hog <- clean_ubica_geo(hog, year_int)
 
-  ### ---- Viviendas (housing + survey design) -------------------
+  ### Viviendas (housing + survey design)
   viv_cols <- c("folioviv","tipo_viv","mat_pared","mat_techos","mat_pisos",
                 "antiguedad","cuart_dorm","num_cuarto","disp_agua","dotac_agua",
                 "excusado","disp_elect","combustible","eli_basura",
@@ -112,7 +112,7 @@ build_year_month <- function(year_int) {
     if (sum(is.na(x)) <= sum(is.na(viv[[col]]))) viv[[col]] <- x
   }
 
-  ### ---- Trabajos (jobs and benefits) --------------------------
+  ### Trabajos (jobs and benefits)
   tra <- read_dta(file.path(base, sprintf("trabajos%d.dta", year_int))) |>
     rename_with(tolower)
   tra <- rename_benefits(tra, year_int)
@@ -164,7 +164,7 @@ build_year_month <- function(year_int) {
     }
   }
 
-  ### ---- Gastospersona (personal expenditure aggregates) -------
+  ### Gastospersona (personal expenditure aggregates)
   gp <- read_dta(file.path(base, sprintf("gastospersona%d.dta", year_int))) |>
     rename_with(tolower) |>
     group_by(folioviv, foliohog, numren) |>
@@ -174,7 +174,7 @@ build_year_month <- function(year_int) {
       .groups = "drop"
     )
 
-  ### ---- Ingresos (income panel) -------------------------------
+  ### Ingresos (income panel)
   ing <- read_dta(file.path(base, sprintf("ingresos%d.dta", year_int))) |>
     rename_with(tolower) |>
     classify_clave() |>
@@ -217,7 +217,7 @@ build_year_month <- function(year_int) {
     if (!col %in% names(ing_pm)) ing_pm[[col]] <- 0
   }
 
-  ### ---- Merge per-year pieces ---------------------------------
+  ### Merge per-year pieces
   yr <- ing_pm |>
     left_join(pop,      by = c("folioviv","foliohog","numren")) |>
     left_join(as.data.frame(tra_wide),
@@ -334,6 +334,6 @@ ordered_cols <- c(
 trail <- setdiff(names(panel), ordered_cols)
 panel <- panel[, c(ordered_cols, trail)]
 
-write_dta_safe(panel, "../../data/clean/enigh/enigh-month.dta")
+write_dta_safe(panel, "../../data/clean/enigh/enigh-indlevel-month.dta")
 message(sprintf("Saved enigh-month.dta — N = %d, vars = %d",
                 nrow(panel), ncol(panel)))

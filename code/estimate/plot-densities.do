@@ -18,7 +18,7 @@ log using "log/plot-densities.log", replace text
 **************** Load + Globals *****************
 *************************************************
 
-do read-enighyear.do
+do read-indlevel-year.do
 cap mkdir "../../paper/figures"
 
 *************************************************

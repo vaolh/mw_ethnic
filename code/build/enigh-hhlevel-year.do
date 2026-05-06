@@ -9,7 +9,7 @@ set more off
 set linesize 250
 set varabbrev off
 
-*** REPLICATION FILE: enigh-household.do
+*** REPLICATION FILE: enigh-hhlevel-year.do
 *** STATA VERSION:    StataNow 19.5
 *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 *** DATE:             2026-05-03
@@ -24,11 +24,11 @@ set varabbrev off
 ***   - Head characteristics from poblacion (parentesco == 101)
 ***   - CONEVAL poverty: hli, ictpc, ict, informal, pea, ss_dir
 ***
-*** Output: ../../data/clean/enigh/enigh-household.dta
-*** Companion R script: enigh-household.R
+*** Output: ../../data/clean/enigh/enigh-hhlevel-year.dta
+*** Companion R script: enigh-hhlevel-year.R
 
 cap mkdir log
-log using "log/enigh-household.log", replace text
+log using "log/enigh-hhlevel-year.log", replace text
 
 include _helpers.do
 
@@ -39,7 +39,7 @@ local YEARS 2016 2018 2020 2022 2024
 *********** Aggregate from enigh-month ***********
 *************************************************
 
-use "../../data/clean/enigh/enigh-month.dta", clear
+use "../../data/clean/enigh/enigh-indlevel-month.dta", clear
 display _n "Loaded enigh-month: N = " _N
 
 *** First, collapse to person × year (sum income over the 6 months).
@@ -131,8 +131,13 @@ tempfile hh_panel
 save `hh_panel'
 
 *************************************************
-*** HH expenditure from concentradohogar  *******
+**** HH expenditure aggregated from gastoshogar **
 *************************************************
+
+*** Replaces the previous concentradohogar block — we now sum the raw
+*** clave-level expenditure records into capítulo (10 official COICOP groups)
+*** and custom groups (food, durables, services, ...). aggregate_gastos_hh_year
+*** is defined in _helpers.do.
 
 tempfile defl_tf
 load_deflators_to "`defl_tf'"
@@ -140,58 +145,15 @@ load_deflators_to "`defl_tf'"
 tempfile hh_exp_all
 local first_iter = 1
 foreach yr of local YEARS {
-    use "../../data/source/enigh/concentradohogar`yr'.dta", clear
-    cap confirm string variable ubica_geo
-    if _rc tostring ubica_geo, replace
-    *** Tolerate missing source columns: gen . placeholders for any that
-    *** the survey wave dropped or renamed (e.g., 2024 has no ing_mon).
-    foreach v in folioviv foliohog ing_cor ing_mon ing_no_mon gas_nm_pa ///
-                 ictpch alimentos vesti_calz vivienda salud transporte ///
-                 educa_espa personales transf_gas erogac_tot {
-        cap confirm variable `v'
-        if _rc gen double `v' = .
-    }
-    keep folioviv foliohog ing_cor ing_mon ing_no_mon gas_nm_pa ictpch ///
-         alimentos vesti_calz vivienda salud transporte educa_espa ///
-         personales transf_gas erogac_tot
-    foreach v in ing_cor ing_mon ing_no_mon gas_nm_pa ictpch alimentos ///
-                 vesti_calz vivienda salud transporte educa_espa ///
-                 personales transf_gas erogac_tot {
-        cap destring `v', replace
-    }
-    rename ing_cor    ing_cor_nom
-    rename ing_mon    ing_mon_hh_nom
-    rename ing_no_mon ing_no_mon_nom
-    rename gas_nm_pa  gas_nm_pa_nom
-    rename ictpch     ictpch_nom
-    rename alimentos  gas_food_nom
-    egen gas_nonfood_nom = rowtotal(vesti_calz vivienda salud transporte ///
-                                    educa_espa personales transf_gas)
-    drop vesti_calz vivienda salud transporte educa_espa personales transf_gas
-
-    *** Get August `yr' deflator (HH aggregates from concentradohogar are
-    *** quarterly nominal; treat as Aug-`yr' nominal for deflation).
-    quietly: preserve
-    use "`defl_tf'", clear
-    keep if year == `yr' & month == 8
-    quietly: summarize deflator
-    local ago_def = r(mean)
-    quietly: restore
-    if `ago_def' == 0 | missing(`ago_def') local ago_def = 1
-
-    foreach v in ing_cor_nom ing_mon_hh_nom ing_no_mon_nom gas_nm_pa_nom ///
-                 ictpch_nom gas_food_nom gas_nonfood_nom erogac_tot {
-        local r = subinstr("`v'", "_nom", "", .)
-        gen double `r'_real = `v' / `ago_def'
-    }
-
-    gen year = `yr'
+    tempfile _hh_yr
+    aggregate_gastos_hh_year `yr' "`defl_tf'" "`_hh_yr'"
     if `first_iter' {
+        use "`_hh_yr'", clear
         save `hh_exp_all', replace
         local first_iter = 0
     }
     else {
-        append using `hh_exp_all', force
+        append using "`_hh_yr'", force
         save `hh_exp_all', replace
     }
 }
@@ -317,15 +279,19 @@ order folioviv foliohog year ubica_geo state ent_name ///
       ing_fin_capital_nom ing_fin_capital ing_negocio_nom ing_negocio ///
       ing_ventas_nom ing_ventas ing_other_nom ing_other ///
       ing_lab_nom ing_lab ing_mon_nom ing_mon ///
-      ing_cor_nom ing_cor_real gas_nm_pa_nom gas_nm_pa_real ///
-      gas_food_nom gas_food_real gas_nonfood_nom gas_nonfood_real ///
-      ictpch_nom ictpch_real ///
+      gas_total_nom gas_total_real gas_total_nm_nom gas_total_nm_real ///
+      gas_food_nom gas_food_real gas_durables_nom gas_durables_real ///
+      gas_services_nom gas_services_real gas_housing_nom gas_housing_real ///
+      gas_health_nom gas_health_real gas_transport_nom gas_transport_real ///
       lnw lnnwi lngt lnr lnfc lnn lnv lno lni lnmon
+
+*** Apply value labels to every categorical column.
+apply_all_labels
 
 sort folioviv foliohog year
 compress
-save "../../data/clean/enigh/enigh-household.dta", replace
+save "../../data/clean/enigh/enigh-hhlevel-year.dta", replace
 
-display _n "Saved enigh-household.dta with " _N " HH-year obs and " c(k) " variables."
+display _n "Saved enigh-hhlevel-year.dta with " _N " HH-year obs and " c(k) " variables."
 
 cap log close

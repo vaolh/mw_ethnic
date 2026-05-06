@@ -9,7 +9,7 @@ set more off
 set linesize 250
 set varabbrev off
 
-*** REPLICATION FILE: enigh-year.do
+*** REPLICATION FILE: enigh-indlevel-year.do
 *** STATA VERSION:    StataNow 19.5
 *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 *** DATE:             2026-05-03
@@ -18,10 +18,10 @@ set varabbrev off
 *** enigh-month.dta over the 6-month reference period and merging
 *** CONEVAL poverty / formality flags.
 ***
-*** Companion R script: enigh-year.R (must produce same N + within 1e-6).
+*** Companion R script: enigh-indlevel-year.R (must produce same N + within 1e-6).
 
 cap mkdir log
-log using "log/enigh-year.log", replace text
+log using "log/enigh-indlevel-year.log", replace text
 
 include _helpers.do
 
@@ -32,7 +32,7 @@ local YEARS 2016 2018 2020 2022 2024
 *************** Load enigh-month *****************
 *************************************************
 
-use "../../data/clean/enigh/enigh-month.dta", clear
+use "../../data/clean/enigh/enigh-indlevel-month.dta", clear
 display _n "Loaded enigh-month: N = " _N " obs, vars = " c(k)
 
 *************************************************
@@ -203,9 +203,18 @@ foreach pair in "ictpc 10 deciles_ictpc" "ictpc 100 centiles_ictpc" ///
 **************** Save output *********************
 *************************************************
 
-compress
-save "../../data/clean/enigh/enigh-year.dta", replace
+*** Generate new_id.
+cap drop new_id
+egen new_id = concat(folioviv foliohog numren)
+label variable new_id "individual ID = folioviv+foliohog+numren"
+order new_id, after(numren)
 
-display _n "Saved enigh-year.dta with " _N " observations and " c(k) " variables."
+*** Apply value labels to every categorical column.
+apply_all_labels
+
+compress
+save "../../data/clean/enigh/enigh-indlevel-year.dta", replace
+
+display _n "Saved enigh-indlevel-year.dta with " _N " observations and " c(k) " variables."
 
 cap log close

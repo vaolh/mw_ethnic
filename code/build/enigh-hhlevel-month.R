@@ -5,15 +5,15 @@
 rm(list = ls())
 options(scipen = 999)
 
-### REPLICATION FILE: enigh-household-month.R
+### REPLICATION FILE: enigh-hhlevel-month.R
 ### R VERSION:        4.5+
 ### AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 ### DATE:             2026-05-03
 
 ### Builds the household × month ENIGH panel.
-### Parity port of enigh-household-month.do.
+### Parity port of enigh-hhlevel-month.do.
 ###
-### Output: ../../data/clean/enigh/enigh-household-month.dta
+### Output: ../../data/clean/enigh/enigh-hhlevel-month.dta
 
 #################################################
 ################ Load + Helpers #################
@@ -28,7 +28,7 @@ source("_helpers.R")
 ########### Aggregate from enigh-month ##########
 #################################################
 
-em <- read_dta("../../data/clean/enigh/enigh-month.dta")
+em <- read_dta("../../data/clean/enigh/enigh-indlevel-month.dta")
 em <- as.data.table(em)
 message(sprintf("Loaded enigh-month: N = %d", nrow(em)))
 
@@ -109,6 +109,6 @@ ordered_cols <- c(
 trail <- setdiff(names(hh_month), ordered_cols)
 hh_month <- as.data.frame(hh_month)[, c(intersect(ordered_cols, names(hh_month)), trail)]
 
-write_dta_safe(hh_month, "../../data/clean/enigh/enigh-household-month.dta")
+write_dta_safe(hh_month, "../../data/clean/enigh/enigh-hhlevel-month.dta")
 message(sprintf("Saved enigh-household-month.dta — N = %d HH-month obs, vars = %d",
                 nrow(hh_month), ncol(hh_month)))

@@ -18,7 +18,7 @@ log using "log/sum-descriptive.log", replace text
 **************** Load + Globals *****************
 *************************************************
 
-do read-enighyear.do
+do read-indlevel-year.do
 
 *************************************************
 ************* Descriptive Statistics ************

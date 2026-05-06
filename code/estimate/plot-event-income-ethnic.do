@@ -20,7 +20,7 @@ log using "log/plot-event-income-ethnic.log", replace text
 
 foreach ds in year month {
 
-do read-enigh`ds'.do
+do read-indlevel-`ds'.do
 estimates clear
 cap mkdir "../../paper/figures"
 

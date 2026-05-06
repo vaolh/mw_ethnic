@@ -5,7 +5,7 @@
 rm(list = ls())
 options(scipen = 999)
 
-### REPLICATION FILE: enigh-year.R
+### REPLICATION FILE: enigh-indlevel-year.R
 ### R VERSION:        4.5+
 ### AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 ### DATE:             2026-05-02
@@ -18,10 +18,10 @@ options(scipen = 999)
 ### `month` and `time` index, plus the merged CONEVAL columns).
 ###
 ### Outputs:
-###   ../../data/clean/enigh/enigh-year.dta
-###   ../../data/clean/enigh/enigh-year.RData
+###   ../../data/clean/enigh/enigh-indlevel-year.dta
+###   ../../data/clean/enigh/enigh-indlevel-year.RData
 ###
-### Companion .do script: enigh-year.do (must produce the same N + sums
+### Companion .do script: enigh-indlevel-year.do (must produce the same N + sums
 ### within 1e-6, validated by compare-builds.R).
 
 #################################################
@@ -41,7 +41,7 @@ REF_PERIOD_MONTHS <- 6
 ############### Load enigh-month ################
 #################################################
 
-month_path <- "../../data/clean/enigh/enigh-month.dta"
+month_path <- "../../data/clean/enigh/enigh-indlevel-month.dta"
 if (!file.exists(month_path)) {
   stop(sprintf("enigh-month.dta not found at %s — build enigh-month first.",
                month_path))
@@ -213,9 +213,9 @@ cross <- cross |>
 #################################################
 
 cross_dta <- as.data.frame(cross)
-write_dta_safe(cross_dta, "../../data/clean/enigh/enigh-year.dta")
+write_dta_safe(cross_dta, "../../data/clean/enigh/enigh-indlevel-year.dta")
 message(sprintf("Saved enigh-year.dta — N = %d, vars = %d",
                 nrow(cross_dta), ncol(cross_dta)))
 
-save(cross, file = "../../data/clean/enigh/enigh-year.RData")
-message("Saved enigh-year.RData")
+save(cross, file = "../../data/clean/enigh/enigh-indlevel-year.RData")
+message("Saved enigh-indlevel-year.RData")

@@ -18,7 +18,7 @@ if (!require(pacman)) install.packages("pacman")
 p_load("dplyr", "ggplot2", "data.table", "viridis",
        "survey", "convey", "Hmisc", "cowplot")
 
-load("../../data/clean/enigh/enigh-year.RData")
+load("../../data/clean/enigh/enigh-indlevel-year.RData")
 
 if (!dir.exists("../../paper/figures")) dir.create("../../paper/figures", recursive = TRUE)
 

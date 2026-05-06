@@ -9,7 +9,7 @@ set more off
 set linesize 250
 set varabbrev off
 
-*** REPLICATION FILE: enigh-household-month.do
+*** REPLICATION FILE: enigh-hhlevel-month.do
 *** STATA VERSION:    StataNow 19.5
 *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 *** DATE:             2026-05-03
@@ -21,11 +21,11 @@ set varabbrev off
 ***   - HH composition aggregated from enigh-month rows in that month
 ***   - HH-invariant attributes from concentradohogar (replicated to each month)
 ***
-*** Output: ../../data/clean/enigh/enigh-household-month.dta
-*** Companion R script: enigh-household-month.R
+*** Output: ../../data/clean/enigh/enigh-hhlevel-month.dta
+*** Companion R script: enigh-hhlevel-month.R
 
 cap mkdir log
-log using "log/enigh-household-month.log", replace text
+log using "log/enigh-hhlevel-month.log", replace text
 
 include _helpers.do
 
@@ -33,7 +33,7 @@ include _helpers.do
 *********** Aggregate from enigh-month ***********
 *************************************************
 
-use "../../data/clean/enigh/enigh-month.dta", clear
+use "../../data/clean/enigh/enigh-indlevel-month.dta", clear
 display _n "Loaded enigh-month: N = " _N
 
 local income_bases wages non_wage_income gov_transfers rentas fin_capital ///
@@ -103,6 +103,84 @@ forvalues k = 1/`_N' {
 }
 
 *************************************************
+*** HH expenditure aggregated from gastoshogar ***
+*************************************************
+
+*** For HH × month, distribute trimestral expenditure (gasto_tri) evenly
+*** across the 3 reference months when mes_dia is missing; attribute to the
+*** specific month when mes_dia is valid. We aggregate by (HH × month) and
+*** merge into the panel.
+
+tempfile defl_tf
+load_deflators_to "`defl_tf'"
+
+tempfile defl_tf2
+save `defl_tf2'
+
+tempfile hh_panel_pre_gas
+save `hh_panel_pre_gas'
+
+local YEARS 2016 2018 2020 2022 2024
+tempfile hh_gas_month_all
+local first_iter = 1
+foreach yr of local YEARS {
+    use "../../data/source/enigh/gastoshogar`yr'.dta", clear
+    cap destring gasto_tri,  replace
+    cap destring gas_nm_tri, replace
+    classify_gasto_clave
+    *** Extract month from mes_dia (MMDD); when "0000" or empty, distribute
+    *** evenly across the 3 months centered on the survey reference window.
+    cap confirm string variable mes_dia
+    if _rc tostring mes_dia, replace
+    gen byte month_from_dia = real(substr(mes_dia, 1, 2))
+    *** ENIGH reference period is the survey trimester. We allocate 1/3 of
+    *** the trimestral amount to each of months {month_from_dia, +1, -1}
+    *** if the date is valid; otherwise drop (we keep the year-level total
+    *** in enigh-hhlevel-year.dta which uses the full quarterly aggregate).
+    drop if missing(month_from_dia) | month_from_dia < 1 | month_from_dia > 12
+    *** Each trimestral observation becomes 1 monthly attribution.
+    gen double gas_nom_m  = gasto_tri  / 3
+    gen double gas_nm_m   = gas_nm_tri / 3
+    *** Aggregate to (HH × month).
+    collapse (sum) gas_nom_m gas_nm_m, ///
+        by(folioviv foliohog month_from_dia)
+    rename month_from_dia month
+    rename gas_nom_m gas_total_nom_month
+    rename gas_nm_m  gas_total_nm_nom_month
+    *** Deflate by Aug-`yr' INPC.
+    quietly {
+        preserve
+        use "`defl_tf'", clear
+        keep if year == `yr' & month == 8
+        summarize deflator
+        local ago_def = r(mean)
+        restore
+    }
+    if `ago_def' == 0 | missing(`ago_def') local ago_def = 1
+    gen double gas_total_real_month    = gas_total_nom_month    / `ago_def'
+    gen double gas_total_nm_real_month = gas_total_nm_nom_month / `ago_def'
+    gen year = `yr'
+    if `first_iter' {
+        save `hh_gas_month_all', replace
+        local first_iter = 0
+    }
+    else {
+        append using `hh_gas_month_all', force
+        save `hh_gas_month_all', replace
+    }
+}
+
+use `hh_panel_pre_gas', clear
+merge 1:1 folioviv foliohog year month using `hh_gas_month_all'
+drop if _merge == 2
+drop _merge
+
+label variable gas_total_nom_month     "nominal HH expenditure this month (pesos)"
+label variable gas_total_real_month    "real (Aug-2024) HH expenditure this month"
+label variable gas_total_nm_nom_month  "nominal HH non-monetary expenditure this month"
+label variable gas_total_nm_real_month "real HH non-monetary expenditure this month"
+
+*************************************************
 **************** Save output *********************
 *************************************************
 
@@ -116,13 +194,18 @@ order folioviv foliohog year month time ubica_geo state ent_name ///
       ing_fin_capital_nom ing_fin_capital ing_negocio_nom ing_negocio ///
       ing_ventas_nom ing_ventas ing_other_nom ing_other ///
       ing_lab_nom ing_lab ing_mon_nom ing_mon ///
+      gas_total_nom_month gas_total_real_month ///
+      gas_total_nm_nom_month gas_total_nm_real_month ///
       lnw lnnwi lngt lnr lnfc lnn lnv lno lni lnmon ///
       deflator
 
+*** Apply value labels to every categorical column.
+apply_all_labels
+
 sort folioviv foliohog year month
 compress
-save "../../data/clean/enigh/enigh-household-month.dta", replace
+save "../../data/clean/enigh/enigh-hhlevel-month.dta", replace
 
-display _n "Saved enigh-household-month.dta with " _N " HH-month obs and " c(k) " variables."
+display _n "Saved enigh-hhlevel-month.dta with " _N " HH-month obs and " c(k) " variables."
 
 cap log close

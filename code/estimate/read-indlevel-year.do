@@ -2,13 +2,13 @@
 *************** Read ENIGH Year *****************
 *************************************************
 
-*** REPLICATION FILE: read-enighyear.do
+*** REPLICATION FILE: read-indlevel-year.do
 *** STATA VERSION:    StataNow 19.5
 *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
 *** DATE:             2026-05-03
 
-*** Loads the yearly cross-section produced by code/build/enigh-year.do
-*** (or code/build/enigh-year.R — both write to the same path with the
+*** Loads the yearly cross-section produced by code/build/enigh-indlevel-year.do
+*** (or code/build/enigh-indlevel-year.R — both write to the same path with the
 *** same canonical variable contract).
 ***
 *** Canonical names (zlfn, post, etnia, indspeaker, indund, female,
@@ -38,7 +38,7 @@ if _rc {
 ****************** Load Data ********************
 *************************************************
 
-use "../../data/clean/enigh/enigh-year.dta", clear
+use "../../data/clean/enigh/enigh-indlevel-year.dta", clear
 
 *************************************************
 ***************** Controls **********************
