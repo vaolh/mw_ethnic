@@ -1,0 +1,1272 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
+> nwage/code/estimate/log/plot-event-exp-ethnic.log
+  log type:  text
+ opened on:  10 May 2026, 10:42:44
+
+. 
+. include _helpers.do
+
+. *************************************************
+. **************** Helpers (estimate) *************
+. *************************************************
+. 
+. *** REPLICATION FILE: code/estimate/_helpers.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Defines reusable Stata programs used across the DiD .do files in
+. *** code/estimate/.
+. ***
+. ***   savecoeffs namelist, cvar(<varname>) interaction_pattern(<token>) saved
+> ir(<path>)
+. ***       — extracts every coefficient that contains <token> from each stored
+. ***         estimate, saves to <savedir>/coefficients_<cvar>.{dta,csv}.
+. ***
+. ***   yearcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib2018.year` event-study
+. ***         regression, builds matrices `__year_b` (1×5) and `__year_se` (1×5
+> )
+. ***         with positions [2016, 2018=0, 2020, 2022, 2024] in column order.
+. ***         Coefplot can then plot the 2018 baseline as zero with no CI band.
+. ***         Use as: coefplot matrix(__year_b), se(__year_se) ...
+. ***
+. *** Adapted from a Brazil-minwage `program.do` (savecoeffs + exporttable).
+. *** The original `exporttable` is intentionally NOT ported here: esttab's
+. *** native option strings (mtitle, refcat, coeflabel) do not pass cleanly
+. *** through a Stata wrapper without losing the embedded quoting that
+. *** controls per-column titles. The DiD scripts call esttab directly to
+. *** preserve readable, debuggable formatting.
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. *************************************************
+. **************** yearcoefs **********************
+. *************************************************
+. 
+. cap prog drop yearcoefs
+
+. program define yearcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __year_b
+  4.     cap matrix drop __year_se
+  5.     matrix __year_b  = J(1, 5, 0)
+  6.     matrix __year_se = J(1, 5, 0)
+  7.     matrix __year_b[1, 1]  = _b[1.zlfn#2016.year]
+  8.     matrix __year_b[1, 3]  = _b[1.zlfn#2020.year]
+  9.     matrix __year_b[1, 4]  = _b[1.zlfn#2022.year]
+ 10.     matrix __year_b[1, 5]  = _b[1.zlfn#2024.year]
+ 11.     matrix __year_se[1, 1] = _se[1.zlfn#2016.year]
+ 12.     matrix __year_se[1, 3] = _se[1.zlfn#2020.year]
+ 13.     matrix __year_se[1, 4] = _se[1.zlfn#2022.year]
+ 14.     matrix __year_se[1, 5] = _se[1.zlfn#2024.year]
+ 15.     matrix colnames __year_b  = c2016 c2018 c2020 c2022 c2024
+ 16.     matrix colnames __year_se = c2016 c2018 c2020 c2022 c2024
+ 17. end
+
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. cap prog drop savecoeffs
+
+. program define savecoeffs
+  1.     syntax namelist, CVARname(string) INTERACTION_pattern(string) SAVEdir(
+> string)
+  2. 
+.     *** Get coefficient names from the first stored estimate.
+.     local first : word 1 of `namelist'
+  3.     qui estimates restore `first'
+  4.     local allcoefs : colnames e(b)
+  5. 
+.     *** Filter to those containing both the heterogeneity variable name and
+.     *** the interaction-pattern token (e.g. "1.zlfn#1.post").
+.     local intcoefs
+  6.     foreach c of local allcoefs {
+  7.         if strpos("`c'", "`interaction_pattern'") > 0 & strpos("`c'", "`cv
+> arname'") > 0 {
+  8.             local intcoefs `intcoefs' `c'
+  9.         }
+ 10.     }
+ 11. 
+.     local ncoefs : word count `intcoefs'
+ 12.     if `ncoefs' == 0 {
+ 13.         di as error "savecoeffs: no interaction coefficients found for `cv
+> arname' / `interaction_pattern'"
+ 14.         exit 198
+ 15.     }
+ 16. 
+.     *** Capture value labels BEFORE preserve (preserve restores data state bu
+> t
+.     *** value-label associations are lost across clear).
+.     forval i = 1/`ncoefs' {
+ 17.         local thiscoef : word `i' of `intcoefs'
+ 18.         local rc = regexm("`thiscoef'", "^([0-9]+)[bo]?\.")
+ 19.         local numpart = regexs(1)
+ 20.         local lbl`i' : label (`cvarname') `numpart'
+ 21.         local id`i' = `numpart'
+ 22.     }
+ 23. 
+.     preserve
+ 24.     clear
+ 25.     qui set obs `ncoefs'
+ 26.     gen str80 coefname           = ""
+ 27.     gen int   `cvarname'_id      = .
+ 28.     gen str80 `cvarname'_label   = ""
+ 29. 
+.     forval i = 1/`ncoefs' {
+ 30.         local thiscoef : word `i' of `intcoefs'
+ 31.         qui replace coefname           = "`thiscoef'" in `i'
+ 32.         qui replace `cvarname'_id      = `id`i''      in `i'
+ 33.         qui replace `cvarname'_label   = "`lbl`i''"   in `i'
+ 34.     }
+ 35. 
+.     foreach estnm of local namelist {
+ 36.         qui estimates restore `estnm'
+ 37.         tempname bvec vvec
+ 38.         matrix `bvec' = e(b)
+ 39.         matrix `vvec' = vecdiag(e(V))
+ 40. 
+.         gen double b_`estnm'  = .
+ 41.         gen double se_`estnm' = .
+ 42.         gen double N_`estnm'  = e(N)
+ 43. 
+.         forval i = 1/`ncoefs' {
+ 44.             local thiscoef : word `i' of `intcoefs'
+ 45.             local colidx = colnumb(`bvec', "`thiscoef'")
+ 46.             if `colidx' != . {
+ 47.                 qui replace b_`estnm'  = `bvec'[1, `colidx']        in `i'
+ 48.                 qui replace se_`estnm' = sqrt(`vvec'[1, `colidx']) in `i'
+ 49.             }
+ 50.         }
+ 51.     }
+ 52. 
+.     order `cvarname'_id `cvarname'_label
+ 53.     drop coefname
+ 54.     sort `cvarname'_id
+ 55. 
+.     cap mkdir "`savedir'"
+ 56.     qui save             "`savedir'/coefficients_`cvarname'.dta", replace
+ 57.     qui export delimited "`savedir'/coefficients_`cvarname'.csv", replace
+ 58.     di as text "savecoeffs: wrote coefficients_`cvarname'.{dta,csv} to `sa
+> vedir'"
+ 59.     restore
+ 60. end
+
+. 
+. 
+. *************************************************
+. **** Event Study: Total HH Exp by HLI / Indig ****
+. *************************************************
+. 
+. foreach ds in year month {
+  2. 
+.     do read-hhlevel-exp-month.do
+  3.     estimates clear
+  4.     cap mkdir "../../paper/figures/event"
+  5. 
+.     if "`ds'" == "year" {
+  6. 
+.         local year_xlabel 1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024"
+  7. 
+.         reghdfe lngas_total_real i.zlfn##ib2018.year $controls if hli_hh == 0
+> , ///
+>             absorb(ubica_geo year) vce(cluster ubica_geo)
+  8.         eststo graph1
+  9.         yearcoefs, eq(graph1)
+ 10. 
+.         coefplot matrix(__year_b), se(__year_se) vertical ///
+>             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
+> ol(circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
+>             xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Year") ///
+>             xlabel(`year_xlabel') ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 11.         graph export "../../paper/figures/event/plot-event-exp-hli-nonind-
+> year.png", replace width(4000) height(3000)
+ 12. 
+.         reghdfe lngas_total_real i.zlfn##ib2018.year $controls if hli_hh == 1
+> , ///
+>             absorb(ubica_geo year) vce(cluster ubica_geo)
+ 13.         eststo graph2
+ 14.         yearcoefs, eq(graph2)
+ 15. 
+.         coefplot matrix(__year_b), se(__year_se) vertical ///
+>             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
+> (circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
+>             xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Year") ///
+>             xlabel(`year_xlabel') ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 16.         graph export "../../paper/figures/event/plot-event-exp-hli-ind-yea
+> r.png", replace width(4000) height(3000)
+ 17. 
+.         estimates clear
+ 18. 
+.         reghdfe lngas_total_real i.zlfn##ib2018.year $controls if indig_hh ==
+>  0, ///
+>             absorb(ubica_geo year) vce(cluster ubica_geo)
+ 19.         eststo graph3
+ 20.         yearcoefs, eq(graph3)
+ 21. 
+.         coefplot matrix(__year_b), se(__year_se) vertical ///
+>             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
+> ol(circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
+>             xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Year") ///
+>             xlabel(`year_xlabel') ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 22.         graph export "../../paper/figures/event/plot-event-exp-indig-nonin
+> d-year.png", replace width(4000) height(3000)
+ 23. 
+.         reghdfe lngas_total_real i.zlfn##ib2018.year $controls if indig_hh ==
+>  1, ///
+>             absorb(ubica_geo year) vce(cluster ubica_geo)
+ 24.         eststo graph4
+ 25.         yearcoefs, eq(graph4)
+ 26. 
+.         coefplot matrix(__year_b), se(__year_se) vertical ///
+>             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
+> (circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
+>             xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Year") ///
+>             xlabel(`year_xlabel') ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 27.         graph export "../../paper/figures/event/plot-event-exp-indig-ind-y
+> ear.png", replace width(4000) height(3000)
+ 28.     }
+ 29. 
+.     if "`ds'" == "month" {
+ 30. 
+.         *** Month branch: use ##ib<base_month>.time as in the wage/income var
+> iants.
+.         *** ENIGH 2018 reference month for ZLFN baseline = 21397 (representin
+> g 1aug2018).
+.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 
+> 0, ///
+>             absorb(ubica_geo time) vce(cluster ubica_geo)
+ 31.         eststo graph1
+ 32. 
+.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 
+> 1, ///
+>             absorb(ubica_geo time) vce(cluster ubica_geo)
+ 33.         eststo graph2
+ 34. 
+.         local month_keep ///
+>             "1.zlfn#20485.time" "1.zlfn#20514.time" "1.zlfn#20545.time" ///
+>             "1.zlfn#20575.time" "1.zlfn#20606.time" "1.zlfn#20636.time" ///
+>             "1.zlfn#20667.time" "1.zlfn#20698.time" "1.zlfn#20728.time" ///
+>             "1.zlfn#21216.time" "1.zlfn#21244.time" "1.zlfn#21275.time" ///
+>             "1.zlfn#21305.time" "1.zlfn#21336.time" "1.zlfn#21366.time" ///
+>             "1.zlfn#21397.time" "1.zlfn#21428.time" "1.zlfn#21458.time" ///
+>             "1.zlfn#21946.time" "1.zlfn#21975.time" "1.zlfn#22006.time" ///
+>             "1.zlfn#22036.time" "1.zlfn#22067.time" "1.zlfn#22097.time" ///
+>             "1.zlfn#22128.time" "1.zlfn#22159.time" "1.zlfn#22189.time" ///
+>             "1.zlfn#22677.time" "1.zlfn#22705.time" "1.zlfn#22736.time" ///
+>             "1.zlfn#22766.time" "1.zlfn#22797.time" "1.zlfn#22827.time" ///
+>             "1.zlfn#22858.time" "1.zlfn#22889.time" "1.zlfn#22919.time" ///
+>             "1.zlfn#23407.time" "1.zlfn#23436.time" "1.zlfn#23467.time" ///
+>             "1.zlfn#23497.time" "1.zlfn#23528.time" "1.zlfn#23558.time" ///
+>             "1.zlfn#23589.time" "1.zlfn#23620.time" "1.zlfn#23650.time"
+ 35. 
+.         local month_xlabel ///
+>             1 "01feb2016" 2 "01mar2016" 3 "01apr2016" ///
+>             4 "01may2016" 5 "01jun2016" 6 "01jul2016" ///
+>             7 "01aug2016" 8 "01sep2016" 9 "01oct2016" ///
+>             10 "01feb2018" 11 "01mar2018" 12 "01apr2018" ///
+>             13 "01may2018" 14 "01jun2018" 15 "01jul2018" ///
+>             16 "01aug2018" 17 "01sep2018" 18 "01oct2018" ///
+>             19 "01feb2020" 20 "01mar2020" 21 "01apr2020" ///
+>             22 "01may2020" 23 "01jun2020" 24 "01jul2020" ///
+>             25 "01aug2020" 26 "01sep2020" 27 "01oct2020" ///
+>             28 "01feb2022" 29 "01mar2022" 30 "01apr2022" ///
+>             31 "01may2022" 32 "01jun2022" 33 "01jul2022" ///
+>             34 "01aug2022" 35 "01sep2022" 36 "01oct2022" ///
+>             37 "01feb2024" 38 "01mar2024" 39 "01apr2024" ///
+>             40 "01may2024" 41 "01jun2024" 42 "01jul2024" ///
+>             43 "01aug2024" 44 "01sep2024" 45 "01oct2024"
+ 36. 
+.         coefplot graph1 ///
+>             , keep(`month_keep') vertical ///
+>             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
+> ol(circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
+>             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Month") ///
+>             xlabel(`month_xlabel', angle(90) labsize(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 37.         graph export "../../paper/figures/event/plot-event-exp-hli-nonind-
+> month.png", replace width(4000) height(3000)
+ 38. 
+.         coefplot graph2 ///
+>             , keep(`month_keep') vertical ///
+>             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
+> (circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
+>             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Month") ///
+>             xlabel(`month_xlabel', angle(90) labsize(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 39.         graph export "../../paper/figures/event/plot-event-exp-hli-ind-mon
+> th.png", replace width(4000) height(3000)
+ 40. 
+.         estimates clear
+ 41. 
+.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh =
+> = 0, ///
+>             absorb(ubica_geo time) vce(cluster ubica_geo)
+ 42.         eststo graph3
+ 43. 
+.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh =
+> = 1, ///
+>             absorb(ubica_geo time) vce(cluster ubica_geo)
+ 44.         eststo graph4
+ 45. 
+.         coefplot graph3 ///
+>             , keep(`month_keep') vertical ///
+>             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
+> ol(circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
+>             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Month") ///
+>             xlabel(`month_xlabel', angle(90) labsize(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 46.         graph export "../../paper/figures/event/plot-event-exp-indig-nonin
+> d-month.png", replace width(4000) height(3000)
+ 47. 
+.         coefplot graph4 ///
+>             , keep(`month_keep') vertical ///
+>             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
+> (circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
+>             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Month") ///
+>             xlabel(`month_xlabel', angle(90) labsize(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 48.         graph export "../../paper/figures/event/plot-event-exp-indig-ind-m
+> onth.png", replace width(4000) height(3000)
+ 49.     }
+ 50. 
+. }
+
+. *************************************************
+. *********** Read HH × Month Expenditure *********
+. *************************************************
+. 
+. *** REPLICATION FILE: read-hhlevel-exp-month.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Loads the long expenditure panel (one row per HH × clave × month) from
+. *** code/build/enigh-hhlevel-exp-month.do, then collapses across all claves
+. *** to total household expenditure per month. Merges in HH composition and
+. *** ethnicity proxies from enigh-hhlevel-inc-month for use as covariates and
+. *** heterogeneity strata.
+. ***
+. *** WHY TOTAL (not capítulo-level): The build's clave→capitulo mapping is
+. *** wave-specific. Numeric capítulos ("01"…"18") only appear in 2024 data;
+. *** alpha codes ("A0", "A1", "A2", "B0") span 2016/2018 only. After
+. *** subsetting to a single capítulo, post is constant and the DiD treatment
+. *** effect is unidentifiable. Aggregating over capítulos yields a clean
+. *** monthly HH-expenditure outcome with full pre/post and treat/control
+. *** variation. A capítulo-level breakdown awaits a wave-harmonized
+. *** classification in the build script (see code/build/_helpers.do
+. *** classify_gasto_clave).
+. ***
+. *** Output dataset in memory has, per row:
+. ***   folioviv foliohog year month time             (key)
+. ***   gas_total_real lngas_total_real               (outcomes)
+. ***   zlfn post treat_post ubica_geo factor smg     (HH treatment / weights)
+. ***   hli_hh indig_hh                                (HH ethnicity indicators
+> )
+. ***   hh_size n_kids n_adults n_workers              (composition controls)
+. ***   mean_age mean_educ share_female
+. ***
+. *** Sets the global $controls.
+. 
+. *************************************************
+. ****************** Load Data ********************
+. *************************************************
+. 
+. use "../../data/clean/enigh/enigh-hhlevel-exp-month.dta", clear
+
+. 
+. *************************************************
+. **** Collapse claves -> total HH × month *********
+. *************************************************
+. 
+. *** Sum real and nominal expenditure across ALL claves within (HH, year, mont
+> h).
+. collapse (sum)     gas_total_real    = gas_real        ///
+>                    gas_total_nm_real = gas_nm_real     ///
+>                    gas_total_nom     = gas_nom         ///
+>                    gas_total_nm_nom  = gas_nm_nom      ///
+>          (firstnm) zlfn post treat_post ubica_geo factor smg upm est_dis ///
+>                    state ent_name reg_num reg_name macro_num macro_name time,
+>  ///
+>          by(folioviv foliohog year month)
+
+. 
+. label variable gas_total_real    "Total real HH expenditure (Aug-2024 pesos)"
+
+. label variable gas_total_nm_real "Total real non-monetary HH expenditure"
+
+. 
+. *** Logged outcome (log+1 to handle zero-spending months in unusual cells).
+. gen double lngas_total_real = ln(gas_total_real + 1)
+
+. label variable lngas_total_real "log(total real HH expenditure + 1)"
+
+. 
+. *************************************************
+. **** Merge HH composition + ethnicity ************
+. *************************************************
+. 
+. merge 1:1 folioviv foliohog year month using ///
+>     "../../data/clean/enigh/enigh-hhlevel-inc-month.dta", ///
+>     keepusing(hh_size n_kids n_adults n_workers n_employed n_informal ///
+>               n_indigenous n_hli mean_age mean_educ share_female) ///
+>     keep(match) nogen
+(label post_lbl already defined)
+(label zlfn_lbl already defined)
+(label yesno_lbl already defined)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                           730,252  
+    -----------------------------------------
+
+. 
+. cap drop hli_hh
+
+. cap drop indig_hh
+
+. gen byte hli_hh   = (n_hli         > 0) if !missing(n_hli)
+
+. gen byte indig_hh = (n_indigenous  > 0) if !missing(n_indigenous)
+
+. label variable hli_hh   "Household has at least one HLI member"
+
+. label variable indig_hh "Household has at least one self-identified indigenou
+> s member"
+
+. 
+. *************************************************
+. ***************** Controls **********************
+. *************************************************
+. 
+. global controls hh_size n_kids n_adults n_workers mean_age mean_educ share_fe
+> male
+
+. 
+end of do-file
+(dropped 15 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    662,229
+Absorbing 2 HDFE groups                           F(  10,   1658) =    2760.35
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.3758
+                                                  Adj R-squared   =     0.3743
+                                                  Within R-sq.    =     0.2939
+Number of clusters (ubica_geo) =      1,659       Root MSE        =     0.7545
+
+                          (Std. err. adjusted for 1,659 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+     1 2016  |  -.0166172    .034165    -0.49   0.627    -.0836284     .050394
+     1 2020  |  -.0321447   .0276908    -1.16   0.246    -.0864572    .0221678
+     1 2022  |   .0278596   .0218943     1.27   0.203    -.0150838     .070803
+     1 2024  |  -.0805608   .0296056    -2.72   0.007    -.1386291   -.0224926
+             |
+     hh_size |    .174916   .0028158    62.12   0.000     .1693931    .1804389
+      n_kids |  -.0757398   .0066736   -11.35   0.000    -.0888293   -.0626503
+    n_adults |          0  (omitted)
+   n_workers |   .0676864   .0030063    22.51   0.000     .0617898    .0735829
+    mean_age |  -.0012619   .0001961    -6.43   0.000    -.0016466   -.0008772
+   mean_educ |   .1028852   .0009701   106.06   0.000     .1009824    .1047879
+share_female |  -.1429541   .0065411   -21.85   0.000    -.1557838   -.1301245
+       _cons |   7.243356   .0160473   451.37   0.000     7.211881    7.274831
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1659        1659           0    *|
+        year |         5           1           4     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-hli-nonind-year.png not found)
+file ../../paper/figures/event/plot-event-exp-hli-nonind-year.png written in PN
+> G format
+(dropped 93 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =     67,686
+Absorbing 2 HDFE groups                           F(  10,   1107) =     686.57
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.4365
+                                                  Adj R-squared   =     0.4271
+                                                  Within R-sq.    =     0.2754
+Number of clusters (ubica_geo) =      1,108       Root MSE        =     0.7789
+
+                          (Std. err. adjusted for 1,108 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+     1 2016  |  -.0194599   .0631516    -0.31   0.758    -.1433702    .1044504
+     1 2020  |  -.0570461   .0459368    -1.24   0.215    -.1471792    .0330869
+     1 2022  |  -.0699743   .0722493    -0.97   0.333    -.2117353    .0717867
+     1 2024  |  -.2711203   .0967608    -2.80   0.005    -.4609756    -.081265
+             |
+     hh_size |   .1772609   .0070118    25.28   0.000     .1635029    .1910189
+      n_kids |  -.1003499   .0169416    -5.92   0.000    -.1335912   -.0671086
+    n_adults |          0  (omitted)
+   n_workers |   .0707573   .0069859    10.13   0.000     .0570503    .0844643
+    mean_age |  -.0019596   .0005393    -3.63   0.000    -.0030178   -.0009013
+   mean_educ |   .0924601   .0024079    38.40   0.000     .0877356    .0971845
+share_female |  -.0731046   .0193058    -3.79   0.000    -.1109846   -.0352245
+       _cons |   6.888308   .0417087   165.15   0.000     6.806471    6.970145
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1108        1108           0    *|
+        year |         5           1           4     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-hli-ind-year.png not found)
+file ../../paper/figures/event/plot-event-exp-hli-ind-year.png written in PNG f
+> ormat
+(dropped 21 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    500,899
+Absorbing 2 HDFE groups                           F(  10,   1634) =    2410.40
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.3799
+                                                  Adj R-squared   =     0.3778
+                                                  Within R-sq.    =     0.3011
+Number of clusters (ubica_geo) =      1,635       Root MSE        =     0.7499
+
+                          (Std. err. adjusted for 1,635 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+     1 2016  |  -.0256928   .0370315    -0.69   0.488    -.0983271    .0469415
+     1 2020  |  -.0425174   .0286251    -1.49   0.138    -.0986631    .0136283
+     1 2022  |   .0263192   .0225945     1.16   0.244     -.017998    .0706364
+     1 2024  |  -.0881538   .0304348    -2.90   0.004    -.1478492   -.0284584
+             |
+     hh_size |   .1709801   .0028454    60.09   0.000      .165399    .1765612
+      n_kids |  -.0702243   .0082421    -8.52   0.000    -.0863905    -.054058
+    n_adults |          0  (omitted)
+   n_workers |   .0726634   .0033878    21.45   0.000     .0660186    .0793083
+    mean_age |  -.0012121   .0002046    -5.92   0.000    -.0016134   -.0008108
+   mean_educ |   .1044203   .0010081   103.58   0.000      .102443    .1063977
+share_female |  -.1495895   .0070093   -21.34   0.000    -.1633377   -.1358413
+       _cons |   7.267831   .0159249   456.38   0.000     7.236595    7.299066
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1635        1635           0    *|
+        year |         5           1           4     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-indig-nonind-year.png not found)
+file ../../paper/figures/event/plot-event-exp-indig-nonind-year.png written in 
+> PNG format
+(dropped 14 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    229,089
+Absorbing 2 HDFE groups                           F(  10,   1723) =    1631.55
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.3986
+                                                  Adj R-squared   =     0.3940
+                                                  Within R-sq.    =     0.2717
+Number of clusters (ubica_geo) =      1,724       Root MSE        =     0.7698
+
+                          (Std. err. adjusted for 1,724 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+     1 2016  |   .0012342   .0410035     0.03   0.976    -.0791877    .0816561
+     1 2020  |   .0151908   .0352058     0.43   0.666    -.0538599    .0842415
+     1 2022  |   .0120309   .0280486     0.43   0.668    -.0429821    .0670438
+     1 2024  |  -.0400175   .0328078    -1.22   0.223    -.1043649    .0243299
+             |
+     hh_size |   .1807906   .0041269    43.81   0.000     .1726963    .1888848
+      n_kids |  -.0938734   .0093916   -10.00   0.000    -.1122935   -.0754532
+    n_adults |          0  (omitted)
+   n_workers |   .0575831   .0040826    14.10   0.000     .0495758    .0655904
+    mean_age |   -.001579   .0002898    -5.45   0.000    -.0021474   -.0010106
+   mean_educ |   .0967212   .0014004    69.06   0.000     .0939745     .099468
+share_female |  -.1039817   .0095689   -10.87   0.000    -.1227496   -.0852137
+       _cons |   7.088936   .0247189   286.78   0.000     7.040454    7.137419
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1724        1724           0    *|
+        year |         5           1           4     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-indig-ind-year.png not found)
+file ../../paper/figures/event/plot-event-exp-indig-ind-year.png written in PNG
+>  format
+
+. *************************************************
+. *********** Read HH × Month Expenditure *********
+. *************************************************
+. 
+. *** REPLICATION FILE: read-hhlevel-exp-month.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Loads the long expenditure panel (one row per HH × clave × month) from
+. *** code/build/enigh-hhlevel-exp-month.do, then collapses across all claves
+. *** to total household expenditure per month. Merges in HH composition and
+. *** ethnicity proxies from enigh-hhlevel-inc-month for use as covariates and
+. *** heterogeneity strata.
+. ***
+. *** WHY TOTAL (not capítulo-level): The build's clave→capitulo mapping is
+. *** wave-specific. Numeric capítulos ("01"…"18") only appear in 2024 data;
+. *** alpha codes ("A0", "A1", "A2", "B0") span 2016/2018 only. After
+. *** subsetting to a single capítulo, post is constant and the DiD treatment
+. *** effect is unidentifiable. Aggregating over capítulos yields a clean
+. *** monthly HH-expenditure outcome with full pre/post and treat/control
+. *** variation. A capítulo-level breakdown awaits a wave-harmonized
+. *** classification in the build script (see code/build/_helpers.do
+. *** classify_gasto_clave).
+. ***
+. *** Output dataset in memory has, per row:
+. ***   folioviv foliohog year month time             (key)
+. ***   gas_total_real lngas_total_real               (outcomes)
+. ***   zlfn post treat_post ubica_geo factor smg     (HH treatment / weights)
+. ***   hli_hh indig_hh                                (HH ethnicity indicators
+> )
+. ***   hh_size n_kids n_adults n_workers              (composition controls)
+. ***   mean_age mean_educ share_female
+. ***
+. *** Sets the global $controls.
+. 
+. *************************************************
+. ****************** Load Data ********************
+. *************************************************
+. 
+. use "../../data/clean/enigh/enigh-hhlevel-exp-month.dta", clear
+
+. 
+. *************************************************
+. **** Collapse claves -> total HH × month *********
+. *************************************************
+. 
+. *** Sum real and nominal expenditure across ALL claves within (HH, year, mont
+> h).
+. collapse (sum)     gas_total_real    = gas_real        ///
+>                    gas_total_nm_real = gas_nm_real     ///
+>                    gas_total_nom     = gas_nom         ///
+>                    gas_total_nm_nom  = gas_nm_nom      ///
+>          (firstnm) zlfn post treat_post ubica_geo factor smg upm est_dis ///
+>                    state ent_name reg_num reg_name macro_num macro_name time,
+>  ///
+>          by(folioviv foliohog year month)
+
+. 
+. label variable gas_total_real    "Total real HH expenditure (Aug-2024 pesos)"
+
+. label variable gas_total_nm_real "Total real non-monetary HH expenditure"
+
+. 
+. *** Logged outcome (log+1 to handle zero-spending months in unusual cells).
+. gen double lngas_total_real = ln(gas_total_real + 1)
+
+. label variable lngas_total_real "log(total real HH expenditure + 1)"
+
+. 
+. *************************************************
+. **** Merge HH composition + ethnicity ************
+. *************************************************
+. 
+. merge 1:1 folioviv foliohog year month using ///
+>     "../../data/clean/enigh/enigh-hhlevel-inc-month.dta", ///
+>     keepusing(hh_size n_kids n_adults n_workers n_employed n_informal ///
+>               n_indigenous n_hli mean_age mean_educ share_female) ///
+>     keep(match) nogen
+(label post_lbl already defined)
+(label zlfn_lbl already defined)
+(label yesno_lbl already defined)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                           730,252  
+    -----------------------------------------
+
+. 
+. cap drop hli_hh
+
+. cap drop indig_hh
+
+. gen byte hli_hh   = (n_hli         > 0) if !missing(n_hli)
+
+. gen byte indig_hh = (n_indigenous  > 0) if !missing(n_indigenous)
+
+. label variable hli_hh   "Household has at least one HLI member"
+
+. label variable indig_hh "Household has at least one self-identified indigenou
+> s member"
+
+. 
+. *************************************************
+. ***************** Controls **********************
+. *************************************************
+. 
+. global controls hh_size n_kids n_adults n_workers mean_age mean_educ share_fe
+> male
+
+. 
+end of do-file
+(dropped 15 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23589bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23620bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23650bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    662,229
+Absorbing 2 HDFE groups                           F(  20,   1658) =    1480.68
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.3790
+                                                  Adj R-squared   =     0.3774
+                                                  Within R-sq.    =     0.2950
+Number of clusters (ubica_geo) =      1,659       Root MSE        =     0.7526
+
+                          (Std. err. adjusted for 1,659 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        time |
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+      23589  |          0  (omitted)
+      23620  |          0  (omitted)
+      23650  |          0  (omitted)
+             |
+   zlfn#time |
+    1 20667  |  -.0220987   .0304161    -0.73   0.468    -.0817567    .0375593
+    1 20698  |  -.0124718   .0372513    -0.33   0.738    -.0855363    .0605927
+    1 20728  |  -.0305722   .0450766    -0.68   0.498    -.1189853    .0578409
+    1 21428  |    .000544   .0065027     0.08   0.933    -.0122104    .0132983
+    1 21458  |  -.0260642   .0194562    -1.34   0.181    -.0642254    .0120971
+    1 22128  |  -.0250491   .0259304    -0.97   0.334    -.0759089    .0258108
+    1 22159  |   -.048628   .0271975    -1.79   0.074    -.1019732    .0047171
+    1 22189  |  -.0455795    .033964    -1.34   0.180    -.1121963    .0210373
+    1 22858  |   .0265976   .0230655     1.15   0.249    -.0186429    .0718381
+    1 22889  |    .016997   .0232565     0.73   0.465    -.0286182    .0626122
+    1 22919  |    .033761   .0263317     1.28   0.200     -.017886    .0854079
+    1 23589  |   -.079121   .0283266    -2.79   0.005    -.1346807   -.0235613
+    1 23620  |  -.0820557   .0321871    -2.55   0.011    -.1451873   -.0189242
+    1 23650  |  -.1083336   .0408627    -2.65   0.008    -.1884815   -.0281857
+             |
+     hh_size |   .1754925   .0028254    62.11   0.000     .1699507    .1810342
+      n_kids |  -.0747009   .0066698   -11.20   0.000     -.087783   -.0616188
+    n_adults |          0  (omitted)
+   n_workers |   .0676138   .0030098    22.46   0.000     .0617104    .0735172
+    mean_age |  -.0012811   .0001956    -6.55   0.000    -.0016648   -.0008973
+   mean_educ |    .102798    .000971   105.86   0.000     .1008935    .1047026
+share_female |  -.1425886   .0065464   -21.78   0.000    -.1554288   -.1297484
+       _cons |   7.244058   .0160702   450.77   0.000     7.212538    7.275578
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1659        1659           0    *|
+        time |        15           1          14     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(dropped 93 singleton observations)
+(MWFE estimator converged in 8 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23589bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23620bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23650bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =     67,686
+Absorbing 2 HDFE groups                           F(  20,   1107) =     383.97
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.4414
+                                                  Adj R-squared   =     0.4318
+                                                  Within R-sq.    =     0.2775
+Number of clusters (ubica_geo) =      1,108       Root MSE        =     0.7756
+
+                          (Std. err. adjusted for 1,108 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        time |
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+      23589  |          0  (omitted)
+      23620  |          0  (omitted)
+      23650  |          0  (omitted)
+             |
+   zlfn#time |
+    1 20667  |   -.076738   .0536967    -1.43   0.153    -.1820967    .0286208
+    1 20698  |  -.0365868   .0728208    -0.50   0.615    -.1794692    .1062957
+    1 20728  |  -.1250521   .0968826    -1.29   0.197    -.3151463    .0650422
+    1 21428  |  -.1070353    .036527    -2.93   0.003    -.1787054   -.0353653
+    1 21458  |  -.1271571    .046328    -2.74   0.006    -.2180577   -.0362566
+    1 22128  |  -.0480122   .0487937    -0.98   0.325    -.1437507    .0477264
+    1 22159  |  -.1152136   .0453896    -2.54   0.011    -.2042729   -.0261543
+    1 22189  |  -.3103036   .1105403    -2.81   0.005    -.5271958   -.0934115
+    1 22858  |  -.1057761     .07746    -1.37   0.172     -.257761    .0462088
+    1 22889  |  -.1333559   .0702573    -1.90   0.058    -.2712085    .0044966
+    1 22919  |  -.1627672   .0839953    -1.94   0.053    -.3275751    .0020406
+    1 23589  |  -.2453382   .0899128    -2.73   0.006     -.421757   -.0689194
+    1 23620  |  -.3626644   .1055832    -3.43   0.001    -.5698302   -.1554985
+    1 23650  |  -.5361437   .1459816    -3.67   0.000    -.8225755   -.2497119
+             |
+     hh_size |   .1778035    .006984    25.46   0.000     .1641001     .191507
+      n_kids |  -.0990201   .0169065    -5.86   0.000    -.1321925   -.0658477
+    n_adults |          0  (omitted)
+   n_workers |    .070742   .0069521    10.18   0.000     .0571012    .0843828
+    mean_age |  -.0019857    .000538    -3.69   0.000    -.0030413   -.0009302
+   mean_educ |   .0923513   .0023915    38.62   0.000     .0876589    .0970437
+share_female |  -.0718594   .0193494    -3.71   0.000    -.1098251   -.0338937
+       _cons |   6.889633    .041541   165.85   0.000     6.808125    6.971141
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1108        1108           0    *|
+        time |        15           1          14     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-hli-nonind-month.png not found)
+file ../../paper/figures/event/plot-event-exp-hli-nonind-month.png written in P
+> NG format
+(file ../../paper/figures/event/plot-event-exp-hli-ind-month.png not found)
+file ../../paper/figures/event/plot-event-exp-hli-ind-month.png written in PNG 
+> format
+(dropped 21 singleton observations)
+(MWFE estimator converged in 6 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23589bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23620bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23650bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    500,899
+Absorbing 2 HDFE groups                           F(  20,   1634) =    1318.87
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.3829
+                                                  Adj R-squared   =     0.3808
+                                                  Within R-sq.    =     0.3022
+Number of clusters (ubica_geo) =      1,635       Root MSE        =     0.7481
+
+                          (Std. err. adjusted for 1,635 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        time |
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+      23589  |          0  (omitted)
+      23620  |          0  (omitted)
+      23650  |          0  (omitted)
+             |
+   zlfn#time |
+    1 20667  |  -.0323304    .032035    -1.01   0.313    -.0951643    .0305035
+    1 20698  |  -.0200537   .0399075    -0.50   0.615     -.098329    .0582215
+    1 20728  |  -.0460461   .0505496    -0.91   0.362    -.1451949    .0531026
+    1 21428  |  -.0019541   .0080887    -0.24   0.809    -.0178194    .0139112
+    1 21458  |  -.0290165   .0205631    -1.41   0.158    -.0693493    .0113163
+    1 22128  |  -.0381886    .026373    -1.45   0.148     -.089917    .0135398
+    1 22159  |   -.059392   .0265717    -2.24   0.026    -.1115102   -.0072737
+    1 22189  |  -.0526168   .0354349    -1.48   0.138    -.1221195    .0168859
+    1 22858  |   .0253501   .0241647     1.05   0.294    -.0220468    .0727471
+    1 22889  |     .01091   .0242055     0.45   0.652    -.0365671     .058387
+    1 22919  |   .0345816   .0283059     1.22   0.222     -.020938    .0901012
+    1 23589  |  -.0871651   .0290863    -3.00   0.003    -.1442154   -.0301147
+    1 23620  |  -.0926194   .0326272    -2.84   0.005    -.1566148   -.0286239
+    1 23650  |  -.1127161   .0441377    -2.55   0.011    -.1992886   -.0261436
+             |
+     hh_size |   .1716005   .0028503    60.20   0.000     .1660098    .1771912
+      n_kids |  -.0692205   .0082465    -8.39   0.000    -.0853952   -.0530457
+    n_adults |          0  (omitted)
+   n_workers |   .0726028   .0033905    21.41   0.000     .0659526     .079253
+    mean_age |  -.0012315   .0002037    -6.04   0.000    -.0016311   -.0008318
+   mean_educ |   .1043392   .0010081   103.50   0.000     .1023619    .1063165
+share_female |  -.1491237   .0070232   -21.23   0.000    -.1628992   -.1353482
+       _cons |   7.268528   .0159472   455.79   0.000     7.237249    7.299807
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1635        1635           0    *|
+        time |        15           1          14     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(dropped 14 singleton observations)
+(MWFE estimator converged in 8 iterations)
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 20667bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20698bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 20728bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21428bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 21458bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22128bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22159bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22189bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22858bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22889bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 22919bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23589bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23620bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: 23650bn.time is probably collinear with the fixed effects (all partialled
+> -out values are close to zero; tol = 1.0e-09)
+note: n_adults omitted because of collinearity
+
+HDFE Linear regression                            Number of obs   =    229,089
+Absorbing 2 HDFE groups                           F(  20,   1723) =     837.78
+Statistics robust to heteroskedasticity           Prob > F        =     0.0000
+                                                  R-squared       =     0.4024
+                                                  Adj R-squared   =     0.3977
+                                                  Within R-sq.    =     0.2731
+Number of clusters (ubica_geo) =      1,724       Root MSE        =     0.7674
+
+                          (Std. err. adjusted for 1,724 clusters in ubica_geo)
+------------------------------------------------------------------------------
+             |               Robust
+lngas_tota~l | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+      1.zlfn |          0  (omitted)
+             |
+        time |
+      20667  |          0  (omitted)
+      20698  |          0  (omitted)
+      20728  |          0  (omitted)
+      21428  |          0  (omitted)
+      21458  |          0  (omitted)
+      22128  |          0  (omitted)
+      22159  |          0  (omitted)
+      22189  |          0  (omitted)
+      22858  |          0  (omitted)
+      22889  |          0  (omitted)
+      22919  |          0  (omitted)
+      23589  |          0  (omitted)
+      23620  |          0  (omitted)
+      23650  |          0  (omitted)
+             |
+   zlfn#time |
+    1 20667  |  -.0115524   .0387364    -0.30   0.766    -.0875276    .0644228
+    1 20698  |  -.0116802   .0491149    -0.24   0.812    -.1080113    .0846509
+    1 20728  |   -.003695     .05576    -0.07   0.947    -.1130594    .1056694
+    1 21428  |  -.0147511     .01734    -0.85   0.395    -.0487607    .0192585
+    1 21458  |  -.0422332   .0328521    -1.29   0.199    -.1066674    .0222011
+    1 22128  |   .0239435   .0324878     0.74   0.461    -.0397761    .0876631
+    1 22159  |  -.0122876    .040042    -0.31   0.759    -.0908235    .0662484
+    1 22189  |   -.036644   .0596292    -0.61   0.539    -.1535973    .0803092
+    1 22858  |   .0057361   .0304386     0.19   0.851    -.0539644    .0654366
+    1 22889  |  -.0050428   .0340698    -0.15   0.882    -.0718654    .0617797
+    1 22919  |  -.0151888   .0336931    -0.45   0.652    -.0812725    .0508949
+    1 23589  |  -.0341939   .0268594    -1.27   0.203    -.0868743    .0184865
+    1 23620  |  -.0536525   .0426061    -1.26   0.208    -.1372177    .0299127
+    1 23650  |  -.1264601   .0592048    -2.14   0.033     -.242581   -.0103393
+             |
+     hh_size |   .1813076   .0041401    43.79   0.000     .1731875    .1894277
+      n_kids |  -.0927701   .0093703    -9.90   0.000    -.1111484   -.0743917
+    n_adults |          0  (omitted)
+   n_workers |   .0574733   .0040871    14.06   0.000     .0494572    .0654895
+    mean_age |  -.0015981     .00029    -5.51   0.000    -.0021669   -.0010293
+   mean_educ |   .0966061   .0013958    69.21   0.000     .0938685    .0993438
+share_female |  -.1039014   .0095824   -10.84   0.000    -.1226959    -.085107
+       _cons |    7.09016   .0247195   286.82   0.000     7.041677    7.138644
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+   ubica_geo |      1724        1724           0    *|
+        time |        15           1          14     |
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+(file ../../paper/figures/event/plot-event-exp-indig-nonind-month.png not found
+> )
+file ../../paper/figures/event/plot-event-exp-indig-nonind-month.png written in
+>  PNG format
+(file ../../paper/figures/event/plot-event-exp-indig-ind-month.png not found)
+file ../../paper/figures/event/plot-event-exp-indig-ind-month.png written in PN
+> G format
+
+. 
+. cap log close

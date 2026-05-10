@@ -3,8 +3,163 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/plot-event-income-ethnic.log
   log type:  text
- opened on:  24 Apr 2026, 00:35:52
+ opened on:  10 May 2026, 10:26:57
 
+. 
+. include _helpers.do
+
+. *************************************************
+. **************** Helpers (estimate) *************
+. *************************************************
+. 
+. *** REPLICATION FILE: code/estimate/_helpers.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Defines reusable Stata programs used across the DiD .do files in
+. *** code/estimate/.
+. ***
+. ***   savecoeffs namelist, cvar(<varname>) interaction_pattern(<token>) saved
+> ir(<path>)
+. ***       — extracts every coefficient that contains <token> from each stored
+. ***         estimate, saves to <savedir>/coefficients_<cvar>.{dta,csv}.
+. ***
+. ***   yearcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib2018.year` event-study
+. ***         regression, builds matrices `__year_b` (1×5) and `__year_se` (1×5
+> )
+. ***         with positions [2016, 2018=0, 2020, 2022, 2024] in column order.
+. ***         Coefplot can then plot the 2018 baseline as zero with no CI band.
+. ***         Use as: coefplot matrix(__year_b), se(__year_se) ...
+. ***
+. *** Adapted from a Brazil-minwage `program.do` (savecoeffs + exporttable).
+. *** The original `exporttable` is intentionally NOT ported here: esttab's
+. *** native option strings (mtitle, refcat, coeflabel) do not pass cleanly
+. *** through a Stata wrapper without losing the embedded quoting that
+. *** controls per-column titles. The DiD scripts call esttab directly to
+. *** preserve readable, debuggable formatting.
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. *************************************************
+. **************** yearcoefs **********************
+. *************************************************
+. 
+. cap prog drop yearcoefs
+
+. program define yearcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __year_b
+  4.     cap matrix drop __year_se
+  5.     matrix __year_b  = J(1, 5, 0)
+  6.     matrix __year_se = J(1, 5, 0)
+  7.     matrix __year_b[1, 1]  = _b[1.zlfn#2016.year]
+  8.     matrix __year_b[1, 3]  = _b[1.zlfn#2020.year]
+  9.     matrix __year_b[1, 4]  = _b[1.zlfn#2022.year]
+ 10.     matrix __year_b[1, 5]  = _b[1.zlfn#2024.year]
+ 11.     matrix __year_se[1, 1] = _se[1.zlfn#2016.year]
+ 12.     matrix __year_se[1, 3] = _se[1.zlfn#2020.year]
+ 13.     matrix __year_se[1, 4] = _se[1.zlfn#2022.year]
+ 14.     matrix __year_se[1, 5] = _se[1.zlfn#2024.year]
+ 15.     matrix colnames __year_b  = c2016 c2018 c2020 c2022 c2024
+ 16.     matrix colnames __year_se = c2016 c2018 c2020 c2022 c2024
+ 17. end
+
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. cap prog drop savecoeffs
+
+. program define savecoeffs
+  1.     syntax namelist, CVARname(string) INTERACTION_pattern(string) SAVEdir(
+> string)
+  2. 
+.     *** Get coefficient names from the first stored estimate.
+.     local first : word 1 of `namelist'
+  3.     qui estimates restore `first'
+  4.     local allcoefs : colnames e(b)
+  5. 
+.     *** Filter to those containing both the heterogeneity variable name and
+.     *** the interaction-pattern token (e.g. "1.zlfn#1.post").
+.     local intcoefs
+  6.     foreach c of local allcoefs {
+  7.         if strpos("`c'", "`interaction_pattern'") > 0 & strpos("`c'", "`cv
+> arname'") > 0 {
+  8.             local intcoefs `intcoefs' `c'
+  9.         }
+ 10.     }
+ 11. 
+.     local ncoefs : word count `intcoefs'
+ 12.     if `ncoefs' == 0 {
+ 13.         di as error "savecoeffs: no interaction coefficients found for `cv
+> arname' / `interaction_pattern'"
+ 14.         exit 198
+ 15.     }
+ 16. 
+.     *** Capture value labels BEFORE preserve (preserve restores data state bu
+> t
+.     *** value-label associations are lost across clear).
+.     forval i = 1/`ncoefs' {
+ 17.         local thiscoef : word `i' of `intcoefs'
+ 18.         local rc = regexm("`thiscoef'", "^([0-9]+)[bo]?\.")
+ 19.         local numpart = regexs(1)
+ 20.         local lbl`i' : label (`cvarname') `numpart'
+ 21.         local id`i' = `numpart'
+ 22.     }
+ 23. 
+.     preserve
+ 24.     clear
+ 25.     qui set obs `ncoefs'
+ 26.     gen str80 coefname           = ""
+ 27.     gen int   `cvarname'_id      = .
+ 28.     gen str80 `cvarname'_label   = ""
+ 29. 
+.     forval i = 1/`ncoefs' {
+ 30.         local thiscoef : word `i' of `intcoefs'
+ 31.         qui replace coefname           = "`thiscoef'" in `i'
+ 32.         qui replace `cvarname'_id      = `id`i''      in `i'
+ 33.         qui replace `cvarname'_label   = "`lbl`i''"   in `i'
+ 34.     }
+ 35. 
+.     foreach estnm of local namelist {
+ 36.         qui estimates restore `estnm'
+ 37.         tempname bvec vvec
+ 38.         matrix `bvec' = e(b)
+ 39.         matrix `vvec' = vecdiag(e(V))
+ 40. 
+.         gen double b_`estnm'  = .
+ 41.         gen double se_`estnm' = .
+ 42.         gen double N_`estnm'  = e(N)
+ 43. 
+.         forval i = 1/`ncoefs' {
+ 44.             local thiscoef : word `i' of `intcoefs'
+ 45.             local colidx = colnumb(`bvec', "`thiscoef'")
+ 46.             if `colidx' != . {
+ 47.                 qui replace b_`estnm'  = `bvec'[1, `colidx']        in `i'
+ 48.                 qui replace se_`estnm' = sqrt(`vvec'[1, `colidx']) in `i'
+ 49.             }
+ 50.         }
+ 51.     }
+ 52. 
+.     order `cvarname'_id `cvarname'_label
+ 53.     drop coefname
+ 54.     sort `cvarname'_id
+ 55. 
+.     cap mkdir "`savedir'"
+ 56.     qui save             "`savedir'/coefficients_`cvarname'.dta", replace
+ 57.     qui export delimited "`savedir'/coefficients_`cvarname'.csv", replace
+ 58.     di as text "savecoeffs: wrote coefficients_`cvarname'.{dta,csv} to `sa
+> vedir'"
+ 59.     restore
+ 60. end
+
+. 
 . 
 . *************************************************
 . **** Event Study: Income by HLI Status *********
@@ -12,113 +167,113 @@
 . 
 . foreach ds in year month {
   2. 
-. do read-enigh`ds'.do
+. do read-indlevel-inc-`ds'.do
   3. estimates clear
   4. cap mkdir "../../paper/figures"
   5. 
 . if "`ds'" == "year" {
   6. 
-.     reghdfe lni i.zlfn#ib2018.year $controls if indspeaker == 0, ///
+.     *** Year-cadence event study: regress with full interaction `i.zlfn##ib20
+> 18.year`,
+.     *** then build a 5-column coefficient matrix via yearcoefs (positions
+.     *** 1=2016, 2=2018 baseline at 0, 3=2020, 4=2022, 5=2024) so 2018 plots
+.     *** explicitly at 0 with no CI band.
+. 
+.     local year_xlabel 1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024"
+  7. 
+.     reghdfe lni i.zlfn##ib2018.year $controls if indspeaker == 0, ///
 >         absorb(ubica_geo year) vce(cluster ubica_geo)
-  7.     eststo graph1
-  8. 
-.     reghdfe lni i.zlfn#ib2018.year $controls if indspeaker == 1, ///
->         absorb(ubica_geo year) vce(cluster ubica_geo)
-  9.     eststo graph2
+  8.     eststo graph1
+  9.     yearcoefs, eq(graph1)
  10. 
-.     coefplot graph1 ///
->         , keep(1.zlfn#*.year) vertical offset(0) ///
->         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
->                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+.     coefplot matrix(__year_b), se(__year_se) vertical ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
 > ircle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->         xline(1.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(2.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
->         xlabel(, angle(0)) ///
+>         xlabel(`year_xlabel') ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 11.     graph export "../../paper/figures/plot-event-income-hli-nonind-year.pn
-> g", replace width(4000) height(3000)
+ 11.     graph export "../../paper/figures/event/plot-event-income-hli-nonind-y
+> ear.png", replace width(4000) height(3000)
  12. 
-.     coefplot graph2 ///
->         , keep(1.zlfn#*.year) vertical offset(0) ///
->         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
->                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+.     reghdfe lni i.zlfn##ib2018.year $controls if indspeaker == 1, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
+ 13.     eststo graph2
+ 14.     yearcoefs, eq(graph2)
+ 15. 
+.     coefplot matrix(__year_b), se(__year_se) vertical ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
 > cle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->         xline(1.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(2.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
->         xlabel(, angle(0)) ///
+>         xlabel(`year_xlabel') ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 13.     graph export "../../paper/figures/plot-event-income-hli-ind-year.png",
->  replace width(4000) height(3000)
- 14. 
+ 16.     graph export "../../paper/figures/event/plot-event-income-hli-ind-year
+> .png", replace width(4000) height(3000)
+ 17. 
 .     *************************************************
 .     ** Event Study: Income by Indigenous Identity ***
 .     *************************************************
 . 
 .     estimates clear
- 15. 
-.     reghdfe lni i.zlfn#ib2018.year $controls if etnia == 0, ///
+ 18. 
+.     reghdfe lni i.zlfn##ib2018.year $controls if etnia == 0, ///
 >         absorb(ubica_geo year) vce(cluster ubica_geo)
- 16.     eststo graph3
- 17. 
-.     reghdfe lni i.zlfn#ib2018.year $controls if etnia == 1, ///
->         absorb(ubica_geo year) vce(cluster ubica_geo)
- 18.     eststo graph4
- 19. 
-.     coefplot graph3 ///
->         , keep(1.zlfn#*.year) vertical offset(0) ///
->         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
->                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+ 19.     eststo graph3
+ 20.     yearcoefs, eq(graph3)
+ 21. 
+.     coefplot matrix(__year_b), se(__year_se) vertical ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
 > ircle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->         xline(1.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(2.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
->         xlabel(, angle(0)) ///
+>         xlabel(`year_xlabel') ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 20.     graph export "../../paper/figures/plot-event-income-indig-nonind-year.
-> png", replace width(4000) height(3000)
- 21. 
-.     coefplot graph4 ///
->         , keep(1.zlfn#*.year) vertical offset(0) ///
->         rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
->                1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+ 22.     graph export "../../paper/figures/event/plot-event-income-indig-nonind
+> -year.png", replace width(4000) height(3000)
+ 23. 
+.     reghdfe lni i.zlfn##ib2018.year $controls if etnia == 1, ///
+>         absorb(ubica_geo year) vce(cluster ubica_geo)
+ 24.     eststo graph4
+ 25.     yearcoefs, eq(graph4)
+ 26. 
+.     coefplot matrix(__year_b), se(__year_se) vertical ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
 > cle) lw(medthin) msize(small) ///
 >         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->         xline(1.5, lcolor(gs10) lpattern(dash)) ///
+>         xline(2.5, lcolor(gs10) lpattern(dash)) ///
 >         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >         ytitle("Coefficient Estimate on Log Income") ///
 >         xtitle("Year") ///
->         xlabel(, angle(0)) ///
+>         xlabel(`year_xlabel') ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 22.     graph export "../../paper/figures/plot-event-income-indig-ind-year.png
-> ", replace width(4000) height(3000)
- 23. }
- 24. 
+ 27.     graph export "../../paper/figures/event/plot-event-income-indig-ind-ye
+> ar.png", replace width(4000) height(3000)
+ 28. }
+ 29. 
 . if "`ds'" == "month" {
- 25. 
+ 30. 
 .     reghdfe lni i.zlfn##ib21397.time $controls if indspeaker == 0, ///
 >         absorb(ubica_geo time) vce(cluster ubica_geo)
- 26.     eststo graph1
- 27. 
+ 31.     eststo graph1
+ 32. 
 .     reghdfe lni i.zlfn##ib21397.time $controls if indspeaker == 1, ///
 >         absorb(ubica_geo time) vce(cluster ubica_geo)
- 28.     eststo graph2
- 29. 
+ 33.     eststo graph2
+ 34. 
 .     local month_keep ///
 >         "1.zlfn#20485.time" "1.zlfn#20514.time" "1.zlfn#20545.time" ///
 >         "1.zlfn#20575.time" "1.zlfn#20606.time" "1.zlfn#20636.time" ///
@@ -135,7 +290,7 @@
 >         "1.zlfn#23407.time" "1.zlfn#23436.time" "1.zlfn#23467.time" ///
 >         "1.zlfn#23497.time" "1.zlfn#23528.time" "1.zlfn#23558.time" ///
 >         "1.zlfn#23589.time" "1.zlfn#23620.time" "1.zlfn#23650.time"
- 30. 
+ 35. 
 .     local month_xlabel ///
 >         1 "01feb2016" 2 "01mar2016" 3 "01apr2016" ///
 >         4 "01may2016" 5 "01jun2016" 6 "01jul2016" ///
@@ -152,7 +307,7 @@
 >         37 "01feb2024" 38 "01mar2024" 39 "01apr2024" ///
 >         40 "01may2024" 41 "01jun2024" 42 "01jul2024" ///
 >         43 "01aug2024" 44 "01sep2024" 45 "01oct2024"
- 31. 
+ 36. 
 .     coefplot graph1 ///
 >         , keep(`month_keep') vertical ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
@@ -163,9 +318,9 @@
 >         xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 32.     graph export "../../paper/figures/plot-event-income-hli-nonind-month.p
-> ng", replace width(4000) height(3000)
- 33. 
+ 37.     graph export "../../paper/figures/event/plot-event-income-hli-nonind-m
+> onth.png", replace width(4000) height(3000)
+ 38. 
 .     coefplot graph2 ///
 >         , keep(`month_keep') vertical ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
@@ -176,23 +331,23 @@
 >         xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 34.     graph export "../../paper/figures/plot-event-income-hli-ind-month.png"
-> , replace width(4000) height(3000)
- 35. 
+ 39.     graph export "../../paper/figures/event/plot-event-income-hli-ind-mont
+> h.png", replace width(4000) height(3000)
+ 40. 
 .     *************************************************
 .     ** Event Study: Income by Indigenous Identity ***
 .     *************************************************
 . 
 .     estimates clear
- 36. 
+ 41. 
 .     reghdfe lni i.zlfn##ib21397.time $controls if etnia == 0, ///
 >         absorb(ubica_geo time) vce(cluster ubica_geo)
- 37.     eststo graph3
- 38. 
+ 42.     eststo graph3
+ 43. 
 .     reghdfe lni i.zlfn##ib21397.time $controls if etnia == 1, ///
 >         absorb(ubica_geo time) vce(cluster ubica_geo)
- 39.     eststo graph4
- 40. 
+ 44.     eststo graph4
+ 45. 
 .     coefplot graph3 ///
 >         , keep(`month_keep') vertical ///
 >         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(c
@@ -203,9 +358,9 @@
 >         xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 41.     graph export "../../paper/figures/plot-event-income-indig-nonind-month
-> .png", replace width(4000) height(3000)
- 42. 
+ 46.     graph export "../../paper/figures/event/plot-event-income-indig-nonind
+> -month.png", replace width(4000) height(3000)
+ 47. 
 .     coefplot graph4 ///
 >         , keep(`month_keep') vertical ///
 >         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(cir
@@ -216,148 +371,63 @@
 >         xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >         graphregion(color(white)) bgcolor(white) ///
 >         grid(glcolor(gs14) glwidth(thin))
- 43.     graph export "../../paper/figures/plot-event-income-indig-ind-month.pn
-> g", replace width(4000) height(3000)
- 44. }
- 45. 
+ 48.     graph export "../../paper/figures/event/plot-event-income-indig-ind-mo
+> nth.png", replace width(4000) height(3000)
+ 49. }
+ 50. 
 . }
 
 . *************************************************
 . *************** Read ENIGH Year *****************
 . *************************************************
 . 
-. *** REPLICATION FILE: read-enighyear
-. *** STATA VERSION: StataNow 19.5
-. *** AUTHORS: Matías Carrasco, Victor Ortega Le Hénanff
-. *** DATE: 2026-03-03
+. *** REPLICATION FILE: read-indlevel-inc-year.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-03
 . 
-. *  Loads the yearly cross-section produced by
-. *  data/clean/code/enigh-year.R, generates derived
-. *  variables and sets the $controls global.
+. *** Loads the yearly cross-section produced by code/build/enigh-indlevel-inc-
+> year.do
+. *** (or code/build/enigh-indlevel-inc-year.R — both write to the same path wi
+> th the
+. *** same canonical variable contract).
+. ***
+. *** Canonical names (zlfn, post, etnia, indspeaker, indund, female,
+. *** edad_pob, edadsq, ing_*, ing_*_nom, lnw, lni, …) are produced directly
+. *** by the build script — no renames needed and no log re-derivation.
+. *** Sets the global $controls used by every analysis script.
 . 
-. *  Called by every analysis do-file:
-. *     do read-enighyear.do
+. *************************************************
+. **************** Install packages ****************
+. *************************************************
+. 
+. cap which estout
+
+. if _rc {
+.     ssc install estout, replace
+. }
+
+. cap which coefplot
+
+. if _rc {
+.     ssc install coefplot, replace
+. }
+
+. cap which reghdfe
+
+. if _rc {
+.     net install ftools,  replace from("https://raw.githubusercontent.com/serg
+> iocorreia/ftools/master/src/")
+.     net install reghdfe, replace from("https://raw.githubusercontent.com/serg
+> iocorreia/reghdfe/master/src/")
+. }
+
 . 
 . *************************************************
 . ****************** Load Data ********************
 . *************************************************
 . 
-. use "../../data/clean/enigh/enigh-year.dta", clear
-
-. 
-. ssc install require, replace
-checking require consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. ssc install estout, replace
-checking estout consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. ssc install coefplot, replace
-checking coefplot consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. * Install ftools (remove program if it existed previously)
-. net install ftools, replace from("https://raw.githubusercontent.com/sergiocor
-> reia/ftools/master/src/")
-checking ftools consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. * Install reghdfe 6.x
-. net install reghdfe, replace from("https://raw.githubusercontent.com/sergioco
-> rreia/reghdfe/master/src/")
-checking reghdfe consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. *************************************************
-. *************** Decode Factors ******************
-. *************************************************
-. 
-. * haven::write_dta stores R factors as labeled integers.
-. * Decode year and ent to recover original numeric values.
-. 
-. foreach v in year ent {
-  2.     capture decode `v', gen(_`v'_str)
-  3.     if _rc == 0 {
-  4.         destring _`v'_str, replace force
-  5.         drop `v'
-  6.         rename _`v'_str `v'
-  7.     }
-  8. }
-
-. 
-. *************************************************
-. *********** Generate Log Incomes ****************
-. *************************************************
-. 
-. gen lnw   = ln(ing_wages)            if ing_wages > 0
-(206,957 missing values generated)
-
-. gen lni   = ln(ing_lab)              if ing_lab > 0
-(42,758 missing values generated)
-
-. gen lnmon = ln(ing_mon)              if ing_mon > 0
-(24,777 missing values generated)
-
-. gen lnr   = ln(ing_rentas)          if ing_rentas > 0
-(682,670 missing values generated)
-
-. gen lnv   = ln(ing_ventas)          if ing_ventas > 0
-(676,733 missing values generated)
-
-. gen lno   = ln(ing_other)           if ing_other > 0
-(565,544 missing values generated)
-
-. gen lnn   = ln(ing_negocio)         if ing_negocio > 0
-(546,587 missing values generated)
-
-. gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
-(523,909 missing values generated)
-
-. gen lngt  = ln(ing_gov_transfers)   if ing_gov_transfers > 0
-(583,326 missing values generated)
-
-. gen lnfc  = ln(ing_fin_capital)     if ing_fin_capital > 0
-(663,912 missing values generated)
-
-. 
-. *************************************************
-. ************ Derived Variables ******************
-. *************************************************
-. 
-. gen female = 1 - sexo
-
-. gen edadsq = edad_pob * edad_pob
-
-. 
-. label variable lnw   "Log Wages"
-
-. label variable lni   "Log Labor Income"
-
-. label variable lnmon "Log Monetary Income"
-
-. label variable lnr   "Log Rent Income"
-
-. label variable lnv   "Log Sales Income"
-
-. label variable lno   "Log Other Income"
-
-. label variable lnn   "Log Business Income"
-
-. label variable lnnwi "Log Non-Wage Income"
-
-. label variable lngt  "Log Government Transfers"
-
-. label variable lnfc  "Log Financial Capital Income"
-
-. label variable post  "Post-Treatment (year > 2018)"
-
-. label variable female "Female"
-
-. label variable edadsq "Age Squared"
+. use "../../data/clean/enigh/enigh-indlevel-inc-year.dta", clear
 
 . 
 . *************************************************
@@ -369,249 +439,286 @@ all files already exist and are up to date.
 
 . 
 end of do-file
-(dropped 27 singleton observations)
+(dropped 30 singleton observations)
 (MWFE estimator converged in 6 iterations)
-note: 1.zlfn#2016.year omitted because of collinearity
-note: 1.zlfn#2020.year omitted because of collinearity
-note: 1.zlfn#2022.year omitted because of collinearity
-note: 1.zlfn#2024.year omitted because of collinearity
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =    496,345
-Absorbing 2 HDFE groups                           F(  11,   1693) =    2285.89
+HDFE Linear regression                            Number of obs   =    388,626
+Absorbing 2 HDFE groups                           F(  10,   1677) =    2533.69
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3736
-                                                  Adj R-squared   =     0.3714
-                                                  Within R-sq.    =     0.2773
-Number of clusters (ubica_geo) =      1,694       Root MSE        =     0.9077
+                                                  R-squared       =     0.3959
+                                                  Adj R-squared   =     0.3932
+                                                  Within R-sq.    =     0.2997
+Number of clusters (ubica_geo) =      1,678       Root MSE        =     0.7812
 
-                          (Std. err. adjusted for 1,694 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,678 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-   zlfn#year |
-     0 2016  |   -.104947   .0367263    -2.86   0.004    -.1769806   -.0329134
-     0 2020  |  -.1188505   .0383429    -3.10   0.002     -.194055    -.043646
-     0 2022  |  -.2028984    .021126    -9.60   0.000    -.2443343   -.1614625
-     0 2024  |  -.1635616   .0427826    -3.82   0.000    -.2474739   -.0796492
-     1 2016  |          0  (omitted)
-     1 2018  |   .0327956   .0300985     1.09   0.276    -.0262385    .0918297
-     1 2020  |          0  (omitted)
-     1 2022  |          0  (omitted)
-     1 2024  |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
-    1.female |   -.428227    .006794   -63.03   0.000    -.4415525   -.4149015
-    edad_pob |    .072719   .0007691    94.55   0.000     .0712105    .0742275
-      edadsq |  -.0007938   8.69e-06   -91.35   0.000    -.0008108   -.0007767
-years_of_s~y |   .0747435   .0008922    83.77   0.000     .0729935    .0764934
- hoursworked |   .0169827   .0002107    80.61   0.000     .0165695    .0173959
-  1.employed |   .3052998    .022902    13.33   0.000     .2603806    .3502189
-       _cons |   5.720189   .0364368   156.99   0.000     5.648723    5.791655
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+  ZLFN#2016  |  -.0016615   .0252344    -0.07   0.948    -.0511558    .0478327
+  ZLFN#2020  |   .1023187   .0174865     5.85   0.000      .068021    .1366164
+  ZLFN#2022  |   .1658577   .0246762     6.72   0.000     .1174582    .2142571
+  ZLFN#2024  |   .1555246   .0192498     8.08   0.000     .1177685    .1932807
+             |
+      female |
+     Female  |  -.3131447   .0044257   -70.76   0.000    -.3218252   -.3044641
+    edad_pob |   .0828741   .0008505    97.44   0.000     .0812059    .0845422
+      edadsq |  -.0008514   9.71e-06   -87.71   0.000    -.0008704   -.0008324
+years_of_s~y |   .0800375    .000844    94.83   0.000     .0783821    .0816929
+ hoursworked |   .0143152   .0002358    60.71   0.000     .0138527    .0147777
+             |
+    employed |
+        Yes  |  -.1931923   .0203355    -9.50   0.000    -.2330779   -.1533068
+       _cons |   5.872526   .0301861   194.54   0.000     5.813319    5.931732
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1694        1694           0    *|
+   ubica_geo |      1678        1678           0    *|
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(dropped 214 singleton observations)
+(file ../../paper/figures/event/plot-event-income-hli-nonind-year.png not found
+> )
+file ../../paper/figures/event/plot-event-income-hli-nonind-year.png written in
+>  PNG format
+(dropped 207 singleton observations)
 (MWFE estimator converged in 6 iterations)
-note: 1.zlfn#2016.year omitted because of collinearity
-note: 1.zlfn#2020.year omitted because of collinearity
-note: 1.zlfn#2022.year omitted because of collinearity
-note: 1.zlfn#2024.year omitted because of collinearity
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =     42,471
-Absorbing 2 HDFE groups                           F(  11,    938) =     459.83
+HDFE Linear regression                            Number of obs   =     24,318
+Absorbing 2 HDFE groups                           F(  10,    846) =     228.91
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.4180
-                                                  Adj R-squared   =     0.4046
-                                                  Within R-sq.    =     0.2760
-Number of clusters (ubica_geo) =        939       Root MSE        =     1.1231
+                                                  R-squared       =     0.4007
+                                                  Adj R-squared   =     0.3787
+                                                  Within R-sq.    =     0.2121
+Number of clusters (ubica_geo) =        847       Root MSE        =     0.8914
 
-                            (Std. err. adjusted for 939 clusters in ubica_geo)
+                            (Std. err. adjusted for 847 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-   zlfn#year |
-     0 2016  |  -.1179223   .2681693    -0.44   0.660    -.6442037     .408359
-     0 2020  |  -.1909265   .0484109    -3.94   0.000    -.2859327   -.0959203
-     0 2022  |  -.1738021   .0479914    -3.62   0.000     -.267985   -.0796192
-     0 2024  |   .0446598   .0738161     0.61   0.545     -.100204    .1895236
-     1 2016  |          0  (omitted)
-     1 2018  |   .1017624   .0634986     1.60   0.109    -.0228534    .2263782
-     1 2020  |          0  (omitted)
-     1 2022  |          0  (omitted)
-     1 2024  |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
-    1.female |  -.6062843   .0222136   -27.29   0.000    -.6498785   -.5626901
-    edad_pob |   .0576393   .0021205    27.18   0.000     .0534778    .0618008
-      edadsq |  -.0006964   .0000227   -30.64   0.000     -.000741   -.0006518
-years_of_s~y |    .064087   .0026904    23.82   0.000     .0588072    .0693668
- hoursworked |   .0189542   .0005132    36.94   0.000     .0179471    .0199613
-  1.employed |   .0675649   .0879577     0.77   0.443    -.1050517    .2401814
-       _cons |   5.864954   .1106308    53.01   0.000     5.647842    6.082067
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+  ZLFN#2016  |  -.1006141   .0802031    -1.25   0.210    -.2580346    .0568063
+  ZLFN#2020  |   .1480719   .0833585     1.78   0.076    -.0155419    .3116857
+  ZLFN#2022  |   .1443357   .0587866     2.46   0.014     .0289511    .2597203
+  ZLFN#2024  |  -.0107224   .0662447    -0.16   0.871    -.1407457    .1193009
+             |
+      female |
+     Female  |  -.3677378   .0216511   -16.98   0.000    -.4102339   -.3252416
+    edad_pob |   .0661005   .0025836    25.58   0.000     .0610296    .0711715
+      edadsq |  -.0006896     .00003   -22.95   0.000    -.0007486   -.0006307
+years_of_s~y |   .0693779   .0028852    24.05   0.000      .063715    .0750408
+ hoursworked |   .0128173   .0005254    24.40   0.000      .011786    .0138485
+             |
+    employed |
+        Yes  |  -.3855628   .1036486    -3.72   0.000    -.5890014   -.1821241
+       _cons |   6.271961   .1186431    52.86   0.000     6.039092    6.504831
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |       939         939           0    *|
+   ubica_geo |       847         847           0    *|
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-file ../../paper/figures/plot-event-income-hli-nonind-year.png written in PNG f
-> ormat
-file ../../paper/figures/plot-event-income-hli-ind-year.png written in PNG form
-> at
-(dropped 47 singleton observations)
+(file ../../paper/figures/event/plot-event-income-hli-ind-year.png not found)
+file ../../paper/figures/event/plot-event-income-hli-ind-year.png written in PN
+> G format
+(dropped 56 singleton observations)
 (MWFE estimator converged in 6 iterations)
-note: 1.zlfn#2016.year omitted because of collinearity
-note: 1.zlfn#2020.year omitted because of collinearity
-note: 1.zlfn#2022.year omitted because of collinearity
-note: 1.zlfn#2024.year omitted because of collinearity
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =    373,579
-Absorbing 2 HDFE groups                           F(  11,   1636) =    2265.83
+HDFE Linear regression                            Number of obs   =    296,572
+Absorbing 2 HDFE groups                           F(  10,   1592) =    2413.34
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3708
-                                                  Adj R-squared   =     0.3680
-                                                  Within R-sq.    =     0.2789
-Number of clusters (ubica_geo) =      1,637       Root MSE        =     0.8857
+                                                  R-squared       =     0.3970
+                                                  Adj R-squared   =     0.3937
+                                                  Within R-sq.    =     0.3059
+Number of clusters (ubica_geo) =      1,593       Root MSE        =     0.7630
 
-                          (Std. err. adjusted for 1,637 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,593 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-   zlfn#year |
-     0 2016  |   -.115084   .0380232    -3.03   0.003    -.1896633   -.0405047
-     0 2020  |  -.1120896   .0355584    -3.15   0.002    -.1818344   -.0423447
-     0 2022  |  -.2120744   .0202611   -10.47   0.000    -.2518149   -.1723339
-     0 2024  |  -.1719683    .040959    -4.20   0.000    -.2523058   -.0916308
-     1 2016  |          0  (omitted)
-     1 2018  |   .0322036   .0292212     1.10   0.271    -.0251112    .0895184
-     1 2020  |          0  (omitted)
-     1 2022  |          0  (omitted)
-     1 2024  |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
-    1.female |  -.4092164   .0066568   -61.47   0.000    -.4222732   -.3961597
-    edad_pob |   .0723636   .0008335    86.81   0.000     .0707286    .0739985
-      edadsq |  -.0007871   9.48e-06   -83.00   0.000    -.0008057   -.0007685
-years_of_s~y |   .0762588   .0008958    85.13   0.000     .0745018    .0780158
- hoursworked |   .0167388   .0002126    78.74   0.000     .0163219    .0171558
-  1.employed |   .3151451   .0262172    12.02   0.000     .2637223    .3665678
-       _cons |   5.758134   .0374948   153.57   0.000     5.684591    5.831677
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+  ZLFN#2016  |  -.0060469   .0271707    -0.22   0.824    -.0593409    .0472472
+  ZLFN#2020  |   .0966591   .0186656     5.18   0.000     .0600473    .1332709
+  ZLFN#2022  |   .1678228   .0263024     6.38   0.000     .1162318    .2194139
+  ZLFN#2024  |   .1566763   .0214767     7.30   0.000     .1145507     .198802
+             |
+      female |
+     Female  |  -.3060343   .0044226   -69.20   0.000     -.314709   -.2973597
+    edad_pob |   .0821376   .0008694    94.48   0.000     .0804324    .0838429
+      edadsq |  -.0008442   9.75e-06   -86.54   0.000    -.0008633    -.000825
+years_of_s~y |    .081047   .0008824    91.85   0.000     .0793163    .0827777
+ hoursworked |   .0142262   .0002361    60.26   0.000     .0137631    .0146893
+             |
+    employed |
+        Yes  |  -.1950239   .0227409    -8.58   0.000    -.2396292   -.1504186
+       _cons |   5.927088   .0332306   178.36   0.000     5.861908    5.992268
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1637        1637           0    *|
+   ubica_geo |      1593        1593           0    *|
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(dropped 24 singleton observations)
+(file ../../paper/figures/event/plot-event-income-indig-nonind-year.png not fou
+> nd)
+file ../../paper/figures/event/plot-event-income-indig-nonind-year.png written 
+> in PNG format
+(dropped 37 singleton observations)
 (MWFE estimator converged in 6 iterations)
-note: 1.zlfn#2016.year omitted because of collinearity
-note: 1.zlfn#2020.year omitted because of collinearity
-note: 1.zlfn#2022.year omitted because of collinearity
-note: 1.zlfn#2024.year omitted because of collinearity
+note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
+>  values are close to zero; tol = 1.0e-09)
+note: 2016bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2020bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2022bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
+note: 2024bn.year is probably collinear with the fixed effects (all partialled-
+> out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =    165,407
-Absorbing 2 HDFE groups                           F(  11,   1708) =    1158.37
+HDFE Linear regression                            Number of obs   =    116,516
+Absorbing 2 HDFE groups                           F(  10,   1674) =    1098.29
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.4020
-                                                  Adj R-squared   =     0.3957
-                                                  Within R-sq.    =     0.2756
-Number of clusters (ubica_geo) =      1,709       Root MSE        =     1.0134
+                                                  R-squared       =     0.3832
+                                                  Adj R-squared   =     0.3741
+                                                  Within R-sq.    =     0.2640
+Number of clusters (ubica_geo) =      1,675       Root MSE        =     0.8470
 
-                          (Std. err. adjusted for 1,709 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,675 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-   zlfn#year |
-     0 2016  |  -.0561812   .0527044    -1.07   0.287    -.1595531    .0471907
-     0 2020  |  -.1475443   .0528027    -2.79   0.005     -.251109   -.0439796
-     0 2022  |  -.1598457   .0358113    -4.46   0.000    -.2300844    -.089607
-     0 2024  |   -.060407   .0552024    -1.09   0.274    -.1686784    .0478644
-     1 2016  |          0  (omitted)
-     1 2018  |   .0288434   .0462662     0.62   0.533     -.061901    .1195878
-     1 2020  |          0  (omitted)
-     1 2022  |          0  (omitted)
-     1 2024  |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
-    1.female |  -.5131092   .0101537   -50.53   0.000    -.5330243   -.4931941
-    edad_pob |    .070186   .0012143    57.80   0.000     .0678043    .0725677
-      edadsq |  -.0007914   .0000137   -57.79   0.000    -.0008183   -.0007646
-years_of_s~y |   .0694037   .0014479    47.93   0.000     .0665638    .0722437
- hoursworked |   .0180232    .000308    58.52   0.000     .0174191    .0186273
-  1.employed |   .2380044   .0378022     6.30   0.000     .1638609    .3121479
-       _cons |   5.625136   .0579045    97.14   0.000     5.511564    5.738707
+        year |
+       2016  |          0  (omitted)
+       2020  |          0  (omitted)
+       2022  |          0  (omitted)
+       2024  |          0  (omitted)
+             |
+   zlfn#year |
+  ZLFN#2016  |   .0061718   .0444636     0.14   0.890    -.0810382    .0933818
+  ZLFN#2020  |   .1454121   .0398609     3.65   0.000     .0672297    .2235945
+  ZLFN#2022  |   .1697358   .0464097     3.66   0.000     .0787087    .2607629
+  ZLFN#2024  |   .1029426   .0495189     2.08   0.038     .0058172     .200068
+             |
+      female |
+     Female  |  -.3391523   .0076167   -44.53   0.000    -.3540915    -.324213
+    edad_pob |   .0809103   .0014613    55.37   0.000     .0780441    .0837765
+      edadsq |  -.0008327   .0000174   -47.78   0.000    -.0008669   -.0007985
+years_of_s~y |   .0739662   .0013305    55.59   0.000     .0713566    .0765757
+ hoursworked |   .0142404   .0003457    41.20   0.000     .0135624    .0149184
+             |
+    employed |
+        Yes  |  -.2161735   .0400543    -5.40   0.000    -.2947354   -.1376117
+       _cons |   5.821978   .0516236   112.78   0.000     5.720724    5.923232
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1709        1709           0    *|
+   ubica_geo |      1675        1675           0    *|
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-file ../../paper/figures/plot-event-income-indig-nonind-year.png written in PNG
->  format
-file ../../paper/figures/plot-event-income-indig-ind-year.png written in PNG fo
-> rmat
+(file ../../paper/figures/event/plot-event-income-indig-ind-year.png not found)
+file ../../paper/figures/event/plot-event-income-indig-ind-year.png written in 
+> PNG format
 
 . *************************************************
 . *************** Read ENIGH Month ****************
 . *************************************************
 . 
-. *** REPLICATION FILE: read-enighmonth
-. *** STATA VERSION: StataNow 19.5
-. *** AUTHORS: Matías Carrasco, Victor Ortega Le Hénanff
-. *** DATE: 2026-03-20
+. *** REPLICATION FILE: read-indlevel-inc-month.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-03
 . 
-. *  Loads the monthly panel produced by
-. *  code/build/enigh-month.do, harmonizes variable
-. *  names to match read-enighyear.do interface.
-. 
-. *  Called inside foreach loops in analysis do-files:
-. *     do read-enighmonth.do
+. *** Loads the monthly panel produced by code/build/enigh-indlevel-inc-month.d
+> o.
+. *** All canonical names (zlfn, post, etnia, indspeaker, indund, female,
+. *** edad_pob, edadsq, ing_*, ing_*_nom, lnw, lni, …) are produced directly
+. *** by the build script — no renames needed.
+. *** Sets the global $controls used by every analysis script.
 . 
 . *************************************************
 . ****************** Load Data ********************
 . *************************************************
 . 
-. use "../../data/clean/enigh/enigh-month.dta", clear
-
-. 
-. *************************************************
-. ********** Harmonize Variable Names *************
-. *************************************************
-. 
-. rename zona_a zlfn
-
-. rename edad edad_pob
-
-. rename indigenous etnia
-
-. 
-. gen female = 1 - gender
-
-. 
-. gen post = (year > 2018)
-
-. label variable post "Post-Treatment (year > 2018)"
-
-. label variable female "Female"
+. use "../../data/clean/enigh/enigh-indlevel-inc-month.dta", clear
 
 . 
 . *************************************************
@@ -623,7 +730,7 @@ file ../../paper/figures/plot-event-income-indig-ind-year.png written in PNG fo
 
 . 
 end of do-file
-(dropped 3 singleton observations)
+(dropped 6 singleton observations)
 (MWFE estimator converged in 7 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
 >  values are close to zero; tol = 1.0e-09)
@@ -716,20 +823,21 @@ note: 23620bn.time is probably collinear with the fixed effects (all partialled
 note: 23650bn.time is probably collinear with the fixed effects (all partialled
 > -out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =  2,934,576
-Absorbing 2 HDFE groups                           F(  50,   1722) =     893.39
+HDFE Linear regression                            Number of obs   =  2,130,761
+Absorbing 2 HDFE groups                           F(  50,   1701) =     758.31
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3367
-                                                  Adj R-squared   =     0.3363
-                                                  Within R-sq.    =     0.2360
-Number of clusters (ubica_geo) =      1,723       Root MSE        =     0.8451
+                                                  R-squared       =     0.4266
+                                                  Adj R-squared   =     0.4262
+                                                  Within R-sq.    =     0.3258
+Number of clusters (ubica_geo) =      1,702       Root MSE        =     0.5984
 
-                          (Std. err. adjusted for 1,723 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,702 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-      1.zlfn |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
         time |
       20485  |          0  (omitted)
@@ -778,71 +886,72 @@ Number of clusters (ubica_geo) =      1,723       Root MSE        =     0.8451
       23650  |          0  (omitted)
              |
    zlfn#time |
-    1 20485  |   .0051531   .0472932     0.11   0.913    -.0876051    .0979114
-    1 20514  |  -.0008759   .0290654    -0.03   0.976    -.0578831    .0561313
-    1 20545  |   .0135141    .027106     0.50   0.618      -.03965    .0666782
-    1 20575  |   -.030555   .0253712    -1.20   0.229    -.0803165    .0192066
-    1 20606  |  -.0255689   .0219848    -1.16   0.245    -.0686887    .0175508
-    1 20636  |   .0212658   .0327407     0.65   0.516      -.04295    .0854816
-    1 20667  |  -.0265868   .0180288    -1.47   0.140    -.0619475     .008774
-    1 20698  |   .0034057   .0218486     0.16   0.876     -.039447    .0462584
-    1 20728  |  -.0058809   .0268593    -0.22   0.827    -.0585612    .0467994
-    1 21216  |  -.0477142   .0314128    -1.52   0.129    -.1093254     .013897
-    1 21244  |   .0276715   .0187933     1.47   0.141    -.0091886    .0645315
-    1 21275  |  -.0399507   .0181187    -2.20   0.028    -.0754876   -.0044138
-    1 21305  |  -.0323752   .0142671    -2.27   0.023    -.0603578   -.0043926
-    1 21336  |   .0044218   .0160106     0.28   0.782    -.0269805    .0358242
-    1 21366  |  -.0298249   .0144721    -2.06   0.039    -.0582096   -.0014402
-    1 21428  |   .0020077   .0206552     0.10   0.923    -.0385042    .0425195
-    1 21458  |  -.0255284   .0191856    -1.33   0.183     -.063158    .0121012
-    1 21946  |   .0668821   .0416555     1.61   0.109    -.0148186    .1485827
-    1 21975  |   .0273317   .0257523     1.06   0.289    -.0231773    .0778408
-    1 22006  |   .0451701   .0320958     1.41   0.160    -.0177808    .1081211
-    1 22036  |   .0768198    .030383     2.53   0.012     .0172283    .1364113
-    1 22067  |   .0416343   .0269831     1.54   0.123    -.0112888    .0945575
-    1 22097  |    .076429   .0207469     3.68   0.000     .0357372    .1171208
-    1 22128  |   .0816881   .0266547     3.06   0.002     .0294091    .1339671
-    1 22159  |   .0472579   .0250384     1.89   0.059     -.001851    .0963667
-    1 22189  |     .09247    .022482     4.11   0.000     .0483751    .1365648
-    1 22677  |   .1278654   .0489118     2.61   0.009     .0319326    .2237981
-    1 22705  |   .0894925   .0423884     2.11   0.035     .0063543    .1726307
-    1 22736  |   .1459763   .0352007     4.15   0.000     .0769357     .215017
-    1 22766  |   .1012526    .030944     3.27   0.001     .0405607    .1619445
-    1 22797  |   .1290507   .0283571     4.55   0.000     .0734327    .1846687
-    1 22827  |   .1286336   .0302353     4.25   0.000     .0693317    .1879354
-    1 22858  |   .1258686   .0211533     5.95   0.000     .0843797    .1673576
-    1 22889  |   .1467642   .0157986     9.29   0.000     .1157777    .1777507
-    1 22919  |   .1280569   .0182491     7.02   0.000     .0922641    .1638498
-    1 23407  |   .0767979   .0381377     2.01   0.044     .0019969    .1515989
-    1 23436  |   .0994937   .0277643     3.58   0.000     .0450384     .153949
-    1 23467  |   .0791722   .0252258     3.14   0.002     .0296959    .1286486
-    1 23497  |   .1133542   .0197711     5.73   0.000     .0745763    .1521321
-    1 23528  |   .0861812   .0228346     3.77   0.000     .0413948    .1309676
-    1 23558  |   .0496056   .0249007     1.99   0.047     .0007669    .0984444
-    1 23589  |   .1161594   .0171621     6.77   0.000     .0824986    .1498202
-    1 23620  |   .0675068   .0218626     3.09   0.002     .0246267    .1103869
-    1 23650  |   .1290283   .0214323     6.02   0.000     .0869923    .1710644
+ ZLFN#20485  |   .0147547    .048282     0.31   0.760    -.0799437     .109453
+ ZLFN#20514  |  -.0163473   .0229454    -0.71   0.476    -.0613515    .0286569
+ ZLFN#20545  |   .0047671    .023867     0.20   0.842    -.0420448    .0515789
+ ZLFN#20575  |  -.0343168   .0193552    -1.77   0.076    -.0722792    .0036456
+ ZLFN#20606  |  -.0264519   .0179147    -1.48   0.140     -.061589    .0086851
+ ZLFN#20636  |   .0070378   .0284825     0.25   0.805    -.0488266    .0629022
+ ZLFN#20667  |  -.0317629   .0155028    -2.05   0.041    -.0621695   -.0013563
+ ZLFN#20698  |  -.0163263    .023743    -0.69   0.492    -.0628949    .0302422
+ ZLFN#20728  |  -.0067984   .0284558    -0.24   0.811    -.0626105    .0490137
+ ZLFN#21216  |  -.0606625    .029096    -2.08   0.037    -.1177303   -.0035948
+ ZLFN#21244  |   .0078527   .0173808     0.45   0.651    -.0262373    .0419428
+ ZLFN#21275  |  -.0494004   .0122179    -4.04   0.000    -.0733641   -.0254367
+ ZLFN#21305  |  -.0474077     .00927    -5.11   0.000    -.0655896   -.0292258
+ ZLFN#21336  |  -.0086975   .0124145    -0.70   0.484    -.0330468    .0156517
+ ZLFN#21366  |  -.0556901   .0093031    -5.99   0.000    -.0739368   -.0374434
+ ZLFN#21428  |  -.0320093   .0166698    -1.92   0.055    -.0647049    .0006862
+ ZLFN#21458  |  -.0296317   .0149456    -1.98   0.048    -.0589453    -.000318
+ ZLFN#21946  |   .0607132   .0319075     1.90   0.057    -.0018688    .1232953
+ ZLFN#21975  |   .0309313   .0304856     1.01   0.310     -.028862    .0907245
+ ZLFN#22006  |   .0292919   .0299317     0.98   0.328    -.0294151    .0879988
+ ZLFN#22036  |   .0624912   .0303077     2.06   0.039      .003047    .1219354
+ ZLFN#22067  |    .027071   .0233812     1.16   0.247    -.0187879    .0729299
+ ZLFN#22097  |   .0857044   .0163804     5.23   0.000     .0535766    .1178322
+ ZLFN#22128  |   .0561259   .0218704     2.57   0.010     .0132302    .0990216
+ ZLFN#22159  |   .0282814   .0159094     1.78   0.076    -.0029227    .0594855
+ ZLFN#22189  |   .0831956   .0224767     3.70   0.000     .0391108    .1272804
+ ZLFN#22677  |   .1238379   .0406793     3.04   0.002     .0440512    .2036247
+ ZLFN#22705  |   .1182854    .032533     3.64   0.000     .0544765    .1820942
+ ZLFN#22736  |   .1349041   .0307613     4.39   0.000     .0745701    .1952381
+ ZLFN#22766  |   .1053586   .0242585     4.34   0.000      .057779    .1529382
+ ZLFN#22797  |   .1193415   .0227273     5.25   0.000      .074765    .1639179
+ ZLFN#22827  |   .1400498   .0271826     5.15   0.000      .086735    .1933645
+ ZLFN#22858  |   .1105308   .0207721     5.32   0.000     .0697891    .1512724
+ ZLFN#22889  |   .1527637   .0168328     9.08   0.000     .1197486    .1857788
+ ZLFN#22919  |   .1209894   .0261028     4.64   0.000     .0697924    .1721864
+ ZLFN#23407  |   .1060135   .0339883     3.12   0.002     .0393502    .1726769
+ ZLFN#23436  |   .1355998    .021734     6.24   0.000     .0929715    .1782281
+ ZLFN#23467  |   .0906989   .0237966     3.81   0.000     .0440252    .1373727
+ ZLFN#23497  |   .1286112   .0203519     6.32   0.000     .0886939    .1685286
+ ZLFN#23528  |   .0916318   .0185786     4.93   0.000     .0551926    .1280711
+ ZLFN#23558  |   .0894978   .0228889     3.91   0.000     .0446044    .1343911
+ ZLFN#23589  |   .1300588   .0165815     7.84   0.000     .0975366     .162581
+ ZLFN#23620  |   .1165464   .0190151     6.13   0.000     .0792509    .1538418
+ ZLFN#23650  |    .145366    .026665     5.45   0.000     .0930663    .1976658
              |
-    1.female |  -.3230237   .0049469   -65.30   0.000    -.3327262   -.3133211
-    edad_pob |   .0405571   .0006294    64.44   0.000     .0393227    .0417916
-      edadsq |   -.000362   7.01e-06   -51.61   0.000    -.0003757   -.0003482
-years_of_s~y |   .0773581   .0008406    92.03   0.000     .0757095    .0790067
- hoursworked |   .0130729   .0001624    80.48   0.000     .0127543    .0133915
+      female |
+     Female  |  -.2838819    .003686   -77.02   0.000    -.2911115   -.2766523
+    edad_pob |   .0573561   .0006362    90.15   0.000     .0561082     .058604
+      edadsq |  -.0006021   7.40e-06   -81.35   0.000    -.0006167   -.0005876
+years_of_s~y |   .0719422    .000792    90.83   0.000     .0703888    .0734957
+ hoursworked |     .01174   .0002104    55.80   0.000     .0113274    .0121526
              |
     employed |
-   Employed  |    .232365   .0151097    15.38   0.000     .2027297    .2620003
-       _cons |   6.505279   .0207495   313.52   0.000     6.464583    6.545976
+        Yes  |  -.1386454   .0179368    -7.73   0.000     -.173826   -.1034649
+       _cons |   6.738337   .0245634   274.32   0.000     6.690159    6.786514
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1723        1723           0    *|
+   ubica_geo |      1702        1702           0    *|
         time |        45           1          44     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(dropped 6 singleton observations)
+(dropped 5 singleton observations)
 (MWFE estimator converged in 9 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
 >  values are close to zero; tol = 1.0e-09)
@@ -935,20 +1044,21 @@ note: 23620bn.time is probably collinear with the fixed effects (all partialled
 note: 23650bn.time is probably collinear with the fixed effects (all partialled
 > -out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =    256,947
-Absorbing 2 HDFE groups                           F(  50,   1160) =     112.66
+HDFE Linear regression                            Number of obs   =    127,450
+Absorbing 2 HDFE groups                           F(  50,   1048) =     112.22
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3149
-                                                  Adj R-squared   =     0.3115
-                                                  Within R-sq.    =     0.1586
-Number of clusters (ubica_geo) =      1,161       Root MSE        =     1.0867
+                                                  R-squared       =     0.4538
+                                                  Adj R-squared   =     0.4489
+                                                  Within R-sq.    =     0.2624
+Number of clusters (ubica_geo) =      1,049       Root MSE        =     0.6627
 
-                          (Std. err. adjusted for 1,161 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,049 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-      1.zlfn |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
         time |
       20485  |          0  (omitted)
@@ -997,74 +1107,79 @@ Number of clusters (ubica_geo) =      1,161       Root MSE        =     1.0867
       23650  |          0  (omitted)
              |
    zlfn#time |
-    1 20485  |   -.138594   .1638895    -0.85   0.398     -.460147    .1829591
-    1 20514  |   .0053184   .1125322     0.05   0.962     -.215471    .2261078
-    1 20545  |  -.0160674   .0904332    -0.18   0.859    -.1934984    .1613635
-    1 20575  |   .0476056   .0677733     0.70   0.483    -.0853664    .1805776
-    1 20606  |  -.1341942   .0930551    -1.44   0.150    -.3167694    .0483811
-    1 20636  |   .1135665   .0846173     1.34   0.180    -.0524536    .2795865
-    1 20667  |  -.1061923   .0605233    -1.75   0.080    -.2249397     .012555
-    1 20698  |   .0385763   .0635142     0.61   0.544    -.0860393    .1631919
-    1 20728  |  -.1922658   .0876191    -2.19   0.028    -.3641755   -.0203561
-    1 21216  |  -.0179069   .1132138    -0.16   0.874    -.2400336    .2042198
-    1 21244  |   .2065801   .0435174     4.75   0.000     .1211984    .2919618
-    1 21275  |  -.0522205   .0429431    -1.22   0.224    -.1364753    .0320343
-    1 21305  |  -.0147179   .0241073    -0.61   0.542    -.0620167    .0325809
-    1 21336  |   .0917125   .0478553     1.92   0.056    -.0021801    .1856051
-    1 21366  |   .0305327     .04594     0.66   0.506    -.0596021    .1206674
-    1 21428  |   .0534295   .0426354     1.25   0.210    -.0302217    .1370807
-    1 21458  |  -.1737519   .0370684    -4.69   0.000    -.2464804   -.1010233
-    1 21946  |  -.4141813   .4695198    -0.88   0.378    -1.335384    .5070217
-    1 21975  |   .0089731    .154235     0.06   0.954    -.2936378    .3115839
-    1 22006  |   .0940442   .1121827     0.84   0.402    -.1260596     .314148
-    1 22036  |   .2477604   .1247214     1.99   0.047     .0030556    .4924652
-    1 22067  |   .0922618   .1089559     0.85   0.397    -.1215109    .3060345
-    1 22097  |   .0826657   .0885393     0.93   0.351    -.0910495    .2563809
-    1 22128  |   .2095501   .0857821     2.44   0.015     .0412446    .3778557
-    1 22159  |   .1295659   .0882126     1.47   0.142    -.0435081    .3026399
-    1 22189  |   .1899826   .0865035     2.20   0.028     .0202618    .3597035
-    1 22677  |   .3864202   .1680128     2.30   0.022     .0567771    .7160632
-    1 22705  |   .0141613   .0899934     0.16   0.875    -.1624067    .1907293
-    1 22736  |   .2003201   .0995451     2.01   0.044     .0050114    .3956287
-    1 22766  |    .002166   .0961262     0.02   0.982    -.1864346    .1907666
-    1 22797  |    .078199   .0898843     0.87   0.384     -.098155     .254553
-    1 22827  |   .0298691   .1123224     0.27   0.790    -.1905088     .250247
-    1 22858  |   -.019447   .0815461    -0.24   0.812    -.1794413    .1405472
-    1 22889  |  -.1489587    .080675    -1.85   0.065     -.307244    .0093267
-    1 22919  |   .0217519   .0856785     0.25   0.800    -.1463503    .1898541
-    1 23407  |  -.2097974   .1679188    -1.25   0.212     -.539256    .1196613
-    1 23436  |  -.0874517   .0615544    -1.42   0.156    -.2082221    .0333186
-    1 23467  |  -.0953262    .065381    -1.46   0.145    -.2236043     .032952
-    1 23497  |  -.0392872   .0606603    -0.65   0.517    -.1583035    .0797291
-    1 23528  |   .0326822   .0689063     0.47   0.635    -.1025126    .1678771
-    1 23558  |  -.1526554   .0592846    -2.57   0.010    -.2689724   -.0363384
-    1 23589  |   .0133192   .0765257     0.17   0.862    -.1368251    .1634634
-    1 23620  |  -.1896471   .0611007    -3.10   0.002    -.3095273    -.069767
-    1 23650  |   .0463128   .0988383     0.47   0.639     -.147609    .2402346
+ ZLFN#20485  |  -.2026861   .1185554    -1.71   0.088    -.4353191    .0299469
+ ZLFN#20514  |  -.0469493   .0474424    -0.99   0.323    -.1400422    .0461437
+ ZLFN#20545  |   .0714622   .0479931     1.49   0.137    -.0227113    .1656358
+ ZLFN#20575  |  -.0269653   .0357931    -0.75   0.451    -.0971996     .043269
+ ZLFN#20606  |    -.04902   .0448754    -1.09   0.275    -.1370758    .0390358
+ ZLFN#20636  |   .0386823   .0523956     0.74   0.461      -.06413    .1414946
+ ZLFN#20667  |   -.022125   .0463391    -0.48   0.633     -.113053    .0688031
+ ZLFN#20698  |  -.0468265   .0366312    -1.28   0.201    -.1187052    .0250523
+ ZLFN#20728  |  -.1930841    .052431    -3.68   0.000    -.2959658   -.0902024
+ ZLFN#21216  |  -.0764485   .0885393    -0.86   0.388     -.250183     .097286
+ ZLFN#21244  |   .1212711   .0340753     3.56   0.000     .0544074    .1881348
+ ZLFN#21275  |  -.0362636   .0274037    -1.32   0.186    -.0900359    .0175087
+ ZLFN#21305  |  -.0570962   .0158155    -3.61   0.000    -.0881299   -.0260625
+ ZLFN#21336  |   .0328292   .0280479     1.17   0.242    -.0222072    .0878656
+ ZLFN#21366  |  -.0583644   .0145833    -4.00   0.000    -.0869803   -.0297486
+ ZLFN#21428  |  -.0439112   .0477801    -0.92   0.358    -.1376667    .0498443
+ ZLFN#21458  |   -.127265   .0400949    -3.17   0.002    -.2059404   -.0485896
+ ZLFN#21946  |  -.1137084   .1354578    -0.84   0.401    -.3795077    .1520909
+ ZLFN#21975  |   .0526688   .0868489     0.61   0.544    -.1177487    .2230863
+ ZLFN#22006  |   .0571442   .0788751     0.72   0.469    -.0976269    .2119154
+ ZLFN#22036  |   .2254413   .0747079     3.02   0.003     .0788472    .3720353
+ ZLFN#22067  |   .1019476   .0644893     1.58   0.114    -.0245951    .2284904
+ ZLFN#22097  |   .1882029   .0573574     3.28   0.001     .0756545    .3007513
+ ZLFN#22128  |   .1994856    .070518     2.83   0.005      .061113    .3378581
+ ZLFN#22159  |   .0973169   .0705597     1.38   0.168    -.0411374    .2357712
+ ZLFN#22189  |   .2505082   .0979923     2.56   0.011     .0582249    .4427916
+ ZLFN#22677  |   .2751831   .0723801     3.80   0.000     .1331567    .4172096
+ ZLFN#22705  |   .1172738   .0566276     2.07   0.039     .0061574    .2283903
+ ZLFN#22736  |   .1694466   .0608941     2.78   0.005     .0499583    .2889348
+ ZLFN#22766  |   .0813082   .0385963     2.11   0.035     .0055735     .157043
+ ZLFN#22797  |   .0783316   .0448906     1.74   0.081    -.0097542    .1664173
+ ZLFN#22827  |   .1467747   .0602885     2.43   0.015     .0284747    .2650747
+ ZLFN#22858  |   .0698166   .0418752     1.67   0.096    -.0123522    .1519854
+ ZLFN#22889  |   .0664216   .0442632     1.50   0.134     -.020433    .1532762
+ ZLFN#22919  |   .1107733   .0624338     1.77   0.076    -.0117362    .2332829
+ ZLFN#23407  |  -.1331788   .1228671    -1.08   0.279    -.3742723    .1079147
+ ZLFN#23436  |   .0512991   .0594684     0.86   0.389    -.0653916    .1679897
+ ZLFN#23467  |  -.0479139   .0655517    -0.73   0.465    -.1765414    .0807137
+ ZLFN#23497  |   .0055786   .0580449     0.10   0.923    -.1083189     .119476
+ ZLFN#23528  |  -.0055607   .0417538    -0.13   0.894    -.0874913    .0763699
+ ZLFN#23558  |  -.0227647   .0615155    -0.37   0.711    -.1434722    .0979429
+ ZLFN#23589  |   .1022914   .0580859     1.76   0.079    -.0116864    .2162692
+ ZLFN#23620  |  -.0273779    .058046    -0.47   0.637    -.1412775    .0865218
+ ZLFN#23650  |    .114605   .0993645     1.15   0.249     -.080371     .309581
              |
-    1.female |  -.3524833   .0182104   -19.36   0.000    -.3882123   -.3167544
-    edad_pob |   .0156172   .0017638     8.85   0.000     .0121566    .0190778
-      edadsq |  -.0001232   .0000182    -6.78   0.000    -.0001589   -.0000875
-years_of_s~y |   .0692586   .0023216    29.83   0.000     .0647036    .0738135
- hoursworked |   .0138465   .0003852    35.94   0.000     .0130906    .0146023
+      female |
+     Female  |  -.3481071   .0177039   -19.66   0.000    -.3828463   -.3133679
+    edad_pob |   .0461561   .0020682    22.32   0.000     .0420979    .0502144
+      edadsq |  -.0005074   .0000243   -20.87   0.000    -.0005552   -.0004597
+years_of_s~y |   .0623574    .002307    27.03   0.000     .0578306    .0668842
+ hoursworked |   .0107171   .0004109    26.08   0.000     .0099108    .0115234
              |
     employed |
-   Employed  |  -.1907379   .0372115    -5.13   0.000    -.2637474   -.1177284
-       _cons |   7.047813   .0555465   126.88   0.000      6.93883    7.156795
+        Yes  |  -.2482409   .0989648    -2.51   0.012    -.4424326   -.0540491
+       _cons |   7.000687   .1075721    65.08   0.000     6.789606    7.211768
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1161        1161           0    *|
+   ubica_geo |      1049        1049           0    *|
         time |        45           1          44     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-file ../../paper/figures/plot-event-income-hli-nonind-month.png written in PNG 
-> format
-file ../../paper/figures/plot-event-income-hli-ind-month.png written in PNG for
-> mat
+(file ../../paper/figures/event/plot-event-income-hli-nonind-month.png not foun
+> d)
+file ../../paper/figures/event/plot-event-income-hli-nonind-month.png written i
+> n PNG format
+(file ../../paper/figures/event/plot-event-income-hli-ind-month.png not found)
+file ../../paper/figures/event/plot-event-income-hli-ind-month.png written in P
+> NG format
+(dropped 6 singleton observations)
 (MWFE estimator converged in 7 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
 >  values are close to zero; tol = 1.0e-09)
@@ -1157,20 +1272,21 @@ note: 23620bn.time is probably collinear with the fixed effects (all partialled
 note: 23650bn.time is probably collinear with the fixed effects (all partialled
 > -out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =  2,206,399
-Absorbing 2 HDFE groups                           F(  50,   1687) =     765.58
+HDFE Linear regression                            Number of obs   =  1,636,296
+Absorbing 2 HDFE groups                           F(  50,   1642) =     684.67
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3387
-                                                  Adj R-squared   =     0.3382
-                                                  Within R-sq.    =     0.2431
-Number of clusters (ubica_geo) =      1,688       Root MSE        =     0.8244
+                                                  R-squared       =     0.4270
+                                                  Adj R-squared   =     0.4264
+                                                  Within R-sq.    =     0.3316
+Number of clusters (ubica_geo) =      1,643       Root MSE        =     0.5894
 
-                          (Std. err. adjusted for 1,688 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,643 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-      1.zlfn |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
         time |
       20485  |          0  (omitted)
@@ -1219,70 +1335,72 @@ Number of clusters (ubica_geo) =      1,688       Root MSE        =     0.8244
       23650  |          0  (omitted)
              |
    zlfn#time |
-    1 20485  |  -.0086196    .046074    -0.19   0.852    -.0989879    .0817487
-    1 20514  |  -.0079039   .0314388    -0.25   0.802    -.0695671    .0537593
-    1 20545  |    .015823   .0283338     0.56   0.577    -.0397502    .0713962
-    1 20575  |  -.0291973   .0252097    -1.16   0.247     -.078643    .0202483
-    1 20606  |  -.0246466   .0219396    -1.12   0.261    -.0676783    .0183851
-    1 20636  |   .0218481   .0319275     0.68   0.494    -.0407736    .0844698
-    1 20667  |  -.0234168   .0199917    -1.17   0.242    -.0626279    .0157944
-    1 20698  |   .0023243   .0217833     0.11   0.915    -.0404009    .0450494
-    1 20728  |     -.0162   .0267785    -0.60   0.545    -.0687227    .0363226
-    1 21216  |  -.0325169   .0331233    -0.98   0.326    -.0974839    .0324501
-    1 21244  |   .0273348      .0207     1.32   0.187    -.0132656    .0679351
-    1 21275  |  -.0393612    .018367    -2.14   0.032    -.0753858   -.0033367
-    1 21305  |  -.0306279   .0145079    -2.11   0.035    -.0590833   -.0021725
-    1 21336  |   .0031036   .0159936     0.19   0.846    -.0282658     .034473
-    1 21366  |  -.0257239   .0150028    -1.71   0.087      -.05515    .0037021
-    1 21428  |  -.0026325   .0218066    -0.12   0.904    -.0454034    .0401383
-    1 21458  |  -.0265233   .0190547    -1.39   0.164    -.0638967      .01085
-    1 21946  |   .0531279   .0434743     1.22   0.222    -.0321414    .1383972
-    1 21975  |   .0239062   .0266568     0.90   0.370    -.0283776      .07619
-    1 22006  |   .0493011   .0338336     1.46   0.145    -.0170592    .1156614
-    1 22036  |   .0750003   .0301527     2.49   0.013     .0158597    .1341409
-    1 22067  |   .0431141   .0284381     1.52   0.130    -.0126636    .0988918
-    1 22097  |   .0775191   .0201372     3.85   0.000     .0380225    .1170156
-    1 22128  |   .0786233   .0268005     2.93   0.003     .0260576     .131189
-    1 22159  |     .04167   .0259433     1.61   0.108    -.0092145    .0925545
-    1 22189  |   .0722661    .023717     3.05   0.002     .0257483    .1187839
-    1 22677  |   .1344745   .0523044     2.57   0.010     .0318862    .2370628
-    1 22705  |   .1029457   .0412419     2.50   0.013     .0220549    .1838365
-    1 22736  |   .1487364   .0356836     4.17   0.000     .0787475    .2187252
-    1 22766  |   .1140668   .0310068     3.68   0.000     .0532509    .1748827
-    1 22797  |   .1423987   .0282032     5.05   0.000     .0870818    .1977155
-    1 22827  |   .1406565   .0294702     4.77   0.000     .0828546    .1984584
-    1 22858  |   .1372251   .0226162     6.07   0.000     .0928663    .1815838
-    1 22889  |   .1552833   .0163433     9.50   0.000     .1232281    .1873386
-    1 22919  |   .1394328   .0181122     7.70   0.000     .1039081    .1749576
-    1 23407  |   .0814179   .0412338     1.97   0.048     .0005431    .1622926
-    1 23436  |   .1095646   .0297622     3.68   0.000     .0511898    .1679394
-    1 23467  |   .0842374   .0272264     3.09   0.002     .0308363    .1376385
-    1 23497  |   .1192896   .0210044     5.68   0.000     .0780922     .160487
-    1 23528  |   .0923329   .0249735     3.70   0.000     .0433507    .1413152
-    1 23558  |   .0611862   .0273134     2.24   0.025     .0076145    .1147579
-    1 23589  |   .1185517   .0174735     6.78   0.000     .0842797    .1528238
-    1 23620  |   .0733008   .0238151     3.08   0.002     .0265904    .1200111
-    1 23650  |   .1255344   .0201823     6.22   0.000     .0859494    .1651193
+ ZLFN#20485  |   .0002127   .0453863     0.00   0.996    -.0888085    .0892339
+ ZLFN#20514  |   -.027165   .0252356    -1.08   0.282    -.0766622    .0223323
+ ZLFN#20545  |  -.0023243   .0246184    -0.09   0.925    -.0506111    .0459625
+ ZLFN#20575  |  -.0390838   .0213189    -1.83   0.067     -.080899    .0027314
+ ZLFN#20606  |  -.0325969   .0200712    -1.62   0.105    -.0719647    .0067709
+ ZLFN#20636  |   .0013034   .0292728     0.04   0.964    -.0561126    .0587194
+ ZLFN#20667  |   -.035363   .0177785    -1.99   0.047    -.0702339   -.0004922
+ ZLFN#20698  |  -.0187435   .0246926    -0.76   0.448    -.0671759    .0296888
+ ZLFN#20728  |  -.0155757   .0295326    -0.53   0.598    -.0735012    .0423498
+ ZLFN#21216  |  -.0563657   .0332868    -1.69   0.091    -.1216548    .0089234
+ ZLFN#21244  |   .0058916   .0183552     0.32   0.748    -.0301104    .0418936
+ ZLFN#21275  |  -.0481665   .0124316    -3.87   0.000      -.07255   -.0237831
+ ZLFN#21305  |  -.0449331   .0098164    -4.58   0.000    -.0641871    -.025679
+ ZLFN#21336  |  -.0106155   .0125728    -0.84   0.399     -.035276     .014045
+ ZLFN#21366  |  -.0545865   .0105431    -5.18   0.000    -.0752659   -.0339071
+ ZLFN#21428  |  -.0342895   .0177282    -1.93   0.053    -.0690617    .0004827
+ ZLFN#21458  |  -.0266399   .0161316    -1.65   0.099    -.0582807    .0050008
+ ZLFN#21946  |   .0643999   .0368227     1.75   0.080    -.0078245    .1366242
+ ZLFN#21975  |    .024781   .0312995     0.79   0.429    -.0366101    .0861721
+ ZLFN#22006  |   .0301624   .0319896     0.94   0.346    -.0325823    .0929071
+ ZLFN#22036  |    .058666   .0306839     1.91   0.056    -.0015177    .1188496
+ ZLFN#22067  |   .0252276   .0249696     1.01   0.312    -.0237481    .0742033
+ ZLFN#22097  |   .0838602   .0171794     4.88   0.000     .0501643    .1175561
+ ZLFN#22128  |   .0511795   .0220714     2.32   0.021     .0078885    .0944705
+ ZLFN#22159  |   .0271721   .0174014     1.56   0.119    -.0069593    .0613034
+ ZLFN#22189  |   .0712402   .0200263     3.56   0.000     .0319603      .11052
+ ZLFN#22677  |   .1265957   .0378511     3.34   0.001     .0523542    .2008372
+ ZLFN#22705  |   .1205976   .0320618     3.76   0.000     .0577112     .183484
+ ZLFN#22736  |    .134339   .0312224     4.30   0.000     .0730991    .1955788
+ ZLFN#22766  |   .1095365   .0249954     4.38   0.000     .0605103    .1585628
+ ZLFN#22797  |   .1249291   .0227921     5.48   0.000     .0802243    .1696338
+ ZLFN#22827  |   .1428933   .0269505     5.30   0.000     .0900324    .1957543
+ ZLFN#22858  |   .1141854   .0216669     5.27   0.000     .0716878     .156683
+ ZLFN#22889  |   .1601839   .0181766     8.81   0.000     .1245322    .1958357
+ ZLFN#22919  |    .136416   .0263686     5.17   0.000     .0846963    .1881356
+ ZLFN#23407  |   .1083869    .036375     2.98   0.003     .0370407    .1797331
+ ZLFN#23436  |    .141292    .023071     6.12   0.000     .0960402    .1865437
+ ZLFN#23467  |   .0926729    .025316     3.66   0.000     .0430178     .142328
+ ZLFN#23497  |   .1300459   .0210039     6.19   0.000     .0888486    .1712431
+ ZLFN#23528  |   .0932304   .0204121     4.57   0.000      .053194    .1332668
+ ZLFN#23558  |   .0925879   .0247846     3.74   0.000     .0439751    .1412007
+ ZLFN#23589  |   .1278633   .0170978     7.48   0.000     .0943274    .1613991
+ ZLFN#23620  |   .1099121   .0200409     5.48   0.000     .0706037    .1492205
+ ZLFN#23650  |   .1312079   .0259507     5.06   0.000      .080308    .1821078
              |
-    1.female |  -.3147613   .0050145   -62.77   0.000    -.3245966   -.3049261
-    edad_pob |   .0408666   .0006966    58.67   0.000     .0395004    .0422328
-      edadsq |  -.0003651   7.71e-06   -47.38   0.000    -.0003802     -.00035
-years_of_s~y |    .078552   .0008588    91.47   0.000     .0768676    .0802364
- hoursworked |   .0130062   .0001676    77.61   0.000     .0126775    .0133349
+      female |
+     Female  |  -.2772242   .0037753   -73.43   0.000    -.2846291   -.2698193
+    edad_pob |   .0571332   .0006906    82.73   0.000     .0557785    .0584878
+      edadsq |  -.0005987   7.96e-06   -75.25   0.000    -.0006143   -.0005831
+years_of_s~y |   .0731986   .0008212    89.14   0.000     .0715879    .0748093
+ hoursworked |   .0117637   .0002154    54.60   0.000     .0113411    .0121863
              |
     employed |
-   Employed  |   .2535803   .0164219    15.44   0.000     .2213709    .2857898
-       _cons |   6.509434   .0229378   283.79   0.000     6.464444    6.554423
+        Yes  |  -.1355481   .0197799    -6.85   0.000    -.1743447   -.0967515
+       _cons |   6.757675     .02756   245.20   0.000     6.703618    6.811731
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1688        1688           0    *|
+   ubica_geo |      1643        1643           0    *|
         time |        45           1          44     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
+(dropped 2 singleton observations)
 (MWFE estimator converged in 8 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
 >  values are close to zero; tol = 1.0e-09)
@@ -1375,20 +1493,21 @@ note: 23620bn.time is probably collinear with the fixed effects (all partialled
 note: 23650bn.time is probably collinear with the fixed effects (all partialled
 > -out values are close to zero; tol = 1.0e-09)
 
-HDFE Linear regression                            Number of obs   =    985,133
-Absorbing 2 HDFE groups                           F(  50,   1732) =     351.52
+HDFE Linear regression                            Number of obs   =    621,918
+Absorbing 2 HDFE groups                           F(  50,   1709) =     306.25
 Statistics robust to heteroskedasticity           Prob > F        =     0.0000
-                                                  R-squared       =     0.3349
-                                                  Adj R-squared   =     0.3337
-                                                  Within R-sq.    =     0.1985
-Number of clusters (ubica_geo) =      1,733       Root MSE        =     0.9562
+                                                  R-squared       =     0.4202
+                                                  Adj R-squared   =     0.4185
+                                                  Within R-sq.    =     0.2958
+Number of clusters (ubica_geo) =      1,710       Root MSE        =     0.6317
 
-                          (Std. err. adjusted for 1,733 clusters in ubica_geo)
+                          (Std. err. adjusted for 1,710 clusters in ubica_geo)
 ------------------------------------------------------------------------------
              |               Robust
          lni | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-      1.zlfn |          0  (omitted)
+        zlfn |
+       ZLFN  |          0  (omitted)
              |
         time |
       20485  |          0  (omitted)
@@ -1437,74 +1556,79 @@ Number of clusters (ubica_geo) =      1,733       Root MSE        =     0.9562
       23650  |          0  (omitted)
              |
    zlfn#time |
-    1 20485  |   .0497815   .0919479     0.54   0.588    -.1305591    .2301222
-    1 20514  |   .0481844    .047137     1.02   0.307    -.0442671    .1406358
-    1 20545  |   .0139359   .0423985     0.33   0.742    -.0692218    .0970936
-    1 20575  |  -.0060769   .0470431    -0.13   0.897    -.0983442    .0861904
-    1 20606  |  -.0359346   .0398281    -0.90   0.367     -.114051    .0421817
-    1 20636  |   .0465536   .0478049     0.97   0.330    -.0472078     .140315
-    1 20667  |  -.0471767   .0300112    -1.57   0.116    -.1060387    .0116853
-    1 20698  |   .0152801   .0486855     0.31   0.754    -.0802084    .1107687
-    1 20728  |   .0068975   .0602718     0.11   0.909    -.1113157    .1251107
-    1 21216  |  -.1277711   .0876488    -1.46   0.145    -.2996797    .0441375
-    1 21244  |   .0692483   .0299862     2.31   0.021     .0104353    .1280612
-    1 21275  |  -.0459278   .0264956    -1.73   0.083    -.0978946     .006039
-    1 21305  |  -.0349398   .0198187    -1.76   0.078    -.0738109    .0039313
-    1 21336  |   .0184632   .0290456     0.64   0.525     -.038505    .0754315
-    1 21366  |  -.0392755   .0236454    -1.66   0.097    -.0856519     .007101
-    1 21428  |   .0242398   .0322014     0.75   0.452     -.038918    .0873976
-    1 21458  |  -.0705389   .0584007    -1.21   0.227    -.1850822    .0440045
-    1 21946  |   .1114953   .1036904     1.08   0.282    -.0918763    .3148669
-    1 21975  |   .0588984   .0498224     1.18   0.237    -.0388199    .1566168
-    1 22006  |   .0556099    .049937     1.11   0.266    -.0423332     .153553
-    1 22036  |   .1233813   .0543662     2.27   0.023     .0167509    .2300117
-    1 22067  |   .0671495     .03706     1.81   0.070    -.0055375    .1398364
-    1 22097  |   .0861688   .0401929     2.14   0.032     .0073371    .1650005
-    1 22128  |    .118321   .0403966     2.93   0.003     .0390898    .1975521
-    1 22159  |   .0944716   .0430706     2.19   0.028     .0099958    .1789474
-    1 22189  |   .1834585   .0489124     3.75   0.000      .087525     .279392
-    1 22677  |   .1762385   .0625547     2.82   0.005     .0535478    .2989292
-    1 22705  |   .0366609   .0586705     0.62   0.532    -.0784116    .1517335
-    1 22736  |   .1677445   .0538641     3.11   0.002      .062099      .27339
-    1 22766  |   .0489602   .0496517     0.99   0.324    -.0484235    .1463438
-    1 22797  |   .0832826   .0483108     1.72   0.085    -.0114712    .1780363
-    1 22827  |   .0815449   .0526484     1.55   0.122    -.0217161     .184806
-    1 22858  |    .065838   .0419724     1.57   0.117    -.0164838    .1481599
-    1 22889  |   .0539349   .0434629     1.24   0.215    -.0313104    .1391802
-    1 22919  |   .0587368   .0474084     1.24   0.216    -.0342468    .1517204
-    1 23407  |   .0265322   .0917102     0.29   0.772    -.1533422    .2064067
-    1 23436  |   .0181262   .0489991     0.37   0.711    -.0779774    .1142299
-    1 23467  |   .0262924   .0437414     0.60   0.548    -.0594991     .112084
-    1 23497  |   .0651632   .0551737     1.18   0.238    -.0430509    .1733773
-    1 23528  |   .0669406   .0347742     1.93   0.054    -.0012633    .1351445
-    1 23558  |  -.0433001   .0404714    -1.07   0.285    -.1226781    .0360779
-    1 23589  |   .0863038   .0401971     2.15   0.032     .0074638    .1651438
-    1 23620  |   -.001163   .0512854    -0.02   0.982    -.1017509    .0994249
-    1 23650  |   .1297222   .0739758     1.75   0.080    -.0153691    .2748135
+ ZLFN#20485  |   .0288321   .0823047     0.35   0.726    -.1325965    .1902608
+ ZLFN#20514  |   .0252625    .032894     0.77   0.443    -.0392543    .0897793
+ ZLFN#20545  |   .0541922   .0386658     1.40   0.161     -.021645    .1300294
+ ZLFN#20575  |  -.0099394   .0273169    -0.36   0.716    -.0635175    .0436386
+ ZLFN#20606  |  -.0032527   .0195548    -0.17   0.868    -.0416065     .035101
+ ZLFN#20636  |   .0369668   .0335025     1.10   0.270    -.0287436    .1026771
+ ZLFN#20667  |  -.0157485   .0262289    -0.60   0.548    -.0671925    .0356956
+ ZLFN#20698  |  -.0162814   .0263443    -0.62   0.537    -.0679519    .0353892
+ ZLFN#20728  |   .0000689   .0336776     0.00   0.998    -.0659848    .0661225
+ ZLFN#21216  |   -.101306   .0548453    -1.85   0.065    -.2088769    .0062649
+ ZLFN#21244  |   .0458459   .0347459     1.32   0.187     -.022303    .1139948
+ ZLFN#21275  |  -.0485106    .015994    -3.03   0.002    -.0798805   -.0171407
+ ZLFN#21305  |  -.0604968   .0099712    -6.07   0.000    -.0800539   -.0409397
+ ZLFN#21336  |    .006279   .0196048     0.32   0.749    -.0321728    .0447309
+ ZLFN#21366  |  -.0644761   .0097944    -6.58   0.000    -.0836865   -.0452658
+ ZLFN#21428  |  -.0298801   .0197055    -1.52   0.130    -.0685294    .0087693
+ ZLFN#21458  |  -.0704868   .0256467    -2.75   0.006    -.1207891   -.0201844
+ ZLFN#21946  |    .049603   .0479153     1.04   0.301    -.0443757    .1435818
+ ZLFN#21975  |   .0784514   .0367105     2.14   0.033     .0064491    .1504537
+ ZLFN#22006  |   .0527357   .0393456     1.34   0.180    -.0244348    .1299063
+ ZLFN#22036  |   .1257904   .0480005     2.62   0.009     .0316444    .2199364
+ ZLFN#22067  |   .0722673   .0311898     2.32   0.021     .0110931    .1334416
+ ZLFN#22097  |   .1319087   .0317792     4.15   0.000     .0695784     .194239
+ ZLFN#22128  |    .121627   .0381759     3.19   0.001     .0467506    .1965034
+ ZLFN#22159  |   .0751217   .0350768     2.14   0.032     .0063236    .1439197
+ ZLFN#22189  |   .1793588   .0541644     3.31   0.001     .0731232    .2855944
+ ZLFN#22677  |   .1603821    .066587     2.41   0.016     .0297814    .2909828
+ ZLFN#22705  |   .1230937   .0368628     3.34   0.001     .0507927    .1953947
+ ZLFN#22736  |   .1670137   .0421019     3.97   0.000      .084437    .2495904
+ ZLFN#22766  |   .1028174   .0336142     3.06   0.002     .0368881    .1687468
+ ZLFN#22797  |   .1066543   .0332147     3.21   0.001     .0415085    .1718001
+ ZLFN#22827  |   .1517466   .0419711     3.62   0.000     .0694265    .2340668
+ ZLFN#22858  |   .1068779   .0331886     3.22   0.001     .0417834    .1719724
+ ZLFN#22889  |   .1225257   .0400828     3.06   0.002     .0439091    .2011423
+ ZLFN#22919  |   .0762758   .0429589     1.78   0.076    -.0079818    .1605334
+ ZLFN#23407  |   .1101036   .0967287     1.14   0.255    -.0796155    .2998227
+ ZLFN#23436  |   .1116433   .0437468     2.55   0.011     .0258405    .1974462
+ ZLFN#23467  |   .0755813   .0312491     2.42   0.016     .0142908    .1368718
+ ZLFN#23497  |    .116237   .0445119     2.61   0.009     .0289335    .2035406
+ ZLFN#23528  |   .0873771   .0290275     3.01   0.003     .0304439    .1443102
+ ZLFN#23558  |   .0474449   .0340658     1.39   0.164    -.0193702      .11426
+ ZLFN#23589  |   .1332394   .0354764     3.76   0.000     .0636577    .2028212
+ ZLFN#23620  |    .112639   .0545787     2.06   0.039     .0055909     .219687
+ ZLFN#23650  |   .1854531   .0752919     2.46   0.014     .0377792    .3331271
              |
-    1.female |  -.3461034   .0073583   -47.04   0.000    -.3605355   -.3316712
-    edad_pob |   .0330893   .0009256    35.75   0.000     .0312739    .0349048
-      edadsq |  -.0002903   .0000101   -28.72   0.000    -.0003101   -.0002705
-years_of_s~y |   .0733679   .0013328    55.05   0.000     .0707539    .0759819
- hoursworked |   .0134843   .0002263    59.58   0.000     .0130405    .0139282
+      female |
+     Female  |  -.3103258   .0061325   -50.60   0.000    -.3223537   -.2982978
+    edad_pob |   .0556032   .0011052    50.31   0.000     .0534354    .0577709
+      edadsq |  -.0005928   .0000132   -44.80   0.000    -.0006188   -.0005669
+years_of_s~y |   .0654991   .0011681    56.07   0.000     .0632081    .0677901
+ hoursworked |   .0115423   .0002821    40.91   0.000      .010989    .0120957
              |
     employed |
-   Employed  |    .084882   .0214848     3.95   0.000     .0427431     .127021
-       _cons |   6.620102    .030037   220.40   0.000     6.561189    6.679014
+        Yes  |  -.1594392   .0357465    -4.46   0.000    -.2295506   -.0893278
+       _cons |   6.739559    .043244   155.85   0.000     6.654743    6.824376
 ------------------------------------------------------------------------------
 
 Absorbed degrees of freedom:
 -----------------------------------------------------+
  Absorbed FE | Categories  - Redundant  = Num. Coefs |
 -------------+---------------------------------------|
-   ubica_geo |      1733        1733           0    *|
+   ubica_geo |      1710        1710           0    *|
         time |        45           1          44     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-file ../../paper/figures/plot-event-income-indig-nonind-month.png written in PN
-> G format
-file ../../paper/figures/plot-event-income-indig-ind-month.png written in PNG f
-> ormat
+(file ../../paper/figures/event/plot-event-income-indig-nonind-month.png not fo
+> und)
+file ../../paper/figures/event/plot-event-income-indig-nonind-month.png written
+>  in PNG format
+(file ../../paper/figures/event/plot-event-income-indig-ind-month.png not found
+> )
+file ../../paper/figures/event/plot-event-income-indig-ind-month.png written in
+>  PNG format
 
 . 
 . cap log close

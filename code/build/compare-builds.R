@@ -22,8 +22,8 @@
 ###   Rscript compare-builds.R <stata_dta> <r_dta> <dataset_name>
 ### Example:
 ###   Rscript compare-builds.R \
-###     ../../data/clean/enigh/enigh-indlevel-month.dta \
-###     ../../data/clean/enigh/enigh-indlevel-month-R.dta \
+###     ../../data/clean/enigh/enigh-indlevel-inc-month.dta \
+###     ../../data/clean/enigh/enigh-indlevel-inc-month-R.dta \
 ###     enigh-month
 
 suppressPackageStartupMessages({

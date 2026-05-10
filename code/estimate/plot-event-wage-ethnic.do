@@ -14,55 +14,61 @@ set more off
 
 log using "log/plot-event-wage.log", replace text
 
+include _helpers.do
+
 *************************************************
 **** Event Study: Wages by HLI Status **********
 *************************************************
 
 foreach ds in year month {
 
-do read-indlevel-`ds'.do
+do read-indlevel-inc-`ds'.do
 estimates clear
 cap mkdir "../../paper/figures"
 
 if "`ds'" == "year" {
 
-    reghdfe lnw i.zlfn#ib2018.year $controls if indspeaker == 0, ///
+    *** Year-cadence event study: regress with full interaction `i.zlfn##ib2018.year`,
+    *** then build a 5-column coefficient matrix via yearcoefs (positions
+    *** 1=2016, 2=2018 baseline at 0, 3=2020, 4=2022, 5=2024) so 2018 plots
+    *** explicitly at 0 with no CI band. Mirrors the position-based xlabel
+    *** convention used by the month branch below.
+
+    local year_xlabel 1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024"
+
+    reghdfe lnw i.zlfn##ib2018.year $controls if indspeaker == 0, ///
         absorb(ubica_geo year) vce(cluster ubica_geo)
     eststo graph1
+    yearcoefs, eq(graph1)
 
-    reghdfe lnw i.zlfn#ib2018.year $controls if indspeaker == 1, ///
-        absorb(ubica_geo year) vce(cluster ubica_geo)
-    eststo graph2
-
-    coefplot graph1 ///
-        , keep(1.zlfn#*.year) vertical offset(0) ///
-        rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
-               1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+    coefplot matrix(__year_b), se(__year_se) vertical ///
         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(circle) lw(medthin) msize(small) ///
         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
-        xline(1.5, lcolor(gs10) lpattern(dash)) ///
+        xline(2.5, lcolor(gs10) lpattern(dash)) ///
         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
         ytitle("Coefficient Estimate on Log Wages") ///
         xtitle("Year") ///
-        xlabel(, angle(0)) ///
+        xlabel(`year_xlabel') ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-hli-nonind-year.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-hli-nonind-year.png", replace width(4000) height(3000)
 
-    coefplot graph2 ///
-        , keep(1.zlfn#*.year) vertical offset(0) ///
-        rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
-               1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+    reghdfe lnw i.zlfn##ib2018.year $controls if indspeaker == 1, ///
+        absorb(ubica_geo year) vce(cluster ubica_geo)
+    eststo graph2
+    yearcoefs, eq(graph2)
+
+    coefplot matrix(__year_b), se(__year_se) vertical ///
         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(circle) lw(medthin) msize(small) ///
         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
-        xline(1.5, lcolor(gs10) lpattern(dash)) ///
+        xline(2.5, lcolor(gs10) lpattern(dash)) ///
         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
         ytitle("Coefficient Estimate on Log Wages") ///
         xtitle("Year") ///
-        xlabel(, angle(0)) ///
+        xlabel(`year_xlabel') ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-hli-ind-year.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-hli-ind-year.png", replace width(4000) height(3000)
 
     *************************************************
     ** Event Study: Wages by Indigenous Identity ****
@@ -70,43 +76,39 @@ if "`ds'" == "year" {
 
     estimates clear
 
-    reghdfe lnw i.zlfn#ib2018.year $controls if etnia == 0, ///
+    reghdfe lnw i.zlfn##ib2018.year $controls if etnia == 0, ///
         absorb(ubica_geo year) vce(cluster ubica_geo)
     eststo graph3
+    yearcoefs, eq(graph3)
 
-    reghdfe lnw i.zlfn#ib2018.year $controls if etnia == 1, ///
-        absorb(ubica_geo year) vce(cluster ubica_geo)
-    eststo graph4
-
-    coefplot graph3 ///
-        , keep(1.zlfn#*.year) vertical offset(0) ///
-        rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
-               1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+    coefplot matrix(__year_b), se(__year_se) vertical ///
         recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(circle) lw(medthin) msize(small) ///
         ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
-        xline(1.5, lcolor(gs10) lpattern(dash)) ///
+        xline(2.5, lcolor(gs10) lpattern(dash)) ///
         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
         ytitle("Coefficient Estimate on Log Wages") ///
         xtitle("Year") ///
-        xlabel(, angle(0)) ///
+        xlabel(`year_xlabel') ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-indig-nonind-year.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-indig-nonind-year.png", replace width(4000) height(3000)
 
-    coefplot graph4 ///
-        , keep(1.zlfn#*.year) vertical offset(0) ///
-        rename(1.zlfn#2016.year = "2016" 1.zlfn#2020.year = "2020" ///
-               1.zlfn#2022.year = "2022" 1.zlfn#2024.year = "2024") ///
+    reghdfe lnw i.zlfn##ib2018.year $controls if etnia == 1, ///
+        absorb(ubica_geo year) vce(cluster ubica_geo)
+    eststo graph4
+    yearcoefs, eq(graph4)
+
+    coefplot matrix(__year_b), se(__year_se) vertical ///
         recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(circle) lw(medthin) msize(small) ///
         ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
-        xline(1.5, lcolor(gs10) lpattern(dash)) ///
+        xline(2.5, lcolor(gs10) lpattern(dash)) ///
         yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
         ytitle("Coefficient Estimate on Log Wages") ///
         xtitle("Year") ///
-        xlabel(, angle(0)) ///
+        xlabel(`year_xlabel') ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-indig-ind-year.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-indig-ind-year.png", replace width(4000) height(3000)
 }
 
 if "`ds'" == "month" {
@@ -164,7 +166,7 @@ if "`ds'" == "month" {
         xlabel(`month_xlabel', angle(90) labsize(small)) ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-hli-nonind-month.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-hli-nonind-month.png", replace width(4000) height(3000)
 
     coefplot graph2 ///
         , keep(`month_keep') vertical ///
@@ -177,7 +179,7 @@ if "`ds'" == "month" {
         xlabel(`month_xlabel', angle(90) labsize(small)) ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-hli-ind-month.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-hli-ind-month.png", replace width(4000) height(3000)
 
     *************************************************
     ** Event Study: Wages by Indigenous Identity ****
@@ -204,7 +206,7 @@ if "`ds'" == "month" {
         xlabel(`month_xlabel', angle(90) labsize(small)) ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-indig-nonind-month.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-indig-nonind-month.png", replace width(4000) height(3000)
 
     coefplot graph4 ///
         , keep(`month_keep') vertical ///
@@ -217,7 +219,7 @@ if "`ds'" == "month" {
         xlabel(`month_xlabel', angle(90) labsize(small)) ///
         graphregion(color(white)) bgcolor(white) ///
         grid(glcolor(gs14) glwidth(thin))
-    graph export "../../paper/figures/plot-event-wage-indig-ind-month.png", replace width(4000) height(3000)
+    graph export "../../paper/figures/event/plot-event-wage-indig-ind-month.png", replace width(4000) height(3000)
 }
 
 }

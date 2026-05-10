@@ -195,7 +195,7 @@ end
 cap program drop classify_clave
 program define classify_clave
     *** Generates clave_group from clave (P001-P108) following the project
-    *** classification used in enigh-indlevel-year.R. Categories:
+    *** classification used in enigh-indlevel-inc-year.R. Categories:
     ***   wages, non_wage_income, gov_transfers, rentas, fin_capital,
     ***   negocio, ventas, other.
     cap drop clave_group

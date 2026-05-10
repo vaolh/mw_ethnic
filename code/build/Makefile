@@ -1,7 +1,7 @@
 ### REPLICATION FILE: code/build/Makefile
 ### VERSION: GNU Make 3.81+
 ### AUTHORS: Matías Carrasco, Victor Ortega Le Hénanff
-### DATE: 2026-05-03
+### DATE: 2026-05-06
 
 #################################################
 ############### Configuration ###################
@@ -22,12 +22,12 @@ YEARS_TARJETAS := 2024 2022 2020 2018 2016
 ############### Main Targets ####################
 #################################################
 
-all: $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
-     $(DATADIR)/clean/enigh/enigh-indlevel-year.dta \
-     $(DATADIR)/clean/enigh/enigh-indlevel-year.RData \
-     $(DATADIR)/clean/enigh/enigh-hhlevel-year.dta \
-     $(DATADIR)/clean/enigh/enigh-hhlevel-month.dta \
-     $(DATADIR)/clean/enigh/enigh-hhlevel-clave-month.dta \
+all: $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
+     $(DATADIR)/clean/enigh/enigh-indlevel-inc-year.dta \
+     $(DATADIR)/clean/enigh/enigh-indlevel-inc-year.RData \
+     $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year.dta \
+     $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month.dta \
+     $(DATADIR)/clean/enigh/enigh-hhlevel-exp-month.dta \
      parity
 
 download: inpc enigh poverty
@@ -126,69 +126,69 @@ $(DATADIR)/clean/inpc/inpc.csv: inpc-year.R $(DATADIR)/source/inpc/inpc.json | $
 ### Stata is the canonical builder for enigh-month.dta. R parity output
 ### is written to enigh-month-R.dta and validated by `make parity`.
 
-$(DATADIR)/clean/enigh/enigh-indlevel-month.dta: enigh-indlevel-month.do $(HELPERS) $(SOURCE_DTA) \
+$(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta: enigh-indlevel-inc-month.do $(HELPERS) $(SOURCE_DTA) \
         $(DATADIR)/clean/inpc/inpc.csv | $(DATADIR)/clean/enigh log
-	stata-mp -e enigh-indlevel-month.do
+	stata-mp -e enigh-indlevel-inc-month.do
 	@rm -f enigh-month.log
 
-$(DATADIR)/clean/enigh/enigh-indlevel-month-R.dta: enigh-indlevel-month.R $(HELPERS) $(SOURCE_DTA) \
+$(DATADIR)/clean/enigh/enigh-indlevel-inc-month-R.dta: enigh-indlevel-inc-month.R $(HELPERS) $(SOURCE_DTA) \
         $(DATADIR)/clean/inpc/inpc.csv | $(DATADIR)/clean/enigh
-	Rscript enigh-indlevel-month.R
-	mv $(DATADIR)/clean/enigh/enigh-indlevel-month.dta $(DATADIR)/clean/enigh/enigh-indlevel-month-R.dta
+	Rscript enigh-indlevel-inc-month.R
+	mv $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta $(DATADIR)/clean/enigh/enigh-indlevel-inc-month-R.dta
 
 #################################################
 ######### Yearly Cross-Section ##################
 #################################################
 
 ### enigh-year aggregates from enigh-month + merges CONEVAL.
-$(DATADIR)/clean/enigh/enigh-indlevel-year.dta: enigh-indlevel-year.do $(HELPERS) \
-        $(DATADIR)/clean/enigh/enigh-indlevel-month.dta | $(DATADIR)/clean/enigh log
-	stata-mp -e enigh-indlevel-year.do
+$(DATADIR)/clean/enigh/enigh-indlevel-inc-year.dta: enigh-indlevel-inc-year.do $(HELPERS) \
+        $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta | $(DATADIR)/clean/enigh log
+	stata-mp -e enigh-indlevel-inc-year.do
 	@rm -f enigh-year.log
 
-$(DATADIR)/clean/enigh/enigh-indlevel-year.RData $(DATADIR)/clean/enigh/enigh-indlevel-year-R.dta: \
-        enigh-indlevel-year.R $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
+$(DATADIR)/clean/enigh/enigh-indlevel-inc-year.RData $(DATADIR)/clean/enigh/enigh-indlevel-inc-year-R.dta: \
+        enigh-indlevel-inc-year.R $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
         | $(DATADIR)/clean/enigh
-	Rscript enigh-indlevel-year.R
-	mv $(DATADIR)/clean/enigh/enigh-indlevel-year.dta $(DATADIR)/clean/enigh/enigh-indlevel-year-R.dta
+	Rscript enigh-indlevel-inc-year.R
+	mv $(DATADIR)/clean/enigh/enigh-indlevel-inc-year.dta $(DATADIR)/clean/enigh/enigh-indlevel-inc-year-R.dta
 
 #################################################
-######### Household × Year ######################
+######### Household Income × Year ###############
 #################################################
 
-$(DATADIR)/clean/enigh/enigh-hhlevel-year.dta: enigh-hhlevel-year.do $(HELPERS) \
-        $(DATADIR)/clean/enigh/enigh-indlevel-month.dta $(SOURCE_DTA_HH) \
+$(DATADIR)/clean/enigh/enigh-hhlevel-inc-year.dta: enigh-hhlevel-inc-year.do $(HELPERS) \
+        $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta $(SOURCE_DTA_HH) \
         | $(DATADIR)/clean/enigh log
-	stata-mp -e enigh-hhlevel-year.do
-	@rm -f enigh-household.log
+	stata-mp -e enigh-hhlevel-inc-year.do
+	@rm -f enigh-hhlevel-inc-year.log
 
-$(DATADIR)/clean/enigh/enigh-hhlevel-year-R.dta: enigh-hhlevel-year.R $(HELPERS) \
-        $(DATADIR)/clean/enigh/enigh-indlevel-month.dta $(SOURCE_DTA_HH) \
+$(DATADIR)/clean/enigh/enigh-hhlevel-inc-year-R.dta: enigh-hhlevel-inc-year.R $(HELPERS) \
+        $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta $(SOURCE_DTA_HH) \
         | $(DATADIR)/clean/enigh
-	Rscript enigh-hhlevel-year.R
-	mv $(DATADIR)/clean/enigh/enigh-hhlevel-year.dta $(DATADIR)/clean/enigh/enigh-hhlevel-year-R.dta
+	Rscript enigh-hhlevel-inc-year.R
+	mv $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year.dta $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year-R.dta
 
 #################################################
-######### Household × Month #####################
+######### Household Income × Month ##############
 #################################################
 
-$(DATADIR)/clean/enigh/enigh-hhlevel-month.dta: enigh-hhlevel-month.do \
-        $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
+$(DATADIR)/clean/enigh/enigh-hhlevel-inc-month.dta: enigh-hhlevel-inc-month.do \
+        $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
         | $(DATADIR)/clean/enigh log
-	stata-mp -e enigh-hhlevel-month.do
-	@rm -f enigh-household-month.log
+	stata-mp -e enigh-hhlevel-inc-month.do
+	@rm -f enigh-hhlevel-inc-month.log
 
-$(DATADIR)/clean/enigh/enigh-hhlevel-month-R.dta: enigh-hhlevel-month.R \
-        $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
+$(DATADIR)/clean/enigh/enigh-hhlevel-inc-month-R.dta: enigh-hhlevel-inc-month.R \
+        $(HELPERS) $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
         | $(DATADIR)/clean/enigh
-	Rscript enigh-hhlevel-month.R
-	mv $(DATADIR)/clean/enigh/enigh-hhlevel-month.dta $(DATADIR)/clean/enigh/enigh-hhlevel-month-R.dta
+	Rscript enigh-hhlevel-inc-month.R
+	mv $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month.dta $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month-R.dta
 
 #################################################
-######### HH × Clave × Month (long panel) #######
+######### HH Expenditure × Month (long panel) ###
 #################################################
 
-### New long expenditure panel: one row per (HH, clave_gasto, calendar month).
+### Long expenditure panel: one row per (HH, clave_gasto, calendar month).
 ### Depends on the clave label CSV which is built by extract_clave_labels.py.
 
 $(DATADIR)/clean/enigh/clave_gasto_labels.csv: extract_clave_labels.py \
@@ -196,40 +196,40 @@ $(DATADIR)/clean/enigh/clave_gasto_labels.csv: extract_clave_labels.py \
         | $(DATADIR)/clean/enigh
 	python3 extract_clave_labels.py
 
-$(DATADIR)/clean/enigh/enigh-hhlevel-clave-month.dta: \
-        enigh-hhlevel-clave-month.do $(HELPERS) $(SOURCE_DTA_HH) \
+$(DATADIR)/clean/enigh/enigh-hhlevel-exp-month.dta: \
+        enigh-hhlevel-exp-month.do $(HELPERS) $(SOURCE_DTA_HH) \
         $(foreach yr,$(YEARS),$(DATADIR)/source/enigh/gastoshogar$(yr).dta) \
         $(DATADIR)/clean/enigh/clave_gasto_labels.csv \
         $(DATADIR)/clean/inpc/inpc.csv \
         | $(DATADIR)/clean/enigh log
-	stata-mp -e enigh-hhlevel-clave-month.do
-	@rm -f enigh-hhlevel-clave-month.log
+	stata-mp -e enigh-hhlevel-exp-month.do
+	@rm -f enigh-hhlevel-exp-month.log
 
 #################################################
 ######### Parity Check (.do vs .R) ##############
 #################################################
 
 parity: \
-    $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
-    $(DATADIR)/clean/enigh/enigh-indlevel-month-R.dta \
-    $(DATADIR)/clean/enigh/enigh-indlevel-year.dta \
-    $(DATADIR)/clean/enigh/enigh-indlevel-year-R.dta \
-    $(DATADIR)/clean/enigh/enigh-hhlevel-year.dta \
-    $(DATADIR)/clean/enigh/enigh-hhlevel-year-R.dta \
-    $(DATADIR)/clean/enigh/enigh-hhlevel-month.dta \
-    $(DATADIR)/clean/enigh/enigh-hhlevel-month-R.dta
+    $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
+    $(DATADIR)/clean/enigh/enigh-indlevel-inc-month-R.dta \
+    $(DATADIR)/clean/enigh/enigh-indlevel-inc-year.dta \
+    $(DATADIR)/clean/enigh/enigh-indlevel-inc-year-R.dta \
+    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year.dta \
+    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year-R.dta \
+    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month.dta \
+    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month-R.dta
 	Rscript compare-builds.R \
-	    $(DATADIR)/clean/enigh/enigh-indlevel-month.dta \
-	    $(DATADIR)/clean/enigh/enigh-indlevel-month-R.dta enigh-month
+	    $(DATADIR)/clean/enigh/enigh-indlevel-inc-month.dta \
+	    $(DATADIR)/clean/enigh/enigh-indlevel-inc-month-R.dta enigh-indlevel-inc-month
 	Rscript compare-builds.R \
-	    $(DATADIR)/clean/enigh/enigh-indlevel-year.dta \
-	    $(DATADIR)/clean/enigh/enigh-indlevel-year-R.dta enigh-year
+	    $(DATADIR)/clean/enigh/enigh-indlevel-inc-year.dta \
+	    $(DATADIR)/clean/enigh/enigh-indlevel-inc-year-R.dta enigh-indlevel-inc-year
 	Rscript compare-builds.R \
-	    $(DATADIR)/clean/enigh/enigh-hhlevel-year.dta \
-	    $(DATADIR)/clean/enigh/enigh-hhlevel-year-R.dta enigh-household
+	    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year.dta \
+	    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-year-R.dta enigh-hhlevel-inc-year
 	Rscript compare-builds.R \
-	    $(DATADIR)/clean/enigh/enigh-hhlevel-month.dta \
-	    $(DATADIR)/clean/enigh/enigh-hhlevel-month-R.dta enigh-household-month
+	    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month.dta \
+	    $(DATADIR)/clean/enigh/enigh-hhlevel-inc-month-R.dta enigh-hhlevel-inc-month
 
 #################################################
 ############ ENIGH Download Rules ###############
@@ -444,21 +444,26 @@ $(DATADIR)/source/coneval/pobreza2024.dta: $(TEMPDIR)/pm_algoritmo_stata.zip | $
 ############## Phony Targets ####################
 #################################################
 
-.PHONY: all download inpc enigh poverty parity clean help
+.PHONY: all download inpc enigh poverty parity clean clean-logs help
 
 clean:
 	rm -rf $(TEMPDIR)
 	@rm -f *.log Rplots.pdf
 
+clean-logs:
+	@find . -maxdepth 1 -name "*.log" -delete
+
 help:
 	@echo "Available targets:"
-	@echo "  all      - Build all four cleaned datasets in Stata + R + parity"
-	@echo "  download - Download all source data (INPC, ENIGH, poverty)"
-	@echo "  parity   - Build R-side intermediates and run compare-builds.R"
-	@echo "  clean    - Remove temp files"
+	@echo "  all        - Build all five cleaned datasets in Stata + R + parity"
+	@echo "  download   - Download all source data (INPC, ENIGH, poverty)"
+	@echo "  parity     - Build R-side intermediates and run compare-builds.R"
+	@echo "  clean      - Remove temp files and stray logs in this folder"
+	@echo "  clean-logs - Remove only stray .log files in this folder (keep ones in log/)"
 	@echo ""
-	@echo "Datasets produced:"
-	@echo "  enigh-month.dta            (individual x month panel)"
-	@echo "  enigh-year.dta             (individual x year cross-section)"
-	@echo "  enigh-household.dta        (HH x year cross-section)"
-	@echo "  enigh-household-month.dta  (HH x month panel)"
+	@echo "Datasets produced (data/clean/enigh/):"
+	@echo "  enigh-indlevel-inc-month.dta     (individual x month panel)"
+	@echo "  enigh-indlevel-inc-year.dta      (individual x year cross-section)"
+	@echo "  enigh-hhlevel-inc-year.dta   (HH x year income cross-section)"
+	@echo "  enigh-hhlevel-inc-month.dta  (HH x month income panel)"
+	@echo "  enigh-hhlevel-exp-month.dta  (HH x clave x month long expenditure panel)"

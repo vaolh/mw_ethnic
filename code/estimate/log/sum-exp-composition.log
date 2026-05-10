@@ -1,0 +1,312 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
+> nwage/code/estimate/log/sum-exp-composition.log
+  log type:  text
+ opened on:  10 May 2026, 11:00:44
+
+. 
+. include _helpers.do
+
+. *************************************************
+. **************** Helpers (estimate) *************
+. *************************************************
+. 
+. *** REPLICATION FILE: code/estimate/_helpers.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Defines reusable Stata programs used across the DiD .do files in
+. *** code/estimate/.
+. ***
+. ***   savecoeffs namelist, cvar(<varname>) interaction_pattern(<token>) saved
+> ir(<path>)
+. ***       — extracts every coefficient that contains <token> from each stored
+. ***         estimate, saves to <savedir>/coefficients_<cvar>.{dta,csv}.
+. ***
+. ***   yearcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib2018.year` event-study
+. ***         regression, builds matrices `__year_b` (1×5) and `__year_se` (1×5
+> )
+. ***         with positions [2016, 2018=0, 2020, 2022, 2024] in column order.
+. ***         Coefplot can then plot the 2018 baseline as zero with no CI band.
+. ***         Use as: coefplot matrix(__year_b), se(__year_se) ...
+. ***
+. *** Adapted from a Brazil-minwage `program.do` (savecoeffs + exporttable).
+. *** The original `exporttable` is intentionally NOT ported here: esttab's
+. *** native option strings (mtitle, refcat, coeflabel) do not pass cleanly
+. *** through a Stata wrapper without losing the embedded quoting that
+. *** controls per-column titles. The DiD scripts call esttab directly to
+. *** preserve readable, debuggable formatting.
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. *************************************************
+. **************** yearcoefs **********************
+. *************************************************
+. 
+. cap prog drop yearcoefs
+
+. program define yearcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __year_b
+  4.     cap matrix drop __year_se
+  5.     matrix __year_b  = J(1, 5, 0)
+  6.     matrix __year_se = J(1, 5, 0)
+  7.     matrix __year_b[1, 1]  = _b[1.zlfn#2016.year]
+  8.     matrix __year_b[1, 3]  = _b[1.zlfn#2020.year]
+  9.     matrix __year_b[1, 4]  = _b[1.zlfn#2022.year]
+ 10.     matrix __year_b[1, 5]  = _b[1.zlfn#2024.year]
+ 11.     matrix __year_se[1, 1] = _se[1.zlfn#2016.year]
+ 12.     matrix __year_se[1, 3] = _se[1.zlfn#2020.year]
+ 13.     matrix __year_se[1, 4] = _se[1.zlfn#2022.year]
+ 14.     matrix __year_se[1, 5] = _se[1.zlfn#2024.year]
+ 15.     matrix colnames __year_b  = c2016 c2018 c2020 c2022 c2024
+ 16.     matrix colnames __year_se = c2016 c2018 c2020 c2022 c2024
+ 17. end
+
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. cap prog drop savecoeffs
+
+. program define savecoeffs
+  1.     syntax namelist, CVARname(string) INTERACTION_pattern(string) SAVEdir(
+> string)
+  2. 
+.     *** Get coefficient names from the first stored estimate.
+.     local first : word 1 of `namelist'
+  3.     qui estimates restore `first'
+  4.     local allcoefs : colnames e(b)
+  5. 
+.     *** Filter to those containing both the heterogeneity variable name and
+.     *** the interaction-pattern token (e.g. "1.zlfn#1.post").
+.     local intcoefs
+  6.     foreach c of local allcoefs {
+  7.         if strpos("`c'", "`interaction_pattern'") > 0 & strpos("`c'", "`cv
+> arname'") > 0 {
+  8.             local intcoefs `intcoefs' `c'
+  9.         }
+ 10.     }
+ 11. 
+.     local ncoefs : word count `intcoefs'
+ 12.     if `ncoefs' == 0 {
+ 13.         di as error "savecoeffs: no interaction coefficients found for `cv
+> arname' / `interaction_pattern'"
+ 14.         exit 198
+ 15.     }
+ 16. 
+.     *** Capture value labels BEFORE preserve (preserve restores data state bu
+> t
+.     *** value-label associations are lost across clear).
+.     forval i = 1/`ncoefs' {
+ 17.         local thiscoef : word `i' of `intcoefs'
+ 18.         local rc = regexm("`thiscoef'", "^([0-9]+)[bo]?\.")
+ 19.         local numpart = regexs(1)
+ 20.         local lbl`i' : label (`cvarname') `numpart'
+ 21.         local id`i' = `numpart'
+ 22.     }
+ 23. 
+.     preserve
+ 24.     clear
+ 25.     qui set obs `ncoefs'
+ 26.     gen str80 coefname           = ""
+ 27.     gen int   `cvarname'_id      = .
+ 28.     gen str80 `cvarname'_label   = ""
+ 29. 
+.     forval i = 1/`ncoefs' {
+ 30.         local thiscoef : word `i' of `intcoefs'
+ 31.         qui replace coefname           = "`thiscoef'" in `i'
+ 32.         qui replace `cvarname'_id      = `id`i''      in `i'
+ 33.         qui replace `cvarname'_label   = "`lbl`i''"   in `i'
+ 34.     }
+ 35. 
+.     foreach estnm of local namelist {
+ 36.         qui estimates restore `estnm'
+ 37.         tempname bvec vvec
+ 38.         matrix `bvec' = e(b)
+ 39.         matrix `vvec' = vecdiag(e(V))
+ 40. 
+.         gen double b_`estnm'  = .
+ 41.         gen double se_`estnm' = .
+ 42.         gen double N_`estnm'  = e(N)
+ 43. 
+.         forval i = 1/`ncoefs' {
+ 44.             local thiscoef : word `i' of `intcoefs'
+ 45.             local colidx = colnumb(`bvec', "`thiscoef'")
+ 46.             if `colidx' != . {
+ 47.                 qui replace b_`estnm'  = `bvec'[1, `colidx']        in `i'
+ 48.                 qui replace se_`estnm' = sqrt(`vvec'[1, `colidx']) in `i'
+ 49.             }
+ 50.         }
+ 51.     }
+ 52. 
+.     order `cvarname'_id `cvarname'_label
+ 53.     drop coefname
+ 54.     sort `cvarname'_id
+ 55. 
+.     cap mkdir "`savedir'"
+ 56.     qui save             "`savedir'/coefficients_`cvarname'.dta", replace
+ 57.     qui export delimited "`savedir'/coefficients_`cvarname'.csv", replace
+ 58.     di as text "savecoeffs: wrote coefficients_`cvarname'.{dta,csv} to `sa
+> vedir'"
+ 59.     restore
+ 60. end
+
+. 
+. 
+. cap mkdir "../../paper/figures/sum"
+
+. 
+. *************************************************
+. **** Load + filter to post + named groups ********
+. *************************************************
+. 
+. use "../../data/clean/enigh/enigh-hhlevel-exp-month.dta", clear
+
+. keep if post == 1
+(15,600,621 observations deleted)
+
+. drop if missing(gasto_group) | gasto_group == "other"
+(18,623,508 observations deleted)
+
+. 
+. *** Merge in HH ethnicity from inc-month panel.
+. merge m:1 folioviv foliohog year month using ///
+>     "../../data/clean/enigh/enigh-hhlevel-inc-month.dta", ///
+>     keepusing(n_indigenous n_hli) keep(match) nogen
+(label post_lbl already defined)
+(label zlfn_lbl already defined)
+(label yesno_lbl already defined)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                         5,181,785  
+    -----------------------------------------
+
+. gen byte hli_hh   = (n_hli         > 0) if !missing(n_hli)
+
+. gen byte indig_hh = (n_indigenous  > 0) if !missing(n_indigenous)
+
+. 
+. *** Define cell index (1-4): hli × zlfn (post only).
+. gen byte cell = .
+(5,181,785 missing values generated)
+
+. replace cell = 1 if hli_hh == 0 & zlfn == 0
+(4,309,825 real changes made)
+
+. replace cell = 2 if hli_hh == 0 & zlfn == 1
+(409,543 real changes made)
+
+. replace cell = 3 if hli_hh == 1 & zlfn == 0
+(453,885 real changes made)
+
+. replace cell = 4 if hli_hh == 1 & zlfn == 1
+(8,532 real changes made)
+
+. label define cell ///
+>     1 "non-HLI / non-ZLFN"  2 "non-HLI / ZLFN" ///
+>     3 "HLI / non-ZLFN"      4 "HLI / ZLFN"
+
+. label values cell cell
+
+. 
+. drop if missing(cell)
+(0 observations deleted)
+
+. 
+. *************************************************
+. **** Compute (gasto_group, cell) shares **********
+. *************************************************
+. 
+. *** Total within each cell (denominator for share).
+. preserve
+
+. collapse (sum) gas_real, by(cell)
+
+. rename gas_real gas_total_cell
+
+. tempfile totals
+
+. save `totals'
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St60419.000002 saved
+    as .dta format
+
+. restore
+
+. 
+. *** Sum spending by (gasto_group × cell), then divide by cell totals.
+. collapse (sum) gas_real, by(gasto_group cell)
+
+. merge m:1 cell using `totals', nogen
+(label cell already defined)
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                                56  
+    -----------------------------------------
+
+. gen double share = gas_real / gas_total_cell
+
+. 
+. *************************************************
+. **** Reshape wide and stacked horizontal bar *****
+. *************************************************
+. 
+. drop gas_real gas_total_cell
+
+. reshape wide share, i(cell) j(gasto_group) string
+(j = alcohol_tobac clothing comms durables education financial food health hous
+> ing personal recreation restaurants services transport)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations               56   ->   4           
+Number of variables                   3   ->   15          
+j variable (14 values)      gasto_group   ->   (dropped)
+xij variables:
+                                  share   ->   sharealcohol_tobac shareclothing
+>  ... sharetransport
+-----------------------------------------------------------------------------
+
+. 
+. *** All `share*` columns now: each row = a cell, each column = a gasto_group.
+. ds share*
+sharealcoh~c  sharedurab~s  sharefood     shareperso~l  shareservi~s
+sharecloth~g  shareeduca~n  sharehealth   sharerecre~n  sharetrans~t
+sharecomms    sharefinan~l  sharehousing  shareresta~s
+
+. local sharevars `r(varlist)'
+
+. 
+. graph hbar (asis) `sharevars', ///
+>     over(cell, label(labsize(small))) ///
+>     stack ///
+>     blabel(none) ///
+>     ytitle("Share of categorized HH expenditure (post-2018)", size(small)) //
+> /
+>     legend(rows(3) size(small) symxsize(*0.6) symysize(*0.6) ///
+>         label(1 "alcohol-tobac") label(2 "clothing") label(3 "comms") ///
+>         label(4 "durables") label(5 "education") label(6 "financial") ///
+>         label(7 "food") label(8 "health") label(9 "housing") ///
+>         label(10 "personal") label(11 "recreation") label(12 "restaurants") /
+> //
+>         label(13 "services") label(14 "transport")) ///
+>     graphregion(color(white)) bgcolor(white)
+
+. graph export "../../paper/figures/sum/sum-exp-composition.png", replace width
+> (4000) height(3000)
+(file ../../paper/figures/sum/sum-exp-composition.png not found)
+file ../../paper/figures/sum/sum-exp-composition.png written in PNG format
+
+. 
+. cap log close

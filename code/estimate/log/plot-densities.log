@@ -3,151 +3,66 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/plot-densities.log
   log type:  text
- opened on:  24 Apr 2026, 00:47:57
+ opened on:  10 May 2026, 10:49:27
 
 . 
 . *************************************************
 . **************** Load + Globals *****************
 . *************************************************
 . 
-. do read-enighyear.do
+. do read-indlevel-inc-year.do
 
 . *************************************************
 . *************** Read ENIGH Year *****************
 . *************************************************
 . 
-. *** REPLICATION FILE: read-enighyear
-. *** STATA VERSION: StataNow 19.5
-. *** AUTHORS: Matías Carrasco, Victor Ortega Le Hénanff
-. *** DATE: 2026-03-03
+. *** REPLICATION FILE: read-indlevel-inc-year.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-03
 . 
-. *  Loads the yearly cross-section produced by
-. *  data/clean/code/enigh-year.R, generates derived
-. *  variables and sets the $controls global.
+. *** Loads the yearly cross-section produced by code/build/enigh-indlevel-inc-
+> year.do
+. *** (or code/build/enigh-indlevel-inc-year.R — both write to the same path wi
+> th the
+. *** same canonical variable contract).
+. ***
+. *** Canonical names (zlfn, post, etnia, indspeaker, indund, female,
+. *** edad_pob, edadsq, ing_*, ing_*_nom, lnw, lni, …) are produced directly
+. *** by the build script — no renames needed and no log re-derivation.
+. *** Sets the global $controls used by every analysis script.
 . 
-. *  Called by every analysis do-file:
-. *     do read-enighyear.do
+. *************************************************
+. **************** Install packages ****************
+. *************************************************
+. 
+. cap which estout
+
+. if _rc {
+.     ssc install estout, replace
+. }
+
+. cap which coefplot
+
+. if _rc {
+.     ssc install coefplot, replace
+. }
+
+. cap which reghdfe
+
+. if _rc {
+.     net install ftools,  replace from("https://raw.githubusercontent.com/serg
+> iocorreia/ftools/master/src/")
+.     net install reghdfe, replace from("https://raw.githubusercontent.com/serg
+> iocorreia/reghdfe/master/src/")
+. }
+
 . 
 . *************************************************
 . ****************** Load Data ********************
 . *************************************************
 . 
-. use "../../data/clean/enigh/enigh-year.dta", clear
-
-. 
-. ssc install require, replace
-checking require consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. ssc install estout, replace
-checking estout consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. ssc install coefplot, replace
-checking coefplot consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. * Install ftools (remove program if it existed previously)
-. net install ftools, replace from("https://raw.githubusercontent.com/sergiocor
-> reia/ftools/master/src/")
-checking ftools consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. * Install reghdfe 6.x
-. net install reghdfe, replace from("https://raw.githubusercontent.com/sergioco
-> rreia/reghdfe/master/src/")
-checking reghdfe consistency and verifying not already installed...
-all files already exist and are up to date.
-
-. 
-. *************************************************
-. *************** Decode Factors ******************
-. *************************************************
-. 
-. * haven::write_dta stores R factors as labeled integers.
-. * Decode year and ent to recover original numeric values.
-. 
-. foreach v in year ent {
-  2.     capture decode `v', gen(_`v'_str)
-  3.     if _rc == 0 {
-  4.         destring _`v'_str, replace force
-  5.         drop `v'
-  6.         rename _`v'_str `v'
-  7.     }
-  8. }
-
-. 
-. *************************************************
-. *********** Generate Log Incomes ****************
-. *************************************************
-. 
-. gen lnw   = ln(ing_wages)            if ing_wages > 0
-(206,957 missing values generated)
-
-. gen lni   = ln(ing_lab)              if ing_lab > 0
-(42,758 missing values generated)
-
-. gen lnmon = ln(ing_mon)              if ing_mon > 0
-(24,777 missing values generated)
-
-. gen lnr   = ln(ing_rentas)          if ing_rentas > 0
-(682,670 missing values generated)
-
-. gen lnv   = ln(ing_ventas)          if ing_ventas > 0
-(676,733 missing values generated)
-
-. gen lno   = ln(ing_other)           if ing_other > 0
-(565,544 missing values generated)
-
-. gen lnn   = ln(ing_negocio)         if ing_negocio > 0
-(546,587 missing values generated)
-
-. gen lnnwi = ln(ing_non_wage_income) if ing_non_wage_income > 0
-(523,909 missing values generated)
-
-. gen lngt  = ln(ing_gov_transfers)   if ing_gov_transfers > 0
-(583,326 missing values generated)
-
-. gen lnfc  = ln(ing_fin_capital)     if ing_fin_capital > 0
-(663,912 missing values generated)
-
-. 
-. *************************************************
-. ************ Derived Variables ******************
-. *************************************************
-. 
-. gen female = 1 - sexo
-
-. gen edadsq = edad_pob * edad_pob
-
-. 
-. label variable lnw   "Log Wages"
-
-. label variable lni   "Log Labor Income"
-
-. label variable lnmon "Log Monetary Income"
-
-. label variable lnr   "Log Rent Income"
-
-. label variable lnv   "Log Sales Income"
-
-. label variable lno   "Log Other Income"
-
-. label variable lnn   "Log Business Income"
-
-. label variable lnnwi "Log Non-Wage Income"
-
-. label variable lngt  "Log Government Transfers"
-
-. label variable lnfc  "Log Financial Capital Income"
-
-. label variable post  "Post-Treatment (year > 2018)"
-
-. label variable female "Female"
-
-. label variable edadsq "Age Squared"
+. use "../../data/clean/enigh/enigh-indlevel-inc-year.dta", clear
 
 . 
 . *************************************************
@@ -186,9 +101,9 @@ end of do-file
 >        legend(order(1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024") ///
 >               position(1) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-all.png", replace width(4000) h
-> eight(3000)
-file ../../paper/figures/plot-kernel-all.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-all.png", replace width
+> (4000) height(3000)
+file ../../paper/figures/density/plot-kernel-all.png written in PNG format
 
 . 
 . *************************************************
@@ -205,9 +120,9 @@ file ../../paper/figures/plot-kernel-all.png written in PNG format
 >        legend(order(1 "Indigenous (2016)" 2 "Non-Indigenous (2016)") position
 > (1) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-2016.png", replace width(4000) 
-> height(3000)
-file ../../paper/figures/plot-kernel-2016.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-2016.png", replace widt
+> h(4000) height(3000)
+file ../../paper/figures/density/plot-kernel-2016.png written in PNG format
 
 . 
 . * 2018
@@ -220,9 +135,9 @@ file ../../paper/figures/plot-kernel-2016.png written in PNG format
 >        legend(order(1 "Indigenous (2018)" 2 "Non-Indigenous (2018)") position
 > (1) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-2018.png", replace width(4000) 
-> height(3000)
-file ../../paper/figures/plot-kernel-2018.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-2018.png", replace widt
+> h(4000) height(3000)
+file ../../paper/figures/density/plot-kernel-2018.png written in PNG format
 
 . 
 . * 2020
@@ -235,9 +150,9 @@ file ../../paper/figures/plot-kernel-2018.png written in PNG format
 >        legend(order(1 "Indigenous (2020)" 2 "Non-Indigenous (2020)") position
 > (1) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-2020.png", replace width(4000) 
-> height(3000)
-file ../../paper/figures/plot-kernel-2020.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-2020.png", replace widt
+> h(4000) height(3000)
+file ../../paper/figures/density/plot-kernel-2020.png written in PNG format
 
 . 
 . * 2022
@@ -250,9 +165,9 @@ file ../../paper/figures/plot-kernel-2020.png written in PNG format
 >        legend(order(1 "Indigenous (2022)" 2 "Non-Indigenous (2022)") position
 > (11) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-2022.png", replace width(4000) 
-> height(3000)
-file ../../paper/figures/plot-kernel-2022.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-2022.png", replace widt
+> h(4000) height(3000)
+file ../../paper/figures/density/plot-kernel-2022.png written in PNG format
 
 . 
 . * 2024
@@ -265,9 +180,9 @@ file ../../paper/figures/plot-kernel-2022.png written in PNG format
 >        legend(order(1 "Indigenous (2024)" 2 "Non-Indigenous (2024)") position
 > (11) ring(0) colfirst)
 
-. graph export "../../paper/figures/plot-kernel-2024.png", replace width(4000) 
-> height(3000)
-file ../../paper/figures/plot-kernel-2024.png written in PNG format
+. graph export "../../paper/figures/density/plot-kernel-2024.png", replace widt
+> h(4000) height(3000)
+file ../../paper/figures/density/plot-kernel-2024.png written in PNG format
 
 . 
 . *************************************************
@@ -283,14 +198,19 @@ file ../../paper/figures/plot-kernel-2024.png written in PNG format
 >            ytitle("Log Labor Income") ///
 >            legend(order(1 "ZLFN (`yr')" 2 "Rest of Country (`yr')") position(
 > 1) ring(0) colfirst)
-  3.     graph export "../../paper/figures/plot-density-zone-`yr'.png", replace
->  width(4000) height(3000)
+  3.     graph export "../../paper/figures/density/plot-density-zone-`yr'.png",
+>  replace width(4000) height(3000)
   4. }
-file ../../paper/figures/plot-density-zone-2016.png written in PNG format
-file ../../paper/figures/plot-density-zone-2018.png written in PNG format
-file ../../paper/figures/plot-density-zone-2020.png written in PNG format
-file ../../paper/figures/plot-density-zone-2022.png written in PNG format
-file ../../paper/figures/plot-density-zone-2024.png written in PNG format
+file ../../paper/figures/density/plot-density-zone-2016.png written in PNG form
+> at
+file ../../paper/figures/density/plot-density-zone-2018.png written in PNG form
+> at
+file ../../paper/figures/density/plot-density-zone-2020.png written in PNG form
+> at
+file ../../paper/figures/density/plot-density-zone-2022.png written in PNG form
+> at
+file ../../paper/figures/density/plot-density-zone-2024.png written in PNG form
+> at
 
 . 
 . *************************************************
@@ -306,14 +226,19 @@ file ../../paper/figures/plot-density-zone-2024.png written in PNG format
 >            ytitle("Log Labor Income") ///
 >            legend(order(1 "Indigenous (`yr')" 2 "Non-Indigenous (`yr')") posi
 > tion(1) ring(0) colfirst)
-  3.     graph export "../../paper/figures/plot-density-ethnic-`yr'.png", repla
-> ce width(4000) height(3000)
+  3.     graph export "../../paper/figures/density/plot-density-ethnic-`yr'.png
+> ", replace width(4000) height(3000)
   4. }
-file ../../paper/figures/plot-density-ethnic-2016.png written in PNG format
-file ../../paper/figures/plot-density-ethnic-2018.png written in PNG format
-file ../../paper/figures/plot-density-ethnic-2020.png written in PNG format
-file ../../paper/figures/plot-density-ethnic-2022.png written in PNG format
-file ../../paper/figures/plot-density-ethnic-2024.png written in PNG format
+file ../../paper/figures/density/plot-density-ethnic-2016.png written in PNG fo
+> rmat
+file ../../paper/figures/density/plot-density-ethnic-2018.png written in PNG fo
+> rmat
+file ../../paper/figures/density/plot-density-ethnic-2020.png written in PNG fo
+> rmat
+file ../../paper/figures/density/plot-density-ethnic-2022.png written in PNG fo
+> rmat
+file ../../paper/figures/density/plot-density-ethnic-2024.png written in PNG fo
+> rmat
 
 . 
 . *************************************************
@@ -329,19 +254,19 @@ file ../../paper/figures/plot-density-ethnic-2024.png written in PNG format
 >            ytitle("Log Labor Income") ///
 >            legend(order(1 "Informal (`yr')" 2 "Formal (`yr')") position(1) ri
 > ng(0) colfirst)
-  3.     graph export "../../paper/figures/plot-density-informality-`yr'.png", 
-> replace width(4000) height(3000)
+  3.     graph export "../../paper/figures/density/plot-density-informality-`yr
+> '.png", replace width(4000) height(3000)
   4. }
-file ../../paper/figures/plot-density-informality-2016.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-informality-2018.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-informality-2020.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-informality-2022.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-informality-2024.png written in PNG forma
-> t
+file ../../paper/figures/density/plot-density-informality-2016.png written in P
+> NG format
+file ../../paper/figures/density/plot-density-informality-2018.png written in P
+> NG format
+file ../../paper/figures/density/plot-density-informality-2020.png written in P
+> NG format
+file ../../paper/figures/density/plot-density-informality-2022.png written in P
+> NG format
+file ../../paper/figures/density/plot-density-informality-2024.png written in P
+> NG format
 
 . 
 . *************************************************
@@ -349,22 +274,32 @@ file ../../paper/figures/plot-density-informality-2024.png written in PNG forma
 . *************************************************
 . 
 . foreach yr in 2016 2018 2020 2022 2024 {
-  2.     twoway (kdensity lni if year == `yr' & sexo == 1, bw(0.4) lcolor(blue)
->  lpattern(solid) lwidth(vthin)) ///
->            (kdensity lni if year == `yr' & sexo == 0, bw(0.4) lcolor(blue) lp
-> attern(dash) lwidth(vthin)), ///
+  2.     twoway (kdensity lni if year == `yr' & female == 0, bw(0.4) lcolor(blu
+> e) lpattern(solid) lwidth(vthin)) ///
+>            (kdensity lni if year == `yr' & female == 1, bw(0.4) lcolor(blue) 
+> lpattern(dash) lwidth(vthin)), ///
 >            xlabel(-2(2.5)16.5, grid) ylabel(, grid) xtitle("") ///
 >            ytitle("Log Labor Income") ///
 >            legend(order(1 "Men (`yr')" 2 "Women (`yr')") position(1) ring(0) 
 > colfirst)
-  3.     graph export "../../paper/figures/plot-density-gender-`yr'.png", repla
-> ce width(4000) height(3000)
+  3.     graph export "../../paper/figures/density/plot-density-gender-`yr'.png
+> ", replace width(4000) height(3000)
   4. }
-file ../../paper/figures/plot-density-gender-2016.png written in PNG format
-file ../../paper/figures/plot-density-gender-2018.png written in PNG format
-file ../../paper/figures/plot-density-gender-2020.png written in PNG format
-file ../../paper/figures/plot-density-gender-2022.png written in PNG format
-file ../../paper/figures/plot-density-gender-2024.png written in PNG format
+(file ../../paper/figures/density/plot-density-gender-2016.png not found)
+file ../../paper/figures/density/plot-density-gender-2016.png written in PNG fo
+> rmat
+(file ../../paper/figures/density/plot-density-gender-2018.png not found)
+file ../../paper/figures/density/plot-density-gender-2018.png written in PNG fo
+> rmat
+(file ../../paper/figures/density/plot-density-gender-2020.png not found)
+file ../../paper/figures/density/plot-density-gender-2020.png written in PNG fo
+> rmat
+(file ../../paper/figures/density/plot-density-gender-2022.png not found)
+file ../../paper/figures/density/plot-density-gender-2022.png written in PNG fo
+> rmat
+(file ../../paper/figures/density/plot-density-gender-2024.png not found)
+file ../../paper/figures/density/plot-density-gender-2024.png written in PNG fo
+> rmat
 
 . 
 . *************************************************
@@ -380,72 +315,11 @@ file ../../paper/figures/plot-density-gender-2024.png written in PNG format
 >            ytitle("Log Labor Income") ///
 >            legend(order(1 "Urban (`yr')" 2 "Rural (`yr')") position(1) ring(0
 > ) colfirst)
-  3.     graph export "../../paper/figures/plot-density-rural-urban-`yr'.png", 
-> replace width(4000) height(3000)
+  3.     graph export "../../paper/figures/density/plot-density-rural-urban-`yr
+> '.png", replace width(4000) height(3000)
   4. }
-file ../../paper/figures/plot-density-rural-urban-2016.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-rural-urban-2018.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-rural-urban-2020.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-rural-urban-2022.png written in PNG forma
-> t
-file ../../paper/figures/plot-density-rural-urban-2024.png written in PNG forma
-> t
+rururb not found
+r(111);
 
-. 
-. *************************************************
-. ******* Graph: Per Capita Income by Year ********
-. *************************************************
-. 
-. twoway (kdensity ictpc if year == 2016, bw(0.4) lcolor(blue) lwidth(vthin)) /
-> //
->        (kdensity ictpc if year == 2018, bw(0.4) lcolor(red) lwidth(vthin)) //
-> /
->        (kdensity ictpc if year == 2020, bw(0.4) lcolor(green) lwidth(vthin)) 
-> ///
->        (kdensity ictpc if year == 2022, bw(0.4) lcolor(magenta) lwidth(vthin)
-> ) ///
->        (kdensity ictpc if year == 2024, bw(0.4) lcolor(orange) lwidth(vthin))
->  ///
->        if ictpc > 0, ///
->        xlabel(4(2)12, grid) ylabel(, grid) xtitle("") ///
->        ytitle("Per Capita Household Income (log)") ///
->        legend(order(1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024") ///
->               position(1) ring(0) colfirst)
-
-. graph export "../../paper/figures/plot-density-income-all.png", replace width
-> (4000) height(3000)
-file ../../paper/figures/plot-density-income-all.png written in PNG format
-
-. 
-. *************************************************
-. ** Wage Density: Indigenous vs Non-Indigenous ****
-. ** Pre-treatment (2016–2018) with ZLFN MW line **
-. *************************************************
-. 
-. *** ZLFN daily MW (2019) × 30 days, log scale
-. *** Adjust this value if wages are deflated to a different base
-. local mw_zlfn = ln(176.72 * 30)
-
-. 
-. twoway (kdensity lnw if post == 0 & indspeaker == 0, bw(0.3) lcolor(blue) lpa
-> ttern(solid) lwidth(thin)) ///
->        (kdensity lnw if post == 0 & indspeaker == 1, bw(0.3) lcolor(red)  lpa
-> ttern(dash)  lwidth(thin)), ///
->        xline(`mw_zlfn', lcolor(black) lpattern(shortdash) lwidth(medthin)) //
-> /
->        xlabel(4(1)12, grid) ylabel(, grid) xtitle("Log Monthly Wages") ///
->        ytitle("Density") ///
->        legend(order(1 "Non-Indigenous" 2 "Indigenous") ///
->               position(1) ring(0) colfirst) ///
->        note("Vertical line = ln(ZLFN daily MW {&times} 30)")
-
-. graph export "../../paper/figures/plot-density-wages-ethnic-pretreat.png", re
-> place width(4000) height(3000)
-file ../../paper/figures/plot-density-wages-ethnic-pretreat.png written in PNG 
-> format
-
-. 
-. cap log close
+end of do-file
+r(111);

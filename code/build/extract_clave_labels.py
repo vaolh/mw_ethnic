@@ -14,7 +14,7 @@
 ###   clave (str)
 ###   label (str)
 ###
-### The CSV is consumed by enigh-hhlevel-clave-month.do/.R via merge.
+### The CSV is consumed by enigh-hhlevel-exp-month.do via merge.
 
 import re
 import csv

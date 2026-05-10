@@ -20,7 +20,7 @@ log using "log/plot-event-wage-centiles.log", replace text
 
 foreach ds in year month {
 
-do read-indlevel-`ds'.do
+do read-indlevel-inc-`ds'.do
 estimates clear
 cap mkdir "../../paper/figures"
 
@@ -56,7 +56,7 @@ coefplot ///
     graphregion(color(white)) bgcolor(white) ///
     grid(glcolor(gs14) glwidth(thin))
 
-graph export "../../paper/figures/plot-did-wage-centiles-`ds'.png", replace width(4000) height(3000)
+graph export "../../paper/figures/did/plot-did-wage-centiles-`ds'.png", replace width(4000) height(3000)
 
 }
 
