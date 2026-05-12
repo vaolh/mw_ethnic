@@ -109,55 +109,33 @@ foreach ds in year month {
 
     if "`ds'" == "month" {
 
-        *** Month branch: use ##ib<base_month>.time as in the wage/income variants.
-        *** ENIGH 2018 reference month for ZLFN baseline = 21397 (representing 1aug2018).
+        *** Month branch: ##ib<base_month>.time event study. ENIGH samples
+        *** Aug/Sep/Oct each wave, giving 15 time categories across 2016-2024.
+        *** Baseline = aug2018 (time=21397, position 4 in monthcoefs matrix).
+        ***
+        *** The monthcoefs helper builds __month_b and __month_se as 1×15
+        *** matrices indexed by the actual interview months, with aug2018
+        *** as the omitted baseline (= 0 in the matrix). This avoids the
+        *** coefplot positional-mismatch bug that occurs with a keep() list
+        *** longer than the model's coefficient set, which silently drops
+        *** all post-treatment points into the pre-treatment x-axis range.
+
+        local month_xlabel ///
+            1 "01aug2016" 2 "01sep2016" 3 "01oct2016" ///
+            4 "01aug2018" 5 "01sep2018" 6 "01oct2018" ///
+            7 "01aug2020" 8 "01sep2020" 9 "01oct2020" ///
+            10 "01aug2022" 11 "01sep2022" 12 "01oct2022" ///
+            13 "01aug2024" 14 "01sep2024" 15 "01oct2024"
+
         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 0, ///
             absorb(ubica_geo time) vce(cluster ubica_geo)
         eststo graph1
+        monthcoefs, eq(graph1)
 
-        reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 1, ///
-            absorb(ubica_geo time) vce(cluster ubica_geo)
-        eststo graph2
-
-        local month_keep ///
-            "1.zlfn#20485.time" "1.zlfn#20514.time" "1.zlfn#20545.time" ///
-            "1.zlfn#20575.time" "1.zlfn#20606.time" "1.zlfn#20636.time" ///
-            "1.zlfn#20667.time" "1.zlfn#20698.time" "1.zlfn#20728.time" ///
-            "1.zlfn#21216.time" "1.zlfn#21244.time" "1.zlfn#21275.time" ///
-            "1.zlfn#21305.time" "1.zlfn#21336.time" "1.zlfn#21366.time" ///
-            "1.zlfn#21397.time" "1.zlfn#21428.time" "1.zlfn#21458.time" ///
-            "1.zlfn#21946.time" "1.zlfn#21975.time" "1.zlfn#22006.time" ///
-            "1.zlfn#22036.time" "1.zlfn#22067.time" "1.zlfn#22097.time" ///
-            "1.zlfn#22128.time" "1.zlfn#22159.time" "1.zlfn#22189.time" ///
-            "1.zlfn#22677.time" "1.zlfn#22705.time" "1.zlfn#22736.time" ///
-            "1.zlfn#22766.time" "1.zlfn#22797.time" "1.zlfn#22827.time" ///
-            "1.zlfn#22858.time" "1.zlfn#22889.time" "1.zlfn#22919.time" ///
-            "1.zlfn#23407.time" "1.zlfn#23436.time" "1.zlfn#23467.time" ///
-            "1.zlfn#23497.time" "1.zlfn#23528.time" "1.zlfn#23558.time" ///
-            "1.zlfn#23589.time" "1.zlfn#23620.time" "1.zlfn#23650.time"
-
-        local month_xlabel ///
-            1 "01feb2016" 2 "01mar2016" 3 "01apr2016" ///
-            4 "01may2016" 5 "01jun2016" 6 "01jul2016" ///
-            7 "01aug2016" 8 "01sep2016" 9 "01oct2016" ///
-            10 "01feb2018" 11 "01mar2018" 12 "01apr2018" ///
-            13 "01may2018" 14 "01jun2018" 15 "01jul2018" ///
-            16 "01aug2018" 17 "01sep2018" 18 "01oct2018" ///
-            19 "01feb2020" 20 "01mar2020" 21 "01apr2020" ///
-            22 "01may2020" 23 "01jun2020" 24 "01jul2020" ///
-            25 "01aug2020" 26 "01sep2020" 27 "01oct2020" ///
-            28 "01feb2022" 29 "01mar2022" 30 "01apr2022" ///
-            31 "01may2022" 32 "01jun2022" 33 "01jul2022" ///
-            34 "01aug2022" 35 "01sep2022" 36 "01oct2022" ///
-            37 "01feb2024" 38 "01mar2024" 39 "01apr2024" ///
-            40 "01may2024" 41 "01jun2024" 42 "01jul2024" ///
-            43 "01aug2024" 44 "01sep2024" 45 "01oct2024"
-
-        coefplot graph1 ///
-            , keep(`month_keep') vertical ///
+        coefplot matrix(__month_b), se(__month_se) vertical ///
             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(circle) lw(medthin) msize(small) ///
             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
-            xline(18.5, lcolor(gs10) lpattern(dash)) ///
+            xline(6.5, lcolor(gs10) lpattern(dash)) ///
             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
             ytitle("Coefficient Estimate on Log HH Expenditure") ///
             xtitle("Month") ///
@@ -166,11 +144,15 @@ foreach ds in year month {
             grid(glcolor(gs14) glwidth(thin))
         graph export "../../paper/figures/event/plot-event-exp-hli-nonind-month.png", replace width(4000) height(3000)
 
-        coefplot graph2 ///
-            , keep(`month_keep') vertical ///
+        reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 1, ///
+            absorb(ubica_geo time) vce(cluster ubica_geo)
+        eststo graph2
+        monthcoefs, eq(graph2)
+
+        coefplot matrix(__month_b), se(__month_se) vertical ///
             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(circle) lw(medthin) msize(small) ///
             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
-            xline(18.5, lcolor(gs10) lpattern(dash)) ///
+            xline(6.5, lcolor(gs10) lpattern(dash)) ///
             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
             ytitle("Coefficient Estimate on Log HH Expenditure") ///
             xtitle("Month") ///
@@ -184,16 +166,12 @@ foreach ds in year month {
         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh == 0, ///
             absorb(ubica_geo time) vce(cluster ubica_geo)
         eststo graph3
+        monthcoefs, eq(graph3)
 
-        reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh == 1, ///
-            absorb(ubica_geo time) vce(cluster ubica_geo)
-        eststo graph4
-
-        coefplot graph3 ///
-            , keep(`month_keep') vertical ///
+        coefplot matrix(__month_b), se(__month_se) vertical ///
             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymbol(circle) lw(medthin) msize(small) ///
             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
-            xline(18.5, lcolor(gs10) lpattern(dash)) ///
+            xline(6.5, lcolor(gs10) lpattern(dash)) ///
             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
             ytitle("Coefficient Estimate on Log HH Expenditure") ///
             xtitle("Month") ///
@@ -202,11 +180,15 @@ foreach ds in year month {
             grid(glcolor(gs14) glwidth(thin))
         graph export "../../paper/figures/event/plot-event-exp-indig-nonind-month.png", replace width(4000) height(3000)
 
-        coefplot graph4 ///
-            , keep(`month_keep') vertical ///
+        reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh == 1, ///
+            absorb(ubica_geo time) vce(cluster ubica_geo)
+        eststo graph4
+        monthcoefs, eq(graph4)
+
+        coefplot matrix(__month_b), se(__month_se) vertical ///
             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol(circle) lw(medthin) msize(small) ///
             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
-            xline(18.5, lcolor(gs10) lpattern(dash)) ///
+            xline(6.5, lcolor(gs10) lpattern(dash)) ///
             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
             ytitle("Coefficient Estimate on Log HH Expenditure") ///
             xtitle("Month") ///

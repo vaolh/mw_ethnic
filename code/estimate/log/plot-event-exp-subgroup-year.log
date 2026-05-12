@@ -1,0 +1,829 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
+> nwage/code/estimate/log/plot-event-exp-subgroup-year.log
+  log type:  text
+ opened on:  11 May 2026, 21:26:24
+
+. 
+. include _helpers.do
+
+. *************************************************
+. **************** Helpers (estimate) *************
+. *************************************************
+. 
+. *** REPLICATION FILE: code/estimate/_helpers.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-07
+. 
+. *** Defines reusable Stata programs used across the DiD .do files in
+. *** code/estimate/.
+. ***
+. ***   savecoeffs namelist, cvar(<varname>) interaction_pattern(<token>) saved
+> ir(<path>)
+. ***       — extracts every coefficient that contains <token> from each stored
+. ***         estimate, saves to <savedir>/coefficients_<cvar>.{dta,csv}.
+. ***
+. ***   yearcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib2018.year` event-study
+. ***         regression, builds matrices `__year_b` (1×5) and `__year_se` (1×5
+> )
+. ***         with positions [2016, 2018=0, 2020, 2022, 2024] in column order.
+. ***         Coefplot can then plot the 2018 baseline as zero with no CI band.
+. ***         Use as: coefplot matrix(__year_b), se(__year_se) ...
+. ***
+. ***   monthcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib21397.time` event-study
+. ***         regression on the HH × month panel, builds matrices `__month_b`
+. ***         (1×15) and `__month_se` (1×15) with positions for the 15 actual
+. ***         ENIGH interview months (Aug/Sep/Oct of each of 5 waves), with
+. ***         aug2018 (time=21397, position 4) set as the baseline = 0.
+. ***         Necessary because `coefplot graph1, keep(...)` mis-positions
+. ***         surviving coefficients sequentially at 1..N rather than at their
+. ***         semantic time positions, dropping all post-2018 points into the
+. ***         pre-2018 portion of the x-axis.
+. ***         Use as: coefplot matrix(__month_b), se(__month_se), ...
+. ***
+. *** Adapted from a Brazil-minwage `program.do` (savecoeffs + exporttable).
+. *** The original `exporttable` is intentionally NOT ported here: esttab's
+. *** native option strings (mtitle, refcat, coeflabel) do not pass cleanly
+. *** through a Stata wrapper without losing the embedded quoting that
+. *** controls per-column titles. The DiD scripts call esttab directly to
+. *** preserve readable, debuggable formatting.
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. *************************************************
+. **************** yearcoefs **********************
+. *************************************************
+. 
+. cap prog drop yearcoefs
+
+. program define yearcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __year_b
+  4.     cap matrix drop __year_se
+  5.     matrix __year_b  = J(1, 5, 0)
+  6.     matrix __year_se = J(1, 5, 0)
+  7.     matrix __year_b[1, 1]  = _b[1.zlfn#2016.year]
+  8.     matrix __year_b[1, 3]  = _b[1.zlfn#2020.year]
+  9.     matrix __year_b[1, 4]  = _b[1.zlfn#2022.year]
+ 10.     matrix __year_b[1, 5]  = _b[1.zlfn#2024.year]
+ 11.     matrix __year_se[1, 1] = _se[1.zlfn#2016.year]
+ 12.     matrix __year_se[1, 3] = _se[1.zlfn#2020.year]
+ 13.     matrix __year_se[1, 4] = _se[1.zlfn#2022.year]
+ 14.     matrix __year_se[1, 5] = _se[1.zlfn#2024.year]
+ 15.     matrix colnames __year_b  = c2016 c2018 c2020 c2022 c2024
+ 16.     matrix colnames __year_se = c2016 c2018 c2020 c2022 c2024
+ 17. end
+
+. 
+. *************************************************
+. **************** monthcoefs *********************
+. *************************************************
+. 
+. *** The 15 ENIGH interview months across 2016-2024 in Stata daily-date encodi
+> ng
+. *** (days since 01jan1960). Each wave samples Aug/Sep/Oct (the ENIGH referenc
+> e
+. *** quarter), so 5 waves × 3 months = 15 categories. aug2018 (time=21397) is
+. *** the omitted baseline.
+. ***
+. ***   Position | Date     | Stata time code | Wave
+. ***   ---------+----------+-----------------+------
+. ***          1 | aug2016  |          20667  | 2016
+. ***          2 | sep2016  |          20698  | 2016
+. ***          3 | oct2016  |          20728  | 2016
+. ***          4 | aug2018  |          21397  | 2018 (BASELINE = 0)
+. ***          5 | sep2018  |          21428  | 2018
+. ***          6 | oct2018  |          21458  | 2018
+. ***          7 | aug2020  |          22128  | 2020
+. ***          8 | sep2020  |          22159  | 2020
+. ***          9 | oct2020  |          22189  | 2020
+. ***         10 | aug2022  |          22858  | 2022
+. ***         11 | sep2022  |          22889  | 2022
+. ***         12 | oct2022  |          22919  | 2022
+. ***         13 | aug2024  |          23589  | 2024
+. ***         14 | sep2024  |          23620  | 2024
+. ***         15 | oct2024  |          23650  | 2024
+. 
+. cap prog drop monthcoefs
+
+. program define monthcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __month_b
+  4.     cap matrix drop __month_se
+  5.     matrix __month_b  = J(1, 15, 0)
+  6.     matrix __month_se = J(1, 15, 0)
+  7.     matrix __month_b[1,  1] = _b[1.zlfn#20667.time]
+  8.     matrix __month_b[1,  2] = _b[1.zlfn#20698.time]
+  9.     matrix __month_b[1,  3] = _b[1.zlfn#20728.time]
+ 10.     *** position 4 (aug2018 = 21397) is the baseline = 0 — leave at J() in
+> it
+.     matrix __month_b[1,  5] = _b[1.zlfn#21428.time]
+ 11.     matrix __month_b[1,  6] = _b[1.zlfn#21458.time]
+ 12.     matrix __month_b[1,  7] = _b[1.zlfn#22128.time]
+ 13.     matrix __month_b[1,  8] = _b[1.zlfn#22159.time]
+ 14.     matrix __month_b[1,  9] = _b[1.zlfn#22189.time]
+ 15.     matrix __month_b[1, 10] = _b[1.zlfn#22858.time]
+ 16.     matrix __month_b[1, 11] = _b[1.zlfn#22889.time]
+ 17.     matrix __month_b[1, 12] = _b[1.zlfn#22919.time]
+ 18.     matrix __month_b[1, 13] = _b[1.zlfn#23589.time]
+ 19.     matrix __month_b[1, 14] = _b[1.zlfn#23620.time]
+ 20.     matrix __month_b[1, 15] = _b[1.zlfn#23650.time]
+ 21.     matrix __month_se[1,  1] = _se[1.zlfn#20667.time]
+ 22.     matrix __month_se[1,  2] = _se[1.zlfn#20698.time]
+ 23.     matrix __month_se[1,  3] = _se[1.zlfn#20728.time]
+ 24.     matrix __month_se[1,  5] = _se[1.zlfn#21428.time]
+ 25.     matrix __month_se[1,  6] = _se[1.zlfn#21458.time]
+ 26.     matrix __month_se[1,  7] = _se[1.zlfn#22128.time]
+ 27.     matrix __month_se[1,  8] = _se[1.zlfn#22159.time]
+ 28.     matrix __month_se[1,  9] = _se[1.zlfn#22189.time]
+ 29.     matrix __month_se[1, 10] = _se[1.zlfn#22858.time]
+ 30.     matrix __month_se[1, 11] = _se[1.zlfn#22889.time]
+ 31.     matrix __month_se[1, 12] = _se[1.zlfn#22919.time]
+ 32.     matrix __month_se[1, 13] = _se[1.zlfn#23589.time]
+ 33.     matrix __month_se[1, 14] = _se[1.zlfn#23620.time]
+ 34.     matrix __month_se[1, 15] = _se[1.zlfn#23650.time]
+ 35.     matrix colnames __month_b  = aug2016 sep2016 oct2016 aug2018 sep2018 o
+> ct2018 ///
+>                                   aug2020 sep2020 oct2020 aug2022 sep2022 oct
+> 2022 ///
+>                                   aug2024 sep2024 oct2024
+ 36.     matrix colnames __month_se = aug2016 sep2016 oct2016 aug2018 sep2018 o
+> ct2018 ///
+>                                   aug2020 sep2020 oct2020 aug2022 sep2022 oct
+> 2022 ///
+>                                   aug2024 sep2024 oct2024
+ 37. end
+
+. 
+. *************************************************
+. **************** savecoeffs *********************
+. *************************************************
+. 
+. cap prog drop savecoeffs
+
+. program define savecoeffs
+  1.     syntax namelist, CVARname(string) INTERACTION_pattern(string) SAVEdir(
+> string)
+  2. 
+.     *** Get coefficient names from the first stored estimate.
+.     local first : word 1 of `namelist'
+  3.     qui estimates restore `first'
+  4.     local allcoefs : colnames e(b)
+  5. 
+.     *** Filter to those containing both the heterogeneity variable name and
+.     *** the interaction-pattern token (e.g. "1.zlfn#1.post").
+.     local intcoefs
+  6.     foreach c of local allcoefs {
+  7.         if strpos("`c'", "`interaction_pattern'") > 0 & strpos("`c'", "`cv
+> arname'") > 0 {
+  8.             local intcoefs `intcoefs' `c'
+  9.         }
+ 10.     }
+ 11. 
+.     local ncoefs : word count `intcoefs'
+ 12.     if `ncoefs' == 0 {
+ 13.         di as error "savecoeffs: no interaction coefficients found for `cv
+> arname' / `interaction_pattern'"
+ 14.         exit 198
+ 15.     }
+ 16. 
+.     *** Capture value labels BEFORE preserve (preserve restores data state bu
+> t
+.     *** value-label associations are lost across clear).
+.     forval i = 1/`ncoefs' {
+ 17.         local thiscoef : word `i' of `intcoefs'
+ 18.         local rc = regexm("`thiscoef'", "^([0-9]+)[bo]?\.")
+ 19.         local numpart = regexs(1)
+ 20.         local lbl`i' : label (`cvarname') `numpart'
+ 21.         local id`i' = `numpart'
+ 22.     }
+ 23. 
+.     preserve
+ 24.     clear
+ 25.     qui set obs `ncoefs'
+ 26.     gen str80 coefname           = ""
+ 27.     gen int   `cvarname'_id      = .
+ 28.     gen str80 `cvarname'_label   = ""
+ 29. 
+.     forval i = 1/`ncoefs' {
+ 30.         local thiscoef : word `i' of `intcoefs'
+ 31.         qui replace coefname           = "`thiscoef'" in `i'
+ 32.         qui replace `cvarname'_id      = `id`i''      in `i'
+ 33.         qui replace `cvarname'_label   = "`lbl`i''"   in `i'
+ 34.     }
+ 35. 
+.     foreach estnm of local namelist {
+ 36.         qui estimates restore `estnm'
+ 37.         tempname bvec vvec
+ 38.         matrix `bvec' = e(b)
+ 39.         matrix `vvec' = vecdiag(e(V))
+ 40. 
+.         gen double b_`estnm'  = .
+ 41.         gen double se_`estnm' = .
+ 42.         gen double N_`estnm'  = e(N)
+ 43. 
+.         forval i = 1/`ncoefs' {
+ 44.             local thiscoef : word `i' of `intcoefs'
+ 45.             local colidx = colnumb(`bvec', "`thiscoef'")
+ 46.             if `colidx' != . {
+ 47.                 qui replace b_`estnm'  = `bvec'[1, `colidx']        in `i'
+ 48.                 qui replace se_`estnm' = sqrt(`vvec'[1, `colidx']) in `i'
+ 49.             }
+ 50.         }
+ 51.     }
+ 52. 
+.     order `cvarname'_id `cvarname'_label
+ 53.     drop coefname
+ 54.     sort `cvarname'_id
+ 55. 
+.     cap mkdir "`savedir'"
+ 56.     qui save             "`savedir'/coefficients_`cvarname'.dta", replace
+ 57.     qui export delimited "`savedir'/coefficients_`cvarname'.csv", replace
+ 58.     di as text "savecoeffs: wrote coefficients_`cvarname'.{dta,csv} to `sa
+> vedir'"
+ 59.     restore
+ 60. end
+
+. 
+. do read-hhlevel-exp-subgroup-year.do
+
+. *************************************************
+. **** Read HH × Subgroup × Year Expenditure *******
+. *************************************************
+. 
+. *** REPLICATION FILE: read-hhlevel-exp-subgroup-year.do
+. *** STATA VERSION:    StataNow 19.5
+. *** AUTHORS:          Matías Carrasco, Victor Ortega Le Hénanff
+. *** DATE:             2026-05-10
+. 
+. *** Year-cadence version of read-hhlevel-exp-subgroup-month.do. Collapses
+. *** the long expenditure panel to (HH × year × subgroup), then reshapes
+. *** wide so each row is (HH × year) with one column per subgroup × outcome.
+. *** Same harmonized ~65-subgroup partition from build-clave-crosswalk.py.
+. 
+. *************************************************
+. ****************** Load Data ********************
+. *************************************************
+. 
+. use "../../data/clean/enigh/enigh-hhlevel-exp-month.dta", clear
+
+. 
+. drop if capitulo == "17"          // Q* capital flows — not consumption
+(606 observations deleted)
+
+. drop if subgroup == "other_uncategorized"
+(49,612 observations deleted)
+
+. 
+. *************************************************
+. **** Collapse claves -> subgroup × HH × year ****
+. *************************************************
+. 
+. collapse (sum) gas_real gas_nm_real ///
+>          (firstnm) zlfn post treat_post ubica_geo factor smg upm est_dis ///
+>                    state ent_name reg_num reg_name macro_num macro_name, ///
+>          by(folioviv foliohog year subgroup)
+
+. 
+. bysort folioviv foliohog year: egen double gas_total_real = total(gas_real)
+
+. gen double share      = gas_real / gas_total_real
+(3,288 missing values generated)
+
+. replace share = 0 if missing(share)
+(3,288 real changes made)
+
+. gen double lngas_real = ln(gas_real + 1)
+
+. 
+. keep folioviv foliohog year subgroup ///
+>      gas_real lngas_real share ///
+>      zlfn post treat_post ubica_geo factor smg upm est_dis ///
+>      state ent_name reg_num reg_name macro_num macro_name ///
+>      gas_total_real
+
+. 
+. reshape wide gas_real lngas_real share, ///
+>         i(folioviv foliohog year) j(subgroup) string
+(j = alcohol bev_coffee_tea_cocoa bev_nonalc clothing_accessories clothing_foot
+> wear clothing_kids clothing_men clothing_women comms_internet_tv comms_teleph
+> ony durables_appliances durables_furniture durables_kitchenware durables_repa
+> ir_mat durables_textiles edu_tuition food_baby food_cereals_bread food_condim
+> ents food_dairy food_eggs food_fish_seafood food_fruits food_meat_beef food_m
+> eat_other food_meat_pork food_meat_poultry food_oils_fats food_other_misc foo
+> d_outside food_prepared food_sugars_sweets food_tubers food_vegetables health
+> _consultations health_devices health_hospital health_insurance health_pharmac
+> y household_cleaning housing_fuel housing_quotas housing_rent housing_repairs
+>  housing_taxes housing_utilities insurance_nonhealth personal_goods personal_
+> services rec_culture_media rec_electronics_av rec_photography rec_tourism rec
+> _toys_sports services_events services_household services_other services_profe
+> ssional tobacco transport_fuel transport_intercity transport_local transport_
+> veh_buy transport_veh_maint)
+
+Data                               Long   ->   Wide
+-----------------------------------------------------------------------------
+Number of observations        8,880,812   ->   415,480     
+Number of variables                  22   ->   210         
+j variable (64 values)         subgroup   ->   (dropped)
+xij variables:
+                               gas_real   ->   gas_realalcohol gas_realbev_coff
+> ee_tea_cocoa ... gas_realtransport_veh_maint
+                             lngas_real   ->   lngas_realalcohol lngas_realbev_
+> coffee_tea_cocoa ... lngas_realtransport_veh_maint
+                                  share   ->   sharealcohol sharebev_coffee_tea
+> _cocoa ... sharetransport_veh_maint
+-----------------------------------------------------------------------------
+
+. 
+. ds gas_real*
+gas_realal~l  gas_realdu~t  gas_real~try  gas_realho~g  gas_realre~m
+gas_realbe~a  gas_rea~iles  gas_real~ats  gas_realho~l  gas_realre~s
+gas_realbe~c  gas_realed~n  gas_realfo~c  gas_realh~as  gas_realse~s
+gas_realc~es  gas_realf~by  gas_realfo~e  gas_realho~t  gas_realse~d
+gas_realcl~r  gas_realf~ad  gas_realf~ed  gas_realh~rs  gas_realse~r
+gas_realc~ds  gas_re~ments  gas_real~ets  gas_real~xes  gas_realse~l
+gas_rea~_men  gas_real~iry  gas_realf~rs  gas_rea~ties  gas_realto~o
+gas_rea~omen  gas_realf~gs  gas_realf~es  gas_realin~h  gas_realt~el
+gas_realco~v  gas_realf~od  gas_realh~ns  gas_realp~ds  gas_realt~ty
+gas_realco~y  gas_real~its  gas_r~evices  gas_realp~es  gas_realt~al
+gas_rea~nces  gas_realfo~f  gas_realhe~l  gas_realre~a  gas_realt~uy
+gas_real~ure  gas_realfo~r  gas_realhe~e  gas_realre~v  gas_realtr~t
+gas_real~are  gas_realfo~k  gas_realhe~y  gas_realre~y
+
+. local gasvars `r(varlist)'
+
+. foreach v of local gasvars {
+  2.     local sub = subinstr("`v'", "gas_real", "", 1)
+  3.     rename `v' gas_`sub'_real
+  4. }
+
+. ds lngas_real*
+lngas_rea~ol  lngas_rea~at  lngas_re~try  lngas_real~g  lngas_real~m
+lngas_rea~oa  lngas_r~iles  lngas_re~ats  lngas~g_fuel  lngas_re~rts
+lngas_rea~lc  lngas_rea~on  lngas_rea~sc  lngas_rea~as  lngas_~vents
+lngas_r~ries  lngas_rea~by  lngas_rea~de  lngas_re~ent  lngas_rea~ld
+lngas_rea~ar  lngas_rea~ad  lngas_rea~ed  lngas_re~irs  lnga~s_other
+lngas_re~ids  lngas_~ments  lngas_re~ets  lngas_re~xes  lngas_re~nal
+lngas_r~_men  lngas_re~iry  lngas_re~ers  lngas_r~ties  lngas_real~o
+lngas_r~omen  lngas_rea~gs  lngas_r~bles  lngas_real~h  lngas~t_fuel
+lngas_rea~tv  lngas_rea~od  lngas_rea~ns  lngas_re~ods  lngas_rea~ty
+lngas_rea~ny  lngas_re~its  lngas~evices  lngas~rvices  lngas_re~cal
+lngas_r~nces  lngas_real~f  lngas_re~tal  lngas_rea~ia  lngas_rea~uy
+lngas_re~ure  lnga~t_other  lngas_rea~ce  lngas_rea~av  lngas_re~int
+lngas_re~are  lngas_real~k  lngas_rea~cy  lngas_rea~hy
+
+. local lnvars `r(varlist)'
+
+. foreach v of local lnvars {
+  2.     local sub = subinstr("`v'", "lngas_real", "", 1)
+  3.     rename `v' lngas_`sub'_real
+  4. }
+
+. ds share*
+sharealcohol  sharedurab~t  sharefoo~try  sharehouse~g  sharerec_t~m
+sharebev_c~a  sharedur~les  sharefoo~ats  sharehousi~l  sharerec_t~s
+sharebev_n~c  shareedu_t~n  sharefood_~c  sharehous~as  shareservi~s
+shareclot~es  sharefood~by  sharefood_~e  sharehousi~t  shareservi~d
+sharecloth~r  sharefood~ad  sharefood~ed  sharehous~rs  shareservi~r
+shareclot~ds  sharefoo~nts  sharefoo~ets  sharehou~xes  shareservi~l
+sharecl~_men  sharefoo~iry  sharefood~rs  sharehou~ies  sharetobacco
+sharecl~omen  sharefood~gs  sharefood~es  shareinsur~h  sharetran~el
+sharecomms~v  sharefood~od  shareheal~ns  sharepers~ds  sharetran~ty
+sharecomms~y  sharefoo~its  shareheal~es  sharepers~es  sharetran~al
+sharedur~ces  sharefood_~f  sharehealt~l  sharerec_c~a  sharetran~uy
+sharedur~ure  sharefood_~r  sharehealt~e  sharerec_e~v  sharetrans~t
+sharedur~are  sharefood_~k  sharehealt~y  sharerec_p~y
+
+. local shvars `r(varlist)'
+
+. foreach v of local shvars {
+  2.     if "`v'" == "share_female" continue
+  3.     local sub = subinstr("`v'", "share", "", 1)
+  4.     rename `v' share_`sub'
+  5. }
+
+. 
+. ds share_*
+share_alco~l  share_dura~t  share_fo~try  share_hous~g  share_rec_~m
+share_bev_~a  share_du~les  share_fo~ats  share_hous~l  share_rec_~s
+share_bev_~c  share_edu_~n  share_food~c  share_hou~as  share_serv~s
+share_clo~es  share_foo~by  share_food~e  share_hous~t  share_serv~d
+share_clot~r  share_foo~ad  share_foo~ed  share_hou~rs  share_serv~r
+share_clo~ds  share_fo~nts  share_fo~ets  share_ho~xes  share_serv~l
+share_c~_men  share_fo~iry  share_foo~rs  share_ho~ies  share_toba~o
+share_c~omen  share_foo~gs  share_foo~es  share_insu~h  share_tra~el
+share_comm~v  share_foo~od  share_hea~ns  share_per~ds  share_tra~ty
+share_comm~y  share_fo~its  share_hea~es  share_per~es  share_tra~al
+share_du~ces  share_food~f  share_heal~l  share_rec_~a  share_tra~uy
+share_du~ure  share_food~r  share_heal~e  share_rec_~v  share_tran~t
+share_du~are  share_food~k  share_heal~y  share_rec_~y
+
+. local rawsubs `r(varlist)'
+
+. local SUBGROUPS ""
+
+. foreach v of local rawsubs {
+  2.     if "`v'" == "share_female" continue
+  3.     local sub = subinstr("`v'", "share_", "", 1)
+  4.     local SUBGROUPS `SUBGROUPS' `sub'
+  5. }
+
+. global SUBGROUPS `SUBGROUPS'
+
+. display as text "SUBGROUPS (" wordcount("$SUBGROUPS") "): " "$SUBGROUPS"
+SUBGROUPS (64): alcohol bev_coffee_tea_cocoa bev_nonalc clothing_accessories cl
+> othing_footwear clothing_kids clothing_men clothing_women comms_internet_tv c
+> omms_telephony durables_appliances durables_furniture durables_kitchenware du
+> rables_repair_mat durables_textiles edu_tuition food_baby food_cereals_bread 
+> food_condiments food_dairy food_eggs food_fish_seafood food_fruits food_meat_
+> beef food_meat_other food_meat_pork food_meat_poultry food_oils_fats food_oth
+> er_misc food_outside food_prepared food_sugars_sweets food_tubers food_vegeta
+> bles health_consultations health_devices health_hospital health_insurance hea
+> lth_pharmacy household_cleaning housing_fuel housing_quotas housing_rent hous
+> ing_repairs housing_taxes housing_utilities insurance_nonhealth personal_good
+> s personal_services rec_culture_media rec_electronics_av rec_photography rec_
+> tourism rec_toys_sports services_events services_household services_other ser
+> vices_professional tobacco transport_fuel transport_intercity transport_local
+>  transport_veh_buy transport_veh_maint
+
+. 
+. foreach s of global SUBGROUPS {
+  2.     cap replace gas_`s'_real   = 0 if missing(gas_`s'_real)
+  3.     cap replace lngas_`s'_real = 0 if missing(lngas_`s'_real)
+  4.     cap replace share_`s'      = 0 if missing(share_`s')
+  5. }
+
+. 
+. gen double lngas_total_real = ln(gas_total_real + 1)
+
+. label variable lngas_total_real "log(total real HH expenditure + 1)"
+
+. 
+. *************************************************
+. **** Merge HH composition + ethnicity ************
+. *************************************************
+. 
+. *** Year-cadence demographic controls come from the inc-year HH file.
+. *** Aggregate to (HH × year) first (collapse to first match per HH-year).
+. merge 1:1 folioviv foliohog year using ///
+>     "../../data/clean/enigh/enigh-hhlevel-inc-year.dta", ///
+>     keepusing(hh_size n_kids n_adults n_workers n_employed n_informal ///
+>               n_indigenous n_hli mean_age mean_educ share_female) ///
+>     keep(match) nogen
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                             0
+    Matched                           415,124  
+    -----------------------------------------
+
+. 
+. cap drop hli_hh
+
+. cap drop indig_hh
+
+. gen byte hli_hh   = (n_hli         > 0) if !missing(n_hli)
+
+. gen byte indig_hh = (n_indigenous  > 0) if !missing(n_indigenous)
+
+. label variable hli_hh   "Household has at least one HLI member"
+
+. label variable indig_hh "Household has at least one self-identified indigenou
+> s member"
+
+. 
+. *************************************************
+. ***************** Controls **********************
+. *************************************************
+. 
+. global controls hh_size n_kids n_adults n_workers mean_age mean_educ share_fe
+> male
+
+. 
+end of do-file
+
+. 
+. cap mkdir "../../paper/figures/event"
+
+. 
+. *** Marquee subgroups (curated for the quality narrative).
+. local MARQUEE ///
+>     food_meat_beef food_meat_pork food_meat_poultry ///
+>     food_outside bev_coffee_tea_cocoa ///
+>     clothing_men clothing_women clothing_kids ///
+>     durables_appliances durables_furniture ///
+>     rec_tourism rec_culture_media ///
+>     transport_intercity transport_local ///
+>     health_consultations health_pharmacy
+
+. 
+. local year_xlabel 1 "2016" 2 "2018" 3 "2020" 4 "2022" 5 "2024"
+
+. 
+. foreach s of local MARQUEE {
+  2.     cap confirm variable share_`s'
+  3.     if _rc {
+  4.         di as text "marquee `s' not in memory — skipping"
+  5.         continue
+  6.     }
+  7. 
+.     foreach stratum in nhli hli nind indig {
+  8.         local cond ""
+  9.         local color "31 119 180"
+ 10.         local label "Non-HLI"
+ 11.         if "`stratum'" == "nhli" {
+ 12.             local cond  "if hli_hh == 0"
+ 13.             local color "31 119 180"
+ 14.             local label "Non-HLI"
+ 15.         }
+ 16.         if "`stratum'" == "hli" {
+ 17.             local cond  "if hli_hh == 1"
+ 18.             local color "214 39 40"
+ 19.             local label "HLI"
+ 20.         }
+ 21.         if "`stratum'" == "nind" {
+ 22.             local cond  "if indig_hh == 0"
+ 23.             local color "31 119 180"
+ 24.             local label "Non-Indig"
+ 25.         }
+ 26.         if "`stratum'" == "indig" {
+ 27.             local cond  "if indig_hh == 1"
+ 28.             local color "214 39 40"
+ 29.             local label "Indigenous"
+ 30.         }
+ 31. 
+.         cap reghdfe share_`s' i.zlfn##ib2018.year $controls `cond', ///
+>             absorb(ubica_geo year) vce(cluster ubica_geo)
+ 32.         if _rc {
+ 33.             di as text "regression failed for `s' × `stratum' — skipping"
+ 34.             continue
+ 35.         }
+ 36.         eststo `s'_`stratum'
+ 37.         yearcoefs, eq(`s'_`stratum')
+ 38. 
+.         coefplot matrix(__year_b), se(__year_se) vertical ///
+>             recast(connected) lcolor("`color'") mcolor("`color'") msymbol(cir
+> cle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("`color'%30") lwidth(none)) ///
+>             xline(2.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient on share of HH expenditure") ///
+>             xtitle("Year") ///
+>             xlabel(`year_xlabel') ///
+>             title("`s' - `label'", size(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 39.         graph export "../../paper/figures/event/plot-event-exp-`s'-`stratu
+> m'-year.png", ///
+>             replace width(4000) height(3000)
+ 40.     }
+ 41. }
+(file ../../paper/figures/event/plot-event-exp-food_meat_beef-nhli-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-food_meat_beef-nhli-year.png writ
+> ten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_beef-hli-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_meat_beef-nind-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-food_meat_beef-nind-year.png writ
+> ten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_beef-indig-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_meat_pork-nhli-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-food_meat_pork-nhli-year.png writ
+> ten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_pork-hli-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_meat_pork-nind-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-food_meat_pork-nind-year.png writ
+> ten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_pork-indig-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_meat_poultry-nhli-year.png 
+> not found)
+file ../../paper/figures/event/plot-event-exp-food_meat_poultry-nhli-year.png w
+> ritten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_poultry-hli-year.png wr
+> itten in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_meat_poultry-nind-year.png 
+> not found)
+file ../../paper/figures/event/plot-event-exp-food_meat_poultry-nind-year.png w
+> ritten in PNG format
+file ../../paper/figures/event/plot-event-exp-food_meat_poultry-indig-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_outside-nhli-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-food_outside-nhli-year.png writte
+> n in PNG format
+file ../../paper/figures/event/plot-event-exp-food_outside-hli-year.png written
+>  in PNG format
+(file ../../paper/figures/event/plot-event-exp-food_outside-nind-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-food_outside-nind-year.png writte
+> n in PNG format
+file ../../paper/figures/event/plot-event-exp-food_outside-indig-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-nhli-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-nhli-year.pn
+> g written in PNG format
+file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-hli-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-nind-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-nind-year.pn
+> g written in PNG format
+(file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-indig-year.
+> png not found)
+file ../../paper/figures/event/plot-event-exp-bev_coffee_tea_cocoa-indig-year.p
+> ng written in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_men-nhli-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-clothing_men-nhli-year.png writte
+> n in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_men-hli-year.png not fo
+> und)
+file ../../paper/figures/event/plot-event-exp-clothing_men-hli-year.png written
+>  in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_men-nind-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-clothing_men-nind-year.png writte
+> n in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_men-indig-year.png not 
+> found)
+file ../../paper/figures/event/plot-event-exp-clothing_men-indig-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_women-nhli-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-clothing_women-nhli-year.png writ
+> ten in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_women-hli-year.png not 
+> found)
+file ../../paper/figures/event/plot-event-exp-clothing_women-hli-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_women-nind-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-clothing_women-nind-year.png writ
+> ten in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_women-indig-year.png no
+> t found)
+file ../../paper/figures/event/plot-event-exp-clothing_women-indig-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_kids-nhli-year.png not 
+> found)
+file ../../paper/figures/event/plot-event-exp-clothing_kids-nhli-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_kids-hli-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-clothing_kids-hli-year.png writte
+> n in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_kids-nind-year.png not 
+> found)
+file ../../paper/figures/event/plot-event-exp-clothing_kids-nind-year.png writt
+> en in PNG format
+(file ../../paper/figures/event/plot-event-exp-clothing_kids-indig-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-clothing_kids-indig-year.png writ
+> ten in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_appliances-nhli-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-durables_appliances-nhli-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_appliances-hli-year.png
+>  not found)
+file ../../paper/figures/event/plot-event-exp-durables_appliances-hli-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_appliances-nind-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-durables_appliances-nind-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_appliances-indig-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-durables_appliances-indig-year.pn
+> g written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_furniture-nhli-year.png
+>  not found)
+file ../../paper/figures/event/plot-event-exp-durables_furniture-nhli-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_furniture-hli-year.png 
+> not found)
+file ../../paper/figures/event/plot-event-exp-durables_furniture-hli-year.png w
+> ritten in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_furniture-nind-year.png
+>  not found)
+file ../../paper/figures/event/plot-event-exp-durables_furniture-nind-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-durables_furniture-indig-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-durables_furniture-indig-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_tourism-nhli-year.png not fo
+> und)
+file ../../paper/figures/event/plot-event-exp-rec_tourism-nhli-year.png written
+>  in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_tourism-hli-year.png not fou
+> nd)
+file ../../paper/figures/event/plot-event-exp-rec_tourism-hli-year.png written 
+> in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_tourism-nind-year.png not fo
+> und)
+file ../../paper/figures/event/plot-event-exp-rec_tourism-nind-year.png written
+>  in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_tourism-indig-year.png not f
+> ound)
+file ../../paper/figures/event/plot-event-exp-rec_tourism-indig-year.png writte
+> n in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_culture_media-nhli-year.png 
+> not found)
+file ../../paper/figures/event/plot-event-exp-rec_culture_media-nhli-year.png w
+> ritten in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_culture_media-hli-year.png n
+> ot found)
+file ../../paper/figures/event/plot-event-exp-rec_culture_media-hli-year.png wr
+> itten in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_culture_media-nind-year.png 
+> not found)
+file ../../paper/figures/event/plot-event-exp-rec_culture_media-nind-year.png w
+> ritten in PNG format
+(file ../../paper/figures/event/plot-event-exp-rec_culture_media-indig-year.png
+>  not found)
+file ../../paper/figures/event/plot-event-exp-rec_culture_media-indig-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_intercity-nhli-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-transport_intercity-nhli-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_intercity-hli-year.png
+>  not found)
+file ../../paper/figures/event/plot-event-exp-transport_intercity-hli-year.png 
+> written in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_intercity-nind-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-transport_intercity-nind-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_intercity-indig-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-transport_intercity-indig-year.pn
+> g written in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_local-nhli-year.png no
+> t found)
+file ../../paper/figures/event/plot-event-exp-transport_local-nhli-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_local-hli-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-transport_local-hli-year.png writ
+> ten in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_local-nind-year.png no
+> t found)
+file ../../paper/figures/event/plot-event-exp-transport_local-nind-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-transport_local-indig-year.png n
+> ot found)
+file ../../paper/figures/event/plot-event-exp-transport_local-indig-year.png wr
+> itten in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_consultations-nhli-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-health_consultations-nhli-year.pn
+> g written in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_consultations-hli-year.pn
+> g not found)
+file ../../paper/figures/event/plot-event-exp-health_consultations-hli-year.png
+>  written in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_consultations-nind-year.p
+> ng not found)
+file ../../paper/figures/event/plot-event-exp-health_consultations-nind-year.pn
+> g written in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_consultations-indig-year.
+> png not found)
+file ../../paper/figures/event/plot-event-exp-health_consultations-indig-year.p
+> ng written in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_pharmacy-nhli-year.png no
+> t found)
+file ../../paper/figures/event/plot-event-exp-health_pharmacy-nhli-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_pharmacy-hli-year.png not
+>  found)
+file ../../paper/figures/event/plot-event-exp-health_pharmacy-hli-year.png writ
+> ten in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_pharmacy-nind-year.png no
+> t found)
+file ../../paper/figures/event/plot-event-exp-health_pharmacy-nind-year.png wri
+> tten in PNG format
+(file ../../paper/figures/event/plot-event-exp-health_pharmacy-indig-year.png n
+> ot found)
+file ../../paper/figures/event/plot-event-exp-health_pharmacy-indig-year.png wr
+> itten in PNG format
+
+. 
+. cap log close

@@ -85,13 +85,25 @@ TABLES_HHLEVEL_INC_M := \
 TABLES_HHLEVEL_EXP_M := \
 	$(PAPERDIR)/tables/did-exp-hhlevel-month.tex
 
+SUBGROUP_CAPS := 01 02 03 04 05 06 07 08 09 10 11 12 13
+SUBGROUP_OUTCOMES := lngas share
+
+TABLES_SUBGROUP_YEAR := $(foreach c,$(SUBGROUP_CAPS), \
+    $(foreach o,$(SUBGROUP_OUTCOMES), \
+        $(PAPERDIR)/tables/did-exp-subgroup-$(c)-$(o)-year.tex))
+TABLES_SUBGROUP_MONTH := $(foreach c,$(SUBGROUP_CAPS), \
+    $(foreach o,$(SUBGROUP_OUTCOMES), \
+        $(PAPERDIR)/tables/did-exp-subgroup-$(c)-$(o)-month.tex))
+
 TABLES := \
 	$(PAPERDIR)/tables/sum-descriptive.tex   \
 	$(TABLES_INDLEVEL_YEAR)                  \
 	$(TABLES_INDLEVEL_MONTH)                 \
 	$(TABLES_HHLEVEL_INC_Y)                  \
 	$(TABLES_HHLEVEL_INC_M)                  \
-	$(TABLES_HHLEVEL_EXP_M)
+	$(TABLES_HHLEVEL_EXP_M)                  \
+	$(TABLES_SUBGROUP_YEAR)                  \
+	$(TABLES_SUBGROUP_MONTH)
 
 tables: $(TABLES)
 
@@ -163,6 +175,38 @@ $(PAPERDIR)/tables/did-exp-hhlevel-month.tex: did-hhlevel-exp-month.do $(HELPERS
                          $(DATA_HHLEVEL_EXP_MONTH) $(DATA_HHLEVEL_INC_MONTH) | $(PAPERDIR)/tables log
 	stata-mp -e $<
 	@rm -f $(<:.do=.log)
+
+# --- did-hhlevel-exp-subgroup-{year,month}.do — subgroup-level expenditure DiD.
+# Each script produces ~26 tables (13 capitulos × 2 outcomes); sentinel pattern.
+# Table-list variables defined alongside other TABLES_* at top of file.
+READ_HHLEVEL_EXP_SUB_Y := read-hhlevel-exp-subgroup-year.do
+READ_HHLEVEL_EXP_SUB_M := read-hhlevel-exp-subgroup-month.do
+
+# sentinel: cap-01 lngas is the trigger; all other tables follow once it's built
+SUBGROUP_YEAR_SENTINEL := $(PAPERDIR)/tables/did-exp-subgroup-01-lngas-year.tex
+SUBGROUP_MONTH_SENTINEL := $(PAPERDIR)/tables/did-exp-subgroup-01-lngas-month.tex
+TABLES_SUBGROUP_YEAR_REST  := $(filter-out $(SUBGROUP_YEAR_SENTINEL),$(TABLES_SUBGROUP_YEAR))
+TABLES_SUBGROUP_MONTH_REST := $(filter-out $(SUBGROUP_MONTH_SENTINEL),$(TABLES_SUBGROUP_MONTH))
+
+$(SUBGROUP_YEAR_SENTINEL): did-hhlevel-exp-subgroup-year.do $(HELPERS) $(READ_HHLEVEL_EXP_SUB_Y) \
+                          $(DATA_HHLEVEL_EXP_MONTH) $(DATA_HHLEVEL_INC_YEAR) \
+                          $(DATADIR)/clean/enigh/clave_crosswalk.dta \
+                          | $(PAPERDIR)/tables log
+	stata-mp -e $<
+	@rm -f $(<:.do=.log)
+
+$(TABLES_SUBGROUP_YEAR_REST): $(SUBGROUP_YEAR_SENTINEL)
+	@:
+
+$(SUBGROUP_MONTH_SENTINEL): did-hhlevel-exp-subgroup-month.do $(HELPERS) $(READ_HHLEVEL_EXP_SUB_M) \
+                           $(DATA_HHLEVEL_EXP_MONTH) $(DATA_HHLEVEL_INC_MONTH) \
+                           $(DATADIR)/clean/enigh/clave_crosswalk.dta \
+                           | $(PAPERDIR)/tables log
+	stata-mp -e $<
+	@rm -f $(<:.do=.log)
+
+$(TABLES_SUBGROUP_MONTH_REST): $(SUBGROUP_MONTH_SENTINEL)
+	@:
 
 #################################################
 ################ Targets — Figures ##############

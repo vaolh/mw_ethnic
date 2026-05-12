@@ -3,7 +3,7 @@
        log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
 > nwage/code/estimate/log/plot-event-exp-ethnic.log
   log type:  text
- opened on:  10 May 2026, 10:42:44
+ opened on:  10 May 2026, 21:07:26
 
 . 
 . include _helpers.do
@@ -32,6 +32,18 @@
 . ***         with positions [2016, 2018=0, 2020, 2022, 2024] in column order.
 . ***         Coefplot can then plot the 2018 baseline as zero with no CI band.
 . ***         Use as: coefplot matrix(__year_b), se(__year_se) ...
+. ***
+. ***   monthcoefs, EQname(<stored_est>)
+. ***       — after `eststo <eqname>` of an `i.zlfn##ib21397.time` event-study
+. ***         regression on the HH × month panel, builds matrices `__month_b`
+. ***         (1×15) and `__month_se` (1×15) with positions for the 15 actual
+. ***         ENIGH interview months (Aug/Sep/Oct of each of 5 waves), with
+. ***         aug2018 (time=21397, position 4) set as the baseline = 0.
+. ***         Necessary because `coefplot graph1, keep(...)` mis-positions
+. ***         surviving coefficients sequentially at 1..N rather than at their
+. ***         semantic time positions, dropping all post-2018 points into the
+. ***         pre-2018 portion of the x-axis.
+. ***         Use as: coefplot matrix(__month_b), se(__month_se), ...
 . ***
 . *** Adapted from a Brazil-minwage `program.do` (savecoeffs + exporttable).
 . *** The original `exporttable` is intentionally NOT ported here: esttab's
@@ -68,6 +80,87 @@
  15.     matrix colnames __year_b  = c2016 c2018 c2020 c2022 c2024
  16.     matrix colnames __year_se = c2016 c2018 c2020 c2022 c2024
  17. end
+
+. 
+. *************************************************
+. **************** monthcoefs *********************
+. *************************************************
+. 
+. *** The 15 ENIGH interview months across 2016-2024 in Stata daily-date encodi
+> ng
+. *** (days since 01jan1960). Each wave samples Aug/Sep/Oct (the ENIGH referenc
+> e
+. *** quarter), so 5 waves × 3 months = 15 categories. aug2018 (time=21397) is
+. *** the omitted baseline.
+. ***
+. ***   Position | Date     | Stata time code | Wave
+. ***   ---------+----------+-----------------+------
+. ***          1 | aug2016  |          20667  | 2016
+. ***          2 | sep2016  |          20698  | 2016
+. ***          3 | oct2016  |          20728  | 2016
+. ***          4 | aug2018  |          21397  | 2018 (BASELINE = 0)
+. ***          5 | sep2018  |          21428  | 2018
+. ***          6 | oct2018  |          21458  | 2018
+. ***          7 | aug2020  |          22128  | 2020
+. ***          8 | sep2020  |          22159  | 2020
+. ***          9 | oct2020  |          22189  | 2020
+. ***         10 | aug2022  |          22858  | 2022
+. ***         11 | sep2022  |          22889  | 2022
+. ***         12 | oct2022  |          22919  | 2022
+. ***         13 | aug2024  |          23589  | 2024
+. ***         14 | sep2024  |          23620  | 2024
+. ***         15 | oct2024  |          23650  | 2024
+. 
+. cap prog drop monthcoefs
+
+. program define monthcoefs
+  1.     syntax, EQname(string)
+  2.     qui estimates restore `eqname'
+  3.     cap matrix drop __month_b
+  4.     cap matrix drop __month_se
+  5.     matrix __month_b  = J(1, 15, 0)
+  6.     matrix __month_se = J(1, 15, 0)
+  7.     matrix __month_b[1,  1] = _b[1.zlfn#20667.time]
+  8.     matrix __month_b[1,  2] = _b[1.zlfn#20698.time]
+  9.     matrix __month_b[1,  3] = _b[1.zlfn#20728.time]
+ 10.     *** position 4 (aug2018 = 21397) is the baseline = 0 — leave at J() in
+> it
+.     matrix __month_b[1,  5] = _b[1.zlfn#21428.time]
+ 11.     matrix __month_b[1,  6] = _b[1.zlfn#21458.time]
+ 12.     matrix __month_b[1,  7] = _b[1.zlfn#22128.time]
+ 13.     matrix __month_b[1,  8] = _b[1.zlfn#22159.time]
+ 14.     matrix __month_b[1,  9] = _b[1.zlfn#22189.time]
+ 15.     matrix __month_b[1, 10] = _b[1.zlfn#22858.time]
+ 16.     matrix __month_b[1, 11] = _b[1.zlfn#22889.time]
+ 17.     matrix __month_b[1, 12] = _b[1.zlfn#22919.time]
+ 18.     matrix __month_b[1, 13] = _b[1.zlfn#23589.time]
+ 19.     matrix __month_b[1, 14] = _b[1.zlfn#23620.time]
+ 20.     matrix __month_b[1, 15] = _b[1.zlfn#23650.time]
+ 21.     matrix __month_se[1,  1] = _se[1.zlfn#20667.time]
+ 22.     matrix __month_se[1,  2] = _se[1.zlfn#20698.time]
+ 23.     matrix __month_se[1,  3] = _se[1.zlfn#20728.time]
+ 24.     matrix __month_se[1,  5] = _se[1.zlfn#21428.time]
+ 25.     matrix __month_se[1,  6] = _se[1.zlfn#21458.time]
+ 26.     matrix __month_se[1,  7] = _se[1.zlfn#22128.time]
+ 27.     matrix __month_se[1,  8] = _se[1.zlfn#22159.time]
+ 28.     matrix __month_se[1,  9] = _se[1.zlfn#22189.time]
+ 29.     matrix __month_se[1, 10] = _se[1.zlfn#22858.time]
+ 30.     matrix __month_se[1, 11] = _se[1.zlfn#22889.time]
+ 31.     matrix __month_se[1, 12] = _se[1.zlfn#22919.time]
+ 32.     matrix __month_se[1, 13] = _se[1.zlfn#23589.time]
+ 33.     matrix __month_se[1, 14] = _se[1.zlfn#23620.time]
+ 34.     matrix __month_se[1, 15] = _se[1.zlfn#23650.time]
+ 35.     matrix colnames __month_b  = aug2016 sep2016 oct2016 aug2018 sep2018 o
+> ct2018 ///
+>                                   aug2020 sep2020 oct2020 aug2022 sep2022 oct
+> 2022 ///
+>                                   aug2024 sep2024 oct2024
+ 36.     matrix colnames __month_se = aug2016 sep2016 oct2016 aug2018 sep2018 o
+> ct2018 ///
+>                                   aug2020 sep2020 oct2020 aug2022 sep2022 oct
+> 2022 ///
+>                                   aug2024 sep2024 oct2024
+ 37. end
 
 . 
 . *************************************************
@@ -260,102 +353,78 @@
  29. 
 .     if "`ds'" == "month" {
  30. 
-.         *** Month branch: use ##ib<base_month>.time as in the wage/income var
-> iants.
-.         *** ENIGH 2018 reference month for ZLFN baseline = 21397 (representin
-> g 1aug2018).
+.         *** Month branch: ##ib<base_month>.time event study. ENIGH samples
+.         *** Aug/Sep/Oct each wave, giving 15 time categories across 2016-2024
+> .
+.         *** Baseline = aug2018 (time=21397, position 4 in monthcoefs matrix).
+.         ***
+.         *** The monthcoefs helper builds __month_b and __month_se as 1×15
+.         *** matrices indexed by the actual interview months, with aug2018
+.         *** as the omitted baseline (= 0 in the matrix). This avoids the
+.         *** coefplot positional-mismatch bug that occurs with a keep() list
+.         *** longer than the model's coefficient set, which silently drops
+.         *** all post-treatment points into the pre-treatment x-axis range.
+. 
+.         local month_xlabel ///
+>             1 "01aug2016" 2 "01sep2016" 3 "01oct2016" ///
+>             4 "01aug2018" 5 "01sep2018" 6 "01oct2018" ///
+>             7 "01aug2020" 8 "01sep2020" 9 "01oct2020" ///
+>             10 "01aug2022" 11 "01sep2022" 12 "01oct2022" ///
+>             13 "01aug2024" 14 "01sep2024" 15 "01oct2024"
+ 31. 
 .         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 
 > 0, ///
 >             absorb(ubica_geo time) vce(cluster ubica_geo)
- 31.         eststo graph1
- 32. 
+ 32.         eststo graph1
+ 33.         monthcoefs, eq(graph1)
+ 34. 
+.         coefplot matrix(__month_b), se(__month_se) vertical ///
+>             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
+> ol(circle) lw(medthin) msize(small) ///
+>             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
+>             xline(6.5, lcolor(gs10) lpattern(dash)) ///
+>             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
+>             ytitle("Coefficient Estimate on Log HH Expenditure") ///
+>             xtitle("Month") ///
+>             xlabel(`month_xlabel', angle(90) labsize(small)) ///
+>             graphregion(color(white)) bgcolor(white) ///
+>             grid(glcolor(gs14) glwidth(thin))
+ 35.         graph export "../../paper/figures/event/plot-event-exp-hli-nonind-
+> month.png", replace width(4000) height(3000)
+ 36. 
 .         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if hli_hh == 
 > 1, ///
 >             absorb(ubica_geo time) vce(cluster ubica_geo)
- 33.         eststo graph2
- 34. 
-.         local month_keep ///
->             "1.zlfn#20485.time" "1.zlfn#20514.time" "1.zlfn#20545.time" ///
->             "1.zlfn#20575.time" "1.zlfn#20606.time" "1.zlfn#20636.time" ///
->             "1.zlfn#20667.time" "1.zlfn#20698.time" "1.zlfn#20728.time" ///
->             "1.zlfn#21216.time" "1.zlfn#21244.time" "1.zlfn#21275.time" ///
->             "1.zlfn#21305.time" "1.zlfn#21336.time" "1.zlfn#21366.time" ///
->             "1.zlfn#21397.time" "1.zlfn#21428.time" "1.zlfn#21458.time" ///
->             "1.zlfn#21946.time" "1.zlfn#21975.time" "1.zlfn#22006.time" ///
->             "1.zlfn#22036.time" "1.zlfn#22067.time" "1.zlfn#22097.time" ///
->             "1.zlfn#22128.time" "1.zlfn#22159.time" "1.zlfn#22189.time" ///
->             "1.zlfn#22677.time" "1.zlfn#22705.time" "1.zlfn#22736.time" ///
->             "1.zlfn#22766.time" "1.zlfn#22797.time" "1.zlfn#22827.time" ///
->             "1.zlfn#22858.time" "1.zlfn#22889.time" "1.zlfn#22919.time" ///
->             "1.zlfn#23407.time" "1.zlfn#23436.time" "1.zlfn#23467.time" ///
->             "1.zlfn#23497.time" "1.zlfn#23528.time" "1.zlfn#23558.time" ///
->             "1.zlfn#23589.time" "1.zlfn#23620.time" "1.zlfn#23650.time"
- 35. 
-.         local month_xlabel ///
->             1 "01feb2016" 2 "01mar2016" 3 "01apr2016" ///
->             4 "01may2016" 5 "01jun2016" 6 "01jul2016" ///
->             7 "01aug2016" 8 "01sep2016" 9 "01oct2016" ///
->             10 "01feb2018" 11 "01mar2018" 12 "01apr2018" ///
->             13 "01may2018" 14 "01jun2018" 15 "01jul2018" ///
->             16 "01aug2018" 17 "01sep2018" 18 "01oct2018" ///
->             19 "01feb2020" 20 "01mar2020" 21 "01apr2020" ///
->             22 "01may2020" 23 "01jun2020" 24 "01jul2020" ///
->             25 "01aug2020" 26 "01sep2020" 27 "01oct2020" ///
->             28 "01feb2022" 29 "01mar2022" 30 "01apr2022" ///
->             31 "01may2022" 32 "01jun2022" 33 "01jul2022" ///
->             34 "01aug2022" 35 "01sep2022" 36 "01oct2022" ///
->             37 "01feb2024" 38 "01mar2024" 39 "01apr2024" ///
->             40 "01may2024" 41 "01jun2024" 42 "01jul2024" ///
->             43 "01aug2024" 44 "01sep2024" 45 "01oct2024"
- 36. 
-.         coefplot graph1 ///
->             , keep(`month_keep') vertical ///
->             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
-> ol(circle) lw(medthin) msize(small) ///
->             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->             xline(18.5, lcolor(gs10) lpattern(dash)) ///
->             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
->             ytitle("Coefficient Estimate on Log HH Expenditure") ///
->             xtitle("Month") ///
->             xlabel(`month_xlabel', angle(90) labsize(small)) ///
->             graphregion(color(white)) bgcolor(white) ///
->             grid(glcolor(gs14) glwidth(thin))
- 37.         graph export "../../paper/figures/event/plot-event-exp-hli-nonind-
-> month.png", replace width(4000) height(3000)
- 38. 
-.         coefplot graph2 ///
->             , keep(`month_keep') vertical ///
+ 37.         eststo graph2
+ 38.         monthcoefs, eq(graph2)
+ 39. 
+.         coefplot matrix(__month_b), se(__month_se) vertical ///
 >             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
 > (circle) lw(medthin) msize(small) ///
 >             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             xline(6.5, lcolor(gs10) lpattern(dash)) ///
 >             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >             ytitle("Coefficient Estimate on Log HH Expenditure") ///
 >             xtitle("Month") ///
 >             xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >             graphregion(color(white)) bgcolor(white) ///
 >             grid(glcolor(gs14) glwidth(thin))
- 39.         graph export "../../paper/figures/event/plot-event-exp-hli-ind-mon
+ 40.         graph export "../../paper/figures/event/plot-event-exp-hli-ind-mon
 > th.png", replace width(4000) height(3000)
- 40. 
-.         estimates clear
  41. 
+.         estimates clear
+ 42. 
 .         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh =
 > = 0, ///
 >             absorb(ubica_geo time) vce(cluster ubica_geo)
- 42.         eststo graph3
- 43. 
-.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh =
-> = 1, ///
->             absorb(ubica_geo time) vce(cluster ubica_geo)
- 44.         eststo graph4
+ 43.         eststo graph3
+ 44.         monthcoefs, eq(graph3)
  45. 
-.         coefplot graph3 ///
->             , keep(`month_keep') vertical ///
+.         coefplot matrix(__month_b), se(__month_se) vertical ///
 >             recast(connected) lcolor("31 119 180") mcolor("31 119 180") msymb
 > ol(circle) lw(medthin) msize(small) ///
 >             ciopts(recast(rarea) fcolor("31 119 180%30") lwidth(none)) ///
->             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             xline(6.5, lcolor(gs10) lpattern(dash)) ///
 >             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >             ytitle("Coefficient Estimate on Log HH Expenditure") ///
 >             xtitle("Month") ///
@@ -365,22 +434,27 @@
  46.         graph export "../../paper/figures/event/plot-event-exp-indig-nonin
 > d-month.png", replace width(4000) height(3000)
  47. 
-.         coefplot graph4 ///
->             , keep(`month_keep') vertical ///
+.         reghdfe lngas_total_real i.zlfn##ib21397.time $controls if indig_hh =
+> = 1, ///
+>             absorb(ubica_geo time) vce(cluster ubica_geo)
+ 48.         eststo graph4
+ 49.         monthcoefs, eq(graph4)
+ 50. 
+.         coefplot matrix(__month_b), se(__month_se) vertical ///
 >             recast(connected) lcolor("214 39 40") mcolor("214 39 40") msymbol
 > (circle) lw(medthin) msize(small) ///
 >             ciopts(recast(rarea) fcolor("214 39 40%30") lwidth(none)) ///
->             xline(18.5, lcolor(gs10) lpattern(dash)) ///
+>             xline(6.5, lcolor(gs10) lpattern(dash)) ///
 >             yline(0, lw(thin) lpattern(solid) lcolor(black)) ///
 >             ytitle("Coefficient Estimate on Log HH Expenditure") ///
 >             xtitle("Month") ///
 >             xlabel(`month_xlabel', angle(90) labsize(small)) ///
 >             graphregion(color(white)) bgcolor(white) ///
 >             grid(glcolor(gs14) glwidth(thin))
- 48.         graph export "../../paper/figures/event/plot-event-exp-indig-ind-m
+ 51.         graph export "../../paper/figures/event/plot-event-exp-indig-ind-m
 > onth.png", replace width(4000) height(3000)
- 49.     }
- 50. 
+ 52.     }
+ 53. 
 . }
 
 . *************************************************
@@ -399,14 +473,19 @@
 . *** heterogeneity strata.
 . ***
 . *** WHY TOTAL (not capítulo-level): The build's clave→capitulo mapping is
-. *** wave-specific. Numeric capítulos ("01"…"18") only appear in 2024 data;
-. *** alpha codes ("A0", "A1", "A2", "B0") span 2016/2018 only. After
-. *** subsetting to a single capítulo, post is constant and the DiD treatment
-. *** effect is unidentifiable. Aggregating over capítulos yields a clean
-. *** monthly HH-expenditure outcome with full pre/post and treat/control
+. *** wave-specific. Pre-2024 ENIGH uses numeric 6-digit clave codes (e.g.
+. *** "011131" Tortillas de maíz, where substr(1,2) = "01" = food). ENIGH 2024
+. *** switched to alpha-prefixed codes (e.g. "A001" Maíz en grano, "B001",
+. *** "K001", ...), so substr(1,2) = "A0", "B0", "K0", etc. — never matching
+. *** the existing numeric branches in classify_gasto_clave. Every 2024 row
+. *** therefore falls into gasto_group = "other". After subsetting to a single
+. *** numeric capítulo, post is constant (2024 is missing) and the DiD
+. *** treatment effect is unidentifiable. Aggregating over capítulos yields a
+. *** clean monthly HH-expenditure outcome with full pre/post and treat/control
 . *** variation. A capítulo-level breakdown awaits a wave-harmonized
 . *** classification in the build script (see code/build/_helpers.do
-. *** classify_gasto_clave).
+. *** classify_gasto_clave, and the alpha-code crosswalk in
+. *** data/clean/enigh/clave_crosswalk.csv once built in Phase 2).
 . ***
 . *** Output dataset in memory has, per row:
 . ***   folioviv foliohog year month time             (key)
@@ -555,7 +634,6 @@ Absorbed degrees of freedom:
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-hli-nonind-year.png not found)
 file ../../paper/figures/event/plot-event-exp-hli-nonind-year.png written in PN
 > G format
 (dropped 93 singleton observations)
@@ -617,7 +695,6 @@ Absorbed degrees of freedom:
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-hli-ind-year.png not found)
 file ../../paper/figures/event/plot-event-exp-hli-ind-year.png written in PNG f
 > ormat
 (dropped 21 singleton observations)
@@ -679,7 +756,6 @@ Absorbed degrees of freedom:
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-indig-nonind-year.png not found)
 file ../../paper/figures/event/plot-event-exp-indig-nonind-year.png written in 
 > PNG format
 (dropped 14 singleton observations)
@@ -741,7 +817,6 @@ Absorbed degrees of freedom:
         year |         5           1           4     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-indig-ind-year.png not found)
 file ../../paper/figures/event/plot-event-exp-indig-ind-year.png written in PNG
 >  format
 
@@ -761,14 +836,19 @@ file ../../paper/figures/event/plot-event-exp-indig-ind-year.png written in PNG
 . *** heterogeneity strata.
 . ***
 . *** WHY TOTAL (not capítulo-level): The build's clave→capitulo mapping is
-. *** wave-specific. Numeric capítulos ("01"…"18") only appear in 2024 data;
-. *** alpha codes ("A0", "A1", "A2", "B0") span 2016/2018 only. After
-. *** subsetting to a single capítulo, post is constant and the DiD treatment
-. *** effect is unidentifiable. Aggregating over capítulos yields a clean
-. *** monthly HH-expenditure outcome with full pre/post and treat/control
+. *** wave-specific. Pre-2024 ENIGH uses numeric 6-digit clave codes (e.g.
+. *** "011131" Tortillas de maíz, where substr(1,2) = "01" = food). ENIGH 2024
+. *** switched to alpha-prefixed codes (e.g. "A001" Maíz en grano, "B001",
+. *** "K001", ...), so substr(1,2) = "A0", "B0", "K0", etc. — never matching
+. *** the existing numeric branches in classify_gasto_clave. Every 2024 row
+. *** therefore falls into gasto_group = "other". After subsetting to a single
+. *** numeric capítulo, post is constant (2024 is missing) and the DiD
+. *** treatment effect is unidentifiable. Aggregating over capítulos yields a
+. *** clean monthly HH-expenditure outcome with full pre/post and treat/control
 . *** variation. A capítulo-level breakdown awaits a wave-harmonized
 . *** classification in the build script (see code/build/_helpers.do
-. *** classify_gasto_clave).
+. *** classify_gasto_clave, and the alpha-code crosswalk in
+. *** data/clean/enigh/clave_crosswalk.csv once built in Phase 2).
 . ***
 . *** Output dataset in memory has, per row:
 . ***   folioviv foliohog year month time             (key)
@@ -957,6 +1037,8 @@ Absorbed degrees of freedom:
         time |        15           1          14     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
+file ../../paper/figures/event/plot-event-exp-hli-nonind-month.png written in P
+> NG format
 (dropped 93 singleton observations)
 (MWFE estimator converged in 8 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
@@ -1056,10 +1138,6 @@ Absorbed degrees of freedom:
         time |        15           1          14     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-hli-nonind-month.png not found)
-file ../../paper/figures/event/plot-event-exp-hli-nonind-month.png written in P
-> NG format
-(file ../../paper/figures/event/plot-event-exp-hli-ind-month.png not found)
 file ../../paper/figures/event/plot-event-exp-hli-ind-month.png written in PNG 
 > format
 (dropped 21 singleton observations)
@@ -1161,6 +1239,8 @@ Absorbed degrees of freedom:
         time |        15           1          14     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
+file ../../paper/figures/event/plot-event-exp-indig-nonind-month.png written in
+>  PNG format
 (dropped 14 singleton observations)
 (MWFE estimator converged in 8 iterations)
 note: 1bn.zlfn is probably collinear with the fixed effects (all partialled-out
@@ -1260,11 +1340,6 @@ Absorbed degrees of freedom:
         time |        15           1          14     |
 -----------------------------------------------------+
 * = FE nested within cluster; treated as redundant for DoF computation
-(file ../../paper/figures/event/plot-event-exp-indig-nonind-month.png not found
-> )
-file ../../paper/figures/event/plot-event-exp-indig-nonind-month.png written in
->  PNG format
-(file ../../paper/figures/event/plot-event-exp-indig-ind-month.png not found)
 file ../../paper/figures/event/plot-event-exp-indig-ind-month.png written in PN
 > G format
 

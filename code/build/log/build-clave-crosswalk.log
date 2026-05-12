@@ -1,0 +1,222 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/victorortega/Library/CloudStorage/Dropbox/CarrascoOrtega-mi
+> nwage/code/build/log/build-clave-crosswalk.log
+  log type:  text
+ opened on:  11 May 2026, 20:13:52
+
+. 
+. local YEARS 2016 2018 2020 2022 2024
+
+. 
+. *************************************************
+. **** Enumerate unique claves across waves ********
+. *************************************************
+. 
+. tempfile uclaves
+
+. clear
+
+. gen str10 clave = ""
+
+. save `uclaves', replace emptyok
+(dataset contains 0 observations)
+(file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 not
+    found)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+
+. 
+. foreach yr of local YEARS {
+  2.     di as text "scanning gastoshogar`yr'.dta …"
+  3.     use clave using "../../data/source/enigh/gastoshogar`yr'.dta", clear
+  4.     duplicates drop clave, force
+  5.     append using `uclaves'
+  6.     duplicates drop clave, force
+  7.     save `uclaves', replace
+  8. }
+scanning gastoshogar2016.dta …
+
+Duplicates in terms of clave
+
+(4,189,987 observations deleted)
+(variable clave was str4, now str10 to accommodate using data's values)
+
+Duplicates in terms of clave
+
+(0 observations are duplicates)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+scanning gastoshogar2018.dta …
+
+Duplicates in terms of clave
+
+(4,404,494 observations deleted)
+(variable clave was str4, now str10 to accommodate using data's values)
+
+Duplicates in terms of clave
+
+(753 observations deleted)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+scanning gastoshogar2020.dta …
+
+Duplicates in terms of clave
+
+(4,947,689 observations deleted)
+(variable clave was str4, now str10 to accommodate using data's values)
+
+Duplicates in terms of clave
+
+(755 observations deleted)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+scanning gastoshogar2022.dta …
+
+Duplicates in terms of clave
+
+(5,074,418 observations deleted)
+(variable clave was str4, now str10 to accommodate using data's values)
+
+Duplicates in terms of clave
+
+(755 observations deleted)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+scanning gastoshogar2024.dta …
+
+Duplicates in terms of clave
+
+(5,310,452 observations deleted)
+(variable clave was str6, now str10 to accommodate using data's values)
+
+Duplicates in terms of clave
+
+(16 observations deleted)
+file /var/folders/9y/pvp4l29s0737335xr1nwfp_00000gn/T//St86390.000001 saved
+    as .dta format
+
+. 
+. use `uclaves', clear
+
+. 
+. *** Drop pre-aggregated T-codes upfront (mirrors classify_gasto_clave).
+. drop if substr(clave, 1, 1) == "T"
+(16 observations deleted)
+
+. 
+. di as text "unique non-T claves found: " _N
+unique non-T claves found: 1771
+
+. 
+. *************************************************
+. **** Apply seed rules (first-match-wins) *********
+. *************************************************
+. 
+. preserve
+
+. qui import delimited "clave_subgroups_seed.csv", ///
+>     stringcols(_all) varnames(1) clear
+
+. local nrules = _N
+
+. forval r = 1/`nrules' {
+  2.     local _s`r'  = clave_start[`r']
+  3.     local _e`r'  = clave_end[`r']
+  4.     local _c`r'  = capitulo_norm[`r']
+  5.     local _sg`r' = subgroup[`r']
+  6.     local _sl`r' = subgroup_label[`r']
+  7. }
+
+. restore
+
+. 
+. gen str10 capitulo_norm  = ""
+(1,771 missing values generated)
+
+. gen str40 subgroup       = ""
+(1,771 missing values generated)
+
+. gen str80 subgroup_label = ""
+(1,771 missing values generated)
+
+. 
+. forval r = 1/`nrules' {
+  2.     qui replace capitulo_norm  = "`_c`r''"  ///
+>         if missing(subgroup) & "`_s`r''" <= clave & clave <= "`_e`r''"
+  3.     qui replace subgroup_label = "`_sl`r''" ///
+>         if missing(subgroup) & "`_s`r''" <= clave & clave <= "`_e`r''"
+  4.     qui replace subgroup       = "`_sg`r''" ///
+>         if missing(subgroup) & "`_s`r''" <= clave & clave <= "`_e`r''"
+  5. }
+
+. 
+. *** Coverage gate.
+. cap assert !missing(subgroup)
+
+. if _rc {
+.     di as error "build-clave-crosswalk: unmatched clave(s); " ///
+>                 "extend code/build/clave_subgroups_seed.csv"
+.     list clave if missing(subgroup), clean noobs
+.     exit 9
+. }
+
+. 
+. di as text "all " _N " unique claves matched by seed rules"
+all 1771 unique claves matched by seed rules
+
+. tab capitulo_norm, missing
+
+capitulo_no |
+         rm |      Freq.     Percent        Cum.
+------------+-----------------------------------
+         01 |        519       29.31       29.31
+         02 |         37        2.09       31.39
+         03 |        268       15.13       46.53
+         04 |         97        5.48       52.00
+         05 |        196       11.07       63.07
+         06 |        142        8.02       71.09
+         07 |         91        5.14       76.23
+         08 |         63        3.56       79.79
+         09 |        148        8.36       88.14
+         10 |         65        3.67       91.81
+         11 |         17        0.96       92.77
+         12 |         70        3.95       96.73
+         13 |         40        2.26       98.98
+         17 |         13        0.73       99.72
+         18 |          5        0.28      100.00
+------------+-----------------------------------
+      Total |      1,771      100.00
+
+. 
+. *************************************************
+. **** Save crosswalk *******************************
+. *************************************************
+. 
+. label variable clave          "ENIGH expenditure clave"
+
+. label variable capitulo_norm  "Capítulo harmonizado (2 dígitos)"
+
+. label variable subgroup       "Concepto subgroup (~65 buckets)"
+
+. label variable subgroup_label "Subgroup display label (Spanish)"
+
+. 
+. sort clave
+
+. compress
+  variable clave was str10 now str6
+  variable capitulo_norm was str10 now str2
+  variable subgroup was str40 now str21
+  variable subgroup_label was str80 now str43
+  (120,428 bytes saved)
+
+. save "../../data/clean/enigh/clave_crosswalk.dta", replace
+file ../../data/clean/enigh/clave_crosswalk.dta saved
+
+. 
+. di as text "saved data/clean/enigh/clave_crosswalk.dta (" _N " rows)"
+saved data/clean/enigh/clave_crosswalk.dta (1771 rows)
+
+. 
+. cap log close

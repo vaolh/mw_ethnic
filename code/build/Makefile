@@ -196,10 +196,28 @@ $(DATADIR)/clean/enigh/clave_gasto_labels.csv: extract_clave_labels.py \
         | $(DATADIR)/clean/enigh
 	python3 extract_clave_labels.py
 
+### Harmonized clave→subgroup crosswalk: maps both numeric (pre-2024) and
+### alpha-prefixed (2024) claves into ~65 concepto buckets. The .csv is
+### a Python-built audit preview; the .dta is the authoritative crosswalk
+### built from the actual gastoshogar.dta clave universe + the seed rules.
+$(DATADIR)/clean/enigh/clave_crosswalk.csv: build-clave-crosswalk.py \
+        $(DATADIR)/clean/enigh/clave_subgroups_seed.csv \
+        $(DATADIR)/clean/enigh/clave_gasto_labels.csv \
+        | $(DATADIR)/clean/enigh
+	python3 build-clave-crosswalk.py
+
+$(DATADIR)/clean/enigh/clave_crosswalk.dta: build-clave-crosswalk.do \
+        $(DATADIR)/clean/enigh/clave_subgroups_seed.csv \
+        $(foreach yr,$(YEARS),$(DATADIR)/source/enigh/gastoshogar$(yr).dta) \
+        | $(DATADIR)/clean/enigh log
+	stata-mp -e build-clave-crosswalk.do
+	@rm -f build-clave-crosswalk.log
+
 $(DATADIR)/clean/enigh/enigh-hhlevel-exp-month.dta: \
         enigh-hhlevel-exp-month.do $(HELPERS) $(SOURCE_DTA_HH) \
         $(foreach yr,$(YEARS),$(DATADIR)/source/enigh/gastoshogar$(yr).dta) \
         $(DATADIR)/clean/enigh/clave_gasto_labels.csv \
+        $(DATADIR)/clean/enigh/clave_crosswalk.dta \
         $(DATADIR)/clean/inpc/inpc.csv \
         | $(DATADIR)/clean/enigh log
 	stata-mp -e enigh-hhlevel-exp-month.do

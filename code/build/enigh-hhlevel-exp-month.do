@@ -18,9 +18,16 @@ set varabbrev off
 *** One row per (folioviv, foliohog, clave, month) when mes_dia is valid.
 *** Includes:
 ***   - Real and nominal expenditure (gas_nom, gas_real, gas_nm_nom, gas_nm_real)
-***   - clave (6-digit string), capitulo (2-digit COICOP), gasto_group (custom)
+***   - clave: numeric 6-digit (pre-2024) or alpha-prefixed (2024)
+***   - capitulo: harmonized 2-digit code from clave_crosswalk
+***   - subgroup, subgroup_label: ~65 concepto buckets harmonized across waves
+***   - gasto_group: legacy 14-bucket grouping derived from capitulo
 ***   - clave_label merged from data/clean/enigh/clave_gasto_labels.csv
 ***   - Survey weights, treatment, geography from concentradohogar
+***
+*** Depends on:
+***   data/clean/enigh/clave_crosswalk.csv  (built by build-clave-crosswalk.py)
+***   data/clean/enigh/clave_gasto_labels.csv
 ***
 *** Output: ../../data/clean/enigh/enigh-hhlevel-exp-month.dta
 
@@ -90,7 +97,7 @@ foreach yr of local YEARS {
     drop _orig_id _seq _has_dia
 
     collapse (sum) gas_nom gas_nm_nom ///
-             (firstnm) capitulo gasto_group, ///
+             (firstnm) capitulo gasto_group subgroup, ///
              by(folioviv foliohog clave month)
 
     *** Deflate by Aug-`yr' INPC.
@@ -156,23 +163,16 @@ label variable treat_post "ZLFN × Post"
 *** Merge clave labels (1,763 codes from docs) ***
 *************************************************
 
-tempfile lbl_tf
-preserve
-import delimited using "../../data/clean/enigh/clave_gasto_labels.csv", ///
-    clear varnames(1) stringcols(_all) encoding("utf-8")
-rename label clave_label
-duplicates drop clave, force
-save `lbl_tf', replace
-restore
+*** NOTE: clave_label and subgroup_label are NOT carried in the long
+*** panel. They balloon the dataset (str>40 × 17M rows = >1GB each)
+*** and trigger memory thrashing on Mac during sort/compress/save.
+*** Downstream scripts can merge them from data/clean/enigh/clave_crosswalk.dta
+*** and data/clean/enigh/clave_gasto_labels.csv as needed.
 
-merge m:1 clave using `lbl_tf'
-drop if _merge == 2
-drop _merge
-
-label variable clave         "ENIGH expenditure clave (6-digit code)"
-label variable clave_label   "ENIGH clave description (Spanish, from docs)"
-label variable capitulo      "Capítulo (COICOP first 2 digits of clave)"
-label variable gasto_group   "Custom group: food / durables / services / housing / transport / health / restaurants / etc."
+label variable clave        "ENIGH expenditure clave (numeric pre-2024, alpha 2024)"
+label variable capitulo     "Capítulo harmonizado (2 dígitos, from crosswalk)"
+label variable subgroup     "Concepto subgroup (~65 buckets, harmonized across waves)"
+label variable gasto_group  "Custom 14-bucket group derived from capítulo (back-compat)"
 label variable gas_nom       "nominal monthly expenditure (allocated from trimestral, pesos)"
 label variable gas_real      "real (Aug-2024) monthly expenditure (pesos)"
 label variable gas_nm_nom    "nominal monthly non-monetary expenditure (pesos)"
@@ -188,7 +188,7 @@ apply_all_labels
 order folioviv foliohog year month time ubica_geo state ent_name ///
       reg_num reg_name macro_num macro_name ///
       factor upm est_dis zlfn post treat_post smg ///
-      clave clave_label capitulo gasto_group ///
+      clave capitulo subgroup gasto_group ///
       gas_nom gas_real gas_nm_nom gas_nm_real deflator
 
 sort folioviv foliohog clave year month

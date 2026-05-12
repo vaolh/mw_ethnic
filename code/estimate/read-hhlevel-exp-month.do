@@ -14,14 +14,19 @@
 *** heterogeneity strata.
 ***
 *** WHY TOTAL (not capítulo-level): The build's clave→capitulo mapping is
-*** wave-specific. Numeric capítulos ("01"…"18") only appear in 2024 data;
-*** alpha codes ("A0", "A1", "A2", "B0") span 2016/2018 only. After
-*** subsetting to a single capítulo, post is constant and the DiD treatment
-*** effect is unidentifiable. Aggregating over capítulos yields a clean
-*** monthly HH-expenditure outcome with full pre/post and treat/control
+*** wave-specific. Pre-2024 ENIGH uses numeric 6-digit clave codes (e.g.
+*** "011131" Tortillas de maíz, where substr(1,2) = "01" = food). ENIGH 2024
+*** switched to alpha-prefixed codes (e.g. "A001" Maíz en grano, "B001",
+*** "K001", ...), so substr(1,2) = "A0", "B0", "K0", etc. — never matching
+*** the existing numeric branches in classify_gasto_clave. Every 2024 row
+*** therefore falls into gasto_group = "other". After subsetting to a single
+*** numeric capítulo, post is constant (2024 is missing) and the DiD
+*** treatment effect is unidentifiable. Aggregating over capítulos yields a
+*** clean monthly HH-expenditure outcome with full pre/post and treat/control
 *** variation. A capítulo-level breakdown awaits a wave-harmonized
 *** classification in the build script (see code/build/_helpers.do
-*** classify_gasto_clave).
+*** classify_gasto_clave, and the alpha-code crosswalk in
+*** data/clean/enigh/clave_crosswalk.csv once built in Phase 2).
 ***
 *** Output dataset in memory has, per row:
 ***   folioviv foliohog year month time             (key)
